@@ -75,6 +75,7 @@ final class UpdateService: ObservableObject {
             }
             return
         }
+        guard AppInfo.releasesRunOnThisMac else { return }
         configureAutomaticChecks()
         if autoCheckEnabled {
             DispatchQueue.main.asyncAfter(deadline: .now() + 6) { [weak self] in
@@ -110,6 +111,13 @@ final class UpdateService: ObservableObject {
                 state = .upToDate
                 availableNotes = nil
             }
+            lastChecked = Date()
+            return
+        }
+        guard AppInfo.releasesRunOnThisMac else {
+            // Nothing published would launch here; updating means rebuilding.
+            state = .upToDate
+            availableNotes = nil
             lastChecked = Date()
             return
         }
@@ -207,6 +215,7 @@ final class UpdateService: ObservableObject {
 
     func downloadAndInstall() {
         if AppInfo.isDeveloperBuild { return }  // never replace the local dev build over itself
+        guard AppInfo.releasesRunOnThisMac else { return }
         guard let downloadURL else { return }
         // Pre-flight BEFORE spending the download: a translocated app or one
         // running from a read-only volume (the mounted DMG) can never be

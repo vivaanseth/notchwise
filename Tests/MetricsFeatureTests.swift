@@ -649,6 +649,16 @@ enum MetricsFeatureTests {
         ) == nil, "A18 Pro remains unavailable when no CPU sensor answers")
         suite.expect(TemperatureSensorSelector.platform(brandString: "Generic CPU") == .generic,
                "other processors keep the generic CPU sensor path")
+        suite.expect(TemperatureSensorSelector.platform(brandString: "Intel(R) Core(TM) i5-8257U CPU @ 1.40GHz") == .intel
+                && TemperatureSensorSelector.isCPUTemperatureKey("TC0P", platform: .intel)
+                && !TemperatureSensorSelector.isCPUTemperatureKey("Tp0P", platform: .intel)
+                && TemperatureSensorSelector.isCPUCoreKey("TC3C", platform: .intel)
+                && !TemperatureSensorSelector.isCPUCoreKey("TC0P", platform: .intel),
+               "Intel Macs read their TC sensors, not the power supply's Tp")
+        suite.expectClose(TemperatureSensorSelector.displayedCPUTemperature(
+            readings: [("TC0P", 81.0), ("TC1C", 89.0), ("TC3C", 91.0), ("TC0L", 0.1)],
+            platform: .intel
+        ) ?? -1, 91.0, "an Intel Mac shows its hottest core")
         suite.expect(TemperatureSensorSelector.isCPUTemperatureKey("Tf4E", platform: .appleM3Family)
                 && !TemperatureSensorSelector.isCPUTemperatureKey("Tf4E", platform: .appleM4Family)
                 && TemperatureSensorSelector.isCPUTemperatureKey("Tp01", platform: .appleM4Family),

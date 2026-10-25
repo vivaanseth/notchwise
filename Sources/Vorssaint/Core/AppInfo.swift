@@ -25,6 +25,16 @@ enum AppInfo {
         (Bundle.main.bundleIdentifier ?? "").hasSuffix(".dev")
     }
 
+    /// Published releases are Apple Silicon only, so a build from source for
+    /// an Intel Mac must never download one over itself.
+    static var releasesRunOnThisMac: Bool {
+        #if arch(arm64)
+        return true
+        #else
+        return false
+        #endif
+    }
+
     /// True when the current version is a pre-release (e.g. 3.3.4-beta.1 or 3.3.4-rc.1).
     static var isBeta: Bool {
         if isDeveloperBuild && UserDefaults.standard.bool(forKey: DefaultsKey.simulateBetaUI) {

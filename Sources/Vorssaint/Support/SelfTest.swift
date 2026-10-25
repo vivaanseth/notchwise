@@ -44,7 +44,10 @@ enum SelfTest {
         }
 
         if let smc = SMCClient() {
-            let keys = smc.keys { $0.hasPrefix("Tp") || $0.hasPrefix("Te") || $0.hasPrefix("Tg") }
+            let platform = TemperatureSensorSelector.currentPlatform()
+            let keys = smc.keys {
+                TemperatureSensorSelector.isCPUTemperatureKey($0, platform: platform) || $0.hasPrefix("Tg")
+            }
             if keys.isEmpty {
                 warnings.append("no SMC temperature keys")
             } else if keys.compactMap({ smc.readValue($0) }).isEmpty {
@@ -200,11 +203,12 @@ enum SensorDump {
             print("AppleSMC unavailable")
             exit(1)
         }
+        let cpuPlatform = TemperatureSensorSelector.currentPlatform()
         let keys = smc.keys { name in
-            name.hasPrefix("Tp") || name.hasPrefix("Te") || name.hasPrefix("Tg")
+            TemperatureSensorSelector.isCPUTemperatureKey(name, platform: cpuPlatform)
+                || name.hasPrefix("Tg")
                 || name.range(of: "^TB[0-9]T$", options: .regularExpression) != nil
         }
-        let cpuPlatform = TemperatureSensorSelector.currentPlatform()
         let hasCPUCoreSet = TemperatureSensorSelector.hasCPUCoreSet(platform: cpuPlatform)
         print("component    key   type   °C")
         for key in keys.sorted(by: { $0.name < $1.name }) {

@@ -12,6 +12,8 @@ enum CPUTemperaturePlatform: Equatable {
     case appleM4ProFamily
     case appleM5Family
     case unmappedAppleSilicon
+    /// Intel Macs name their CPU sensors TC…, with one TC<n>C per core.
+    case intel
     case generic
 }
 
@@ -79,7 +81,9 @@ enum TemperatureSensorSelector {
         case 3: return .appleM3Family
         case 4: return brand == "Apple M4 Pro" ? .appleM4ProFamily : .appleM4Family
         case 5: return .appleM5Family
-        default: return brand.hasPrefix("Apple ") ? .unmappedAppleSilicon : .generic
+        default:
+            if brand.hasPrefix("Apple ") { return .unmappedAppleSilicon }
+            return brand.hasPrefix("Intel") ? .intel : .generic
         }
     }
 
@@ -116,7 +120,7 @@ enum TemperatureSensorSelector {
     static func hasCPUCoreSet(platform: CPUTemperaturePlatform) -> Bool {
         switch platform {
         case .appleM1Family, .appleM2Family, .appleM3Family, .appleM4Family,
-             .appleM4ProFamily, .appleM5Family:
+             .appleM4ProFamily, .appleM5Family, .intel:
             return true
         case .unmappedAppleSilicon, .generic: return false
         }
@@ -136,6 +140,8 @@ enum TemperatureSensorSelector {
             return appleM4ProCPUCoreKeys.contains(key)
         case .appleM5Family:
             return appleM5CPUCoreKeys.contains(key)
+        case .intel:
+            return key.range(of: "^TC[0-9]C$", options: .regularExpression) != nil
         case .unmappedAppleSilicon, .generic:
             return false
         }
@@ -143,6 +149,8 @@ enum TemperatureSensorSelector {
 
     static func isCPUTemperatureKey(_ key: String,
                                     platform: CPUTemperaturePlatform) -> Bool {
+        // On Intel, Tp… is the power supply, not the CPU.
+        if platform == .intel { return key.hasPrefix("TC") }
         if key.hasPrefix("Tp") || key.hasPrefix("Te") { return true }
         return platform == .appleM3Family && key.hasPrefix("Tf")
     }
