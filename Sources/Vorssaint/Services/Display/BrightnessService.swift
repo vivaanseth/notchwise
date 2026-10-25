@@ -2719,6 +2719,11 @@ final class BrightnessService: ObservableObject {
     /// proxy (the I2C endpoint, tagged with its location). Only proxies
     /// marked External accept DDC; the built-in panel's proxy is Embedded.
     private static func externalServices() -> [ExternalService] {
+        #if arch(x86_64)
+        return IntelDDC.externalServices().map {
+            ExternalService(identity: $0.identity, service: $0.channel)
+        }
+        #else
         guard let createWithService = BrightnessBridge.createWithService else { return [] }
         var results: [ExternalService] = []
         let root = IORegistryGetRootEntry(kIOMainPortDefault)
@@ -2764,6 +2769,7 @@ final class BrightnessService: ObservableObject {
             }
         }
         return results
+        #endif
     }
 
     private static func property(_ entry: io_service_t, _ key: String) -> AnyObject? {
@@ -2808,6 +2814,18 @@ enum BrightnessBridge {
         symbol(displayServicesHandle, "DisplayServicesSetBrightnessSmooth")
     static let createInfoDictionary: CreateInfoDictionaryFn? =
         symbol(coreDisplayHandle, "CoreDisplay_DisplayCreateInfoDictionary")
+    #if arch(x86_64)
+    // Intel Macs carry DDC over the framebuffer's I2C bus instead; see IntelDDC.
+    static let writeI2C: WriteI2CFn? = { service, chipAddress, dataAddress, bytes, count in
+        IntelDDC.write(service, chipAddress: chipAddress, dataAddress: dataAddress,
+                       bytes: bytes, count: count)
+    }
+    static let readI2C: ReadI2CFn? = { service, chipAddress, _, bytes, count in
+        IntelDDC.read(service, chipAddress: chipAddress, bytes: bytes, count: count)
+    }
+
+    static var ddcAvailable: Bool { true }
+    #else
     static let createWithService: CreateWithServiceFn? =
         symbol(coreDisplayHandle, "IOAVServiceCreateWithService")
     static let writeI2C: WriteI2CFn? =
@@ -2818,6 +2836,7 @@ enum BrightnessBridge {
     static var ddcAvailable: Bool {
         createWithService != nil && writeI2C != nil && readI2C != nil
     }
+    #endif
 
     private static func symbol<T>(_ handle: UnsafeMutableRawPointer?, _ name: String) -> T? {
         guard let handle, let pointer = dlsym(handle, name) else { return nil }
