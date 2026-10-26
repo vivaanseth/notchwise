@@ -8,10 +8,14 @@ import CoreGraphics
 
 enum NotchModule: String, CaseIterable, Identifiable {
     case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch
+    /// The VoiceOS assistant. Added last, so every saved order and fallback
+    /// keeps its meaning; the combined app's first launch puts it first.
+    case voice
     var id: String { rawValue }
 
     var symbol: String {
         switch self {
+        case .voice: return AppFeature.voiceAssistant.symbolName
         case .controls: return "slider.horizontal.3"
         // A speaker reads as sound at a glance; faders beside the settings
         // gear looked like a second settings button.
@@ -37,6 +41,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
     /// Stable across ordering and languages; every destination has a direct key.
     var shortcutKey: String {
         switch self {
+        case .voice: return "j"
         case .controls: return "c"
         case .mixer: return "v"
         case .music: return "m"
@@ -58,6 +63,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
 
     func isAvailable(in defaults: UserDefaults = .standard) -> Bool {
         switch self {
+        case .voice: return AppFeature.voiceAssistant.isAvailable(in: defaults)
         case .controls, .music: return true
         case .timer: return AppFeature.notchTimer.isAvailable(in: defaults)
         case .camera: return AppFeature.cameraPreview.isAvailable(in: defaults)
@@ -318,6 +324,11 @@ enum NotchLayout {
     static let clipboardCompactCardHeight: CGFloat = 52
     static let clipboardCardSpacing: CGFloat = 8
     static let emptyHeight: CGFloat = 140
+    /// The assistant's input row alone, before its page has been measured.
+    static let voiceInputHeight: CGFloat = 48
+    /// VoiceOS's open notch was 620 points wide; the assistant's page takes
+    /// that width, past the size chosen for the other pages.
+    static let voicePageWidth: CGFloat = 620
     /// The player as a phone's island lays it out: a small cover, the song
     /// beside it, the timeline and one row of buttons across the island,
     /// which is no wider than that: about 380 points between its sides.
@@ -823,12 +834,13 @@ enum NotchMusicStripLayout {
 }
 
 enum NotchCompactActivity: String, Identifiable {
-    case timer, watch, downloads, agents, calendar, music, keepAwake
+    case voice, timer, watch, downloads, agents, calendar, music, keepAwake
 
     var id: String { rawValue }
 
     func title(_ language: AppLanguage) -> String {
         switch self {
+        case .voice: return FeatureStrings.voiceAssistant(language).pageTitle
         case .timer: return FeatureStrings.notchActivities(language).timer
         case .watch: return FeatureStrings.notchWatch(language).title
         case .downloads: return FeatureStrings.notchFiles(language).downloadsTitle
@@ -842,6 +854,7 @@ enum NotchCompactActivity: String, Identifiable {
     /// Keep Awake has no page of its own: its tile is on Controls.
     var module: NotchModule {
         switch self {
+        case .voice: return .voice
         case .timer: return .timer
         case .watch: return .watch
         case .downloads: return .downloads
@@ -1783,10 +1796,12 @@ enum NotchSupport {
     /// Keep Awake comes last: a session can run all day, even more than
     /// music plays, and it only says that the Mac stays awake. A watch
     /// follows the timer: the person started both and is waiting on them.
+    /// The assistant at work comes first: it is the island's main job.
     static func compactActivities(timer: Bool, watch: Bool = false, downloads: Bool, agents: Bool,
-                                  calendar: Bool, music: Bool, keepAwake: Bool = false) -> [NotchCompactActivity] {
+                                  calendar: Bool, music: Bool, keepAwake: Bool = false,
+                                  voice: Bool = false) -> [NotchCompactActivity] {
         let candidates: [(Bool, NotchCompactActivity)] = [
-            (timer, .timer), (watch, .watch), (downloads, .downloads), (agents, .agents),
+            (voice, .voice), (timer, .timer), (watch, .watch), (downloads, .downloads), (agents, .agents),
             (calendar, .calendar), (music, .music), (keepAwake, .keepAwake)
         ]
         return candidates.compactMap { $0.0 ? $0.1 : nil }
@@ -1826,6 +1841,16 @@ enum NotchSupport {
     static func isEnabled(in defaults: UserDefaults = .standard) -> Bool {
         AppFeature.notch.isAvailable(in: defaults)
             && defaults.bool(forKey: DefaultsKey.notchEnabled)
+    }
+
+    /// VoiceOS's "Show notch when idle", saved under its own namespace.
+    static let voiceOSShowIdleNotchKey = "voiceos.showIdleNotch"
+
+    /// That choice switched off: the idle island stays out of sight, as
+    /// VoiceOS's idle notch did, while activities and notices still show.
+    static func voiceOSHidesIdleIsland(in defaults: UserDefaults = .standard) -> Bool {
+        AppFeature.voiceAssistant.isAvailable(in: defaults)
+            && (defaults.object(forKey: voiceOSShowIdleNotchKey) as? Bool) == false
     }
 
     static func usesHapticFeedback(in defaults: UserDefaults = .standard) -> Bool {
@@ -2252,6 +2277,9 @@ struct NotchGeometry: Equatable {
     /// which stays the limit; nil takes all of it, as lists do. A width set
     /// by hand is the island's on every page.
     var pageContentWidth: CGFloat? = nil
+    /// A width of the page's own, past the preset's, as VoiceOS's open
+    /// notch had. Nil keeps the island's chosen width.
+    var pageWidth: CGFloat? = nil
     /// Nothing floating beside the island leads to its sections, so the
     /// open page's row starts with the island's own button for them.
     var sectionsButtonInRow = false
@@ -2647,6 +2675,9 @@ struct NotchGeometry: Equatable {
     }
     var expanded: CGSize { expandedSize(module: .controls) }
     var expandedWidth: CGFloat {
+        if let pageWidth {
+            return min(max(pageWidth, cameraWidth + 36), screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
+        }
         let chosen = NotchLayout.preferredWidth(layout, custom: customWidth)
         // Under a preset, a page with a width of its own takes no more, still
         // wrapping the camera with its row where the chosen width would have.
@@ -2717,7 +2748,7 @@ struct NotchGeometry: Equatable {
                       fileMediaHeight: CGFloat? = nil, systemCards: Int = 6, toolCount: Int? = 8,
                       capturePreviewHeight: CGFloat? = nil,
                       timerHasSession: Bool = false, timerMode: NotchTimerMode = .timer,
-                      agentsHeight: CGFloat? = nil) -> CGSize {
+                      agentsHeight: CGFloat? = nil, voiceHeight: CGFloat? = nil) -> CGSize {
         let budget = contentBudget
         let showsCapturePreview = module == .captures && !detail && capturePreviewHeight != nil
         let showsFileMedia = module == .files && !detail && fileMediaHeight != nil
@@ -2765,6 +2796,11 @@ struct NotchGeometry: Equatable {
             case .agents:
                 // Only the cards a person chose; a short set leaves a short island.
                 contentHeight = min(budget, agentsHeight.map { $0 > 0 ? $0 : NotchLayout.emptyHeight } ?? budget)
+            case .voice:
+                // The conversation's own height, as VoiceOS's notch grew with
+                // it; the display bounds it below. Before the first measure,
+                // the input row.
+                contentHeight = max(0, voiceHeight ?? NotchLayout.voiceInputHeight)
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch:
                 contentHeight = budget

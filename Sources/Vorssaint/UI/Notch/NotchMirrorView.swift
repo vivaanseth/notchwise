@@ -43,6 +43,7 @@ struct NotchMirrorView: View {
                                             size: CGSize) -> some View {
         if geometry.floats {
             switch activity {
+            case .voice: VOVoiceStrip(service: service, capsuleSize: size, displayGeometry: geometry)
             case .timer: NotchCapsuleTimerStrip(service: service, size: size, displayGeometry: geometry)
             case .watch: NotchCapsuleWatchStrip(service: service, size: size, displayGeometry: geometry)
             case .downloads: NotchCapsuleDownloadStrip(service: service, size: size, displayGeometry: geometry)
@@ -53,6 +54,7 @@ struct NotchMirrorView: View {
             }
         } else {
             switch activity {
+            case .voice: VOVoiceStrip(service: service, displayGeometry: mirror.strip)
             case .timer: NotchTimerStrip(service: service, displayGeometry: mirror.strip)
             case .watch: NotchWatchStrip(service: service, displayGeometry: mirror.strip)
             case .downloads: NotchDownloadStrip(service: service, displayGeometry: mirror.strip)

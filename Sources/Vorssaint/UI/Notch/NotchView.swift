@@ -213,11 +213,21 @@ struct NotchView: View {
             .accessibilityHidden(true)
         } else if floats {
             NotchCapsuleRestingView(service: service, size: service.surfaceSize)
+                .opacity(asksVoiceOS ? 0 : 1)
+                .overlay { if asksVoiceOS { VOAskHoverContent(geometry: service.geometry, size: service.surfaceSize) } }
                 .transition(companionSwap)
         } else {
             compact
+                .opacity(asksVoiceOS ? 0 : 1)
+                .overlay { if asksVoiceOS { VOAskHoverContent(geometry: service.geometry, size: service.surfaceSize) } }
                 .transition(companionSwap)
         }
+    }
+
+    /// The idle island grown under the pointer says what a click does, when
+    /// it is wide enough to: it opens the assistant.
+    private var asksVoiceOS: Bool {
+        service.voiceAskShows && service.surfaceSize.width >= 112
     }
 
     /// The island floats as a capsule, whose strips run end to end.
@@ -231,6 +241,7 @@ struct NotchView: View {
     @ViewBuilder private func activityStrip(_ activity: NotchCompactActivity, size: CGSize) -> some View {
         if floats {
             switch activity {
+            case .voice: VOVoiceStrip(service: service, capsuleSize: size)
             case .timer: NotchCapsuleTimerStrip(service: service, size: size)
             case .watch: NotchCapsuleWatchStrip(service: service, size: size)
             case .downloads: NotchCapsuleDownloadStrip(service: service, size: size)
@@ -245,6 +256,7 @@ struct NotchView: View {
             // service to an island with no activity, where they are empty.
             let geometry = service.compactActivityGeometry
             switch activity {
+            case .voice: VOVoiceStrip(service: service, displayGeometry: geometry)
             case .timer: NotchTimerStrip(service: service, displayGeometry: geometry)
             case .watch: NotchWatchStrip(service: service, displayGeometry: geometry)
             case .downloads: NotchDownloadStrip(service: service, displayGeometry: geometry)
@@ -568,6 +580,7 @@ struct NotchView: View {
             }
         } else {
             switch service.selected {
+            case .voice: VOVoicePage(service: service)
             case .timer: NotchTimerView(size: pageSize)
             case .camera:
                 NotchCameraView(size: pageSize)
@@ -818,6 +831,7 @@ struct NotchShape: Shape {
 extension NotchModule: PanelOrderItem {
     func title(_ language: AppLanguage) -> String {
         switch self {
+        case .voice: return FeatureStrings.voiceAssistant(language).pageTitle
         case .timer: return FeatureStrings.notchActivities(language).timer
         case .camera: return FeatureStrings.notchActivities(language).camera
         case .notifications: return FeatureStrings.notchNotifications(language).title

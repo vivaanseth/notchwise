@@ -108,7 +108,9 @@ final class NotchService: ObservableObject {
 
     @Published private(set) var geometry = NotchGeometry(
         screen: CGRect(x: 0, y: 0, width: 1440, height: 900), safeAreaTop: 0, cameraWidth: 0)
-    @Published private(set) var expanded = false
+    @Published private(set) var expanded = false {
+        didSet { if expanded != oldValue { syncVoicePage() } }
+    }
     @Published private(set) var showsKeyboardFocus = false
     /// True when macOS refused the island's own shortcut, so Settings can say so.
     @Published private(set) var shortcutRegistrationFailed = false
@@ -122,7 +124,9 @@ final class NotchService: ObservableObject {
     @Published private(set) var captureControlsCollapsed = false
     @Published private(set) var captureSelectionInProgress = false
     @Published var pinned = false
-    @Published private(set) var selected: NotchModule = .controls
+    @Published private(set) var selected: NotchModule = .controls {
+        didSet { if selected != oldValue { syncVoicePage() } }
+    }
     @Published private(set) var showingAppPanel = false
     @Published private(set) var showingSections = false
     @Published private(set) var sectionQuery = ""
@@ -225,6 +229,9 @@ final class NotchService: ObservableObject {
     private var fileInteractionActive = false
     private var keepsWorkingSurface: Bool {
         pinned || trackingMenu || NSApp.modalWindow != nil || panel?.attachedSheet != nil
+            // Listening, thinking or waiting on a confirmation, the assistant
+            // keeps its page through a click away, as VoiceOS's notch did.
+            || (expanded && selected == .voice && !showingSections && VOIslandBridge.holdsIsland)
             || NotchLyricsService.shared.isImporting
             // Like the lyrics chooser, these panels stand beside the island
             // instead of hanging from it; a click in them is not a click away.
@@ -394,6 +401,12 @@ final class NotchService: ObservableObject {
         if case .linger = mascotVisit?.kind { return true }
         return false
     }
+    /// The assistant's page as SwiftUI last measured it, and whether the
+    /// assistant was last told its page is showing.
+    @Published private var voiceHeight: CGFloat?
+    private var measuredVoiceHeight: CGFloat?
+    private var voicePageShown = false
+    private var voiceSubscription: AnyCancellable?
     /// The Command Bar open inside the island, in place of its pages.
     @Published private(set) var showingCommandBar = false
     @Published private var commandBarHeight: CGFloat?
@@ -415,9 +428,12 @@ final class NotchService: ObservableObject {
     }
 
     private var hiddenUntilHover: Bool {
-        !hiddenInFullscreen && UserDefaults.standard.bool(forKey: DefaultsKey.notchHideUntilHover)
+        guard !hiddenInFullscreen, !expanded, !peeking, !dragPlaceholder, captureControls == nil else { return false }
+        // VoiceOS's "Show notch when idle", switched off, hides only the idle
+        // island: an activity or a notice still shows, as the assistant does.
+        if NotchSupport.voiceOSHidesIdleIsland(), notice == nil, compactActivity == nil { return true }
+        return UserDefaults.standard.bool(forKey: DefaultsKey.notchHideUntilHover)
             && UserDefaults.standard.bool(forKey: DefaultsKey.notchOpenOnHover)
-            && !expanded && !peeking && !dragPlaceholder && captureControls == nil
             // Set to show activity, it comes into sight while one runs or a
             // notice shows. Closed beside a simulated cutout with no room
             // from the menus, it draws no activity, so it keeps waiting for
@@ -524,6 +540,19 @@ final class NotchService: ObservableObject {
         NotchKeepAwakeSupport.showsActivity() && KeepAwakeManager.shared.isActive
     }
 
+    /// The idle island grown under the pointer, which then offers the
+    /// assistant a click away, as VoiceOS's idle notch did.
+    var voiceAskShows: Bool {
+        hoverEmphasized && !expanded && !peeking && notice == nil && compactActivity == nil
+            && captureControls == nil && !dragPlaceholder && modules.contains(.voice)
+    }
+
+    /// The assistant listening, thinking, speaking or waiting on a
+    /// confirmation while its page is not on screen.
+    var hasVoiceActivity: Bool {
+        modules.contains(.voice) && !voicePageShown && VOIslandBridge.activity != nil
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -532,7 +561,8 @@ final class NotchService: ObservableObject {
     var compactActivities: [NotchCompactActivity] {
         NotchSupport.compactActivities(timer: hasTimerActivity, watch: hasWatchActivity, downloads: hasDownloadActivity,
                                       agents: hasAgentActivity, calendar: hasCalendarActivity,
-                                      music: hasMusicActivity, keepAwake: hasKeepAwakeActivity)
+                                      music: hasMusicActivity, keepAwake: hasKeepAwakeActivity,
+                                      voice: hasVoiceActivity)
     }
 
     var showsCompactActivityPicker: Bool {
@@ -658,6 +688,8 @@ final class NotchService: ObservableObject {
                                                     paired: companion != nil)
         // Its reading is a countdown like the timer's, so it takes the timer's wings.
         case .keepAwake: return geometry.compactTimerGeometry(showsDownloads: false, wing: keepAwakeStripWing(in: geometry))
+        // The Jarvis mark on one side and the level or the dots on the other.
+        case .voice: return geometry.compactTimerGeometry(showsDownloads: false, wing: 44)
         default: return geometry
         }
     }
@@ -816,6 +848,7 @@ final class NotchService: ObservableObject {
         var result = geometry.page(module, controls: NotchSupport.controls(),
                                    sectionsButton: !NotchQuickAccessConfiguration.current().actions.contains(.explore))
         if result.pageTop == .wrapsCamera { result.pageTrailingControls = playerToggleCount }
+        if module == .voice { result.pageWidth = NotchLayout.voicePageWidth }
         return result
     }
 
@@ -851,7 +884,8 @@ final class NotchService: ObservableObject {
                                      timerMode: NotchTimerService.shared.session.hasSession
                                         ? NotchTimerService.shared.session.mode : NotchTimerSupport.savedMode(),
                                      agentsHeight: module == .agents && !detail && !panel
-                                        ? agentsContentHeight(width: geometry.contentWidth) : nil)
+                                        ? agentsContentHeight(width: geometry.contentWidth) : nil,
+                                     voiceHeight: module == .voice && !detail && !panel ? voiceHeight : nil)
     }
 
     /// The AI page is as tall as the cards it shows; nil while the logs are
@@ -882,6 +916,7 @@ final class NotchService: ObservableObject {
         if !showingSections, !showingAppPanel, selectedMetric == nil, !modules.isEmpty {
             result.pageContentWidth = NotchLayout.naturalContentWidth(selected, controls: homeControls,
                                                                       within: geometry.contentWidth)
+            if selected == .voice { result.pageWidth = NotchLayout.voicePageWidth }
         } else {
             result.sectionsButtonInRow = false
         }
@@ -1066,6 +1101,8 @@ final class NotchService: ObservableObject {
                 NotchKeepAwakeSupport.compactText(until: $0, now: Date(), locale: Locale(identifier: language.rawValue))
             }
             return layout.keepAwakeSurface(reading: reading, geometry: geometry)
+        case .voice:
+            return layout.voiceSurface(reading: (VOIslandBridge.activity ?? .thinking).reading, geometry: geometry)
         }
     }
 
@@ -3891,6 +3928,12 @@ final class NotchService: ObservableObject {
 
     private func bindEvents() {
         subscriptions.removeAll()
+        voiceSubscription = modules.contains(.voice)
+            ? VOIslandBridge.observe { [weak self] in
+                self?.objectWillChange.send()
+                self?.refreshPresentation()
+            }
+            : nil
         if modules.contains(.timer) {
             NotchTimerService.shared.$session.removeDuplicates().receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in
@@ -5074,6 +5117,90 @@ extension NotchService {
             self.measuredCommandBarHeight = nil
             guard self.showingCommandBar, self.commandBarHeight != measured else { return }
             self.commandBarHeight = measured
+            self.refreshPresentation()
+        }
+    }
+
+    // MARK: - The VoiceOS assistant's page
+
+    /// The island grows and shrinks with the conversation, as VoiceOS's
+    /// notch did. Like the Command Bar, the resize goes out on the next turn
+    /// of the main loop, with the rows SwiftUI measured.
+    func updateVoiceHeight(_ height: CGFloat) {
+        guard height.isFinite, height > 0 else { return }
+        let measured = ceil(height)
+        guard (measuredVoiceHeight ?? voiceHeight) != measured else { return }
+        let waiting = measuredVoiceHeight != nil
+        measuredVoiceHeight = measured
+        guard !waiting else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let measured = self.measuredVoiceHeight else { return }
+            self.measuredVoiceHeight = nil
+            guard self.voiceHeight != measured else { return }
+            self.voiceHeight = measured
+            if self.expanded, self.selected == .voice { self.refreshPresentation() }
+        }
+    }
+
+    /// Opens the assistant's page from wherever the island is: holding the
+    /// assistant's key takes it over, and only then does it take the
+    /// keyboard when asked to.
+    func presentVoice(takeFocus: Bool) {
+        if expanded, selected == .voice, !showingSections, !showingCommandBar, !showingAppPanel, selectedMetric == nil {
+            if takeFocus { focusVoiceInput() }
+            return
+        }
+        open(.voice, takeFocus: takeFocus)
+        // Summoned by its key, the page stays until a click away, Escape or
+        // its own timer, as VoiceOS's notch did, not until the pointer leaves.
+        openedByHover = false
+    }
+
+    /// The assistant closed itself; a pinned island stays open on its page.
+    func dismissVoice() {
+        guard expanded, selected == .voice, !pinned else { return }
+        collapse()
+    }
+
+    /// The assistant's field takes the keyboard, the island staying the
+    /// non-activating panel it is.
+    func focusVoiceInput() {
+        guard let panel, expanded else { return }
+        panel.acceptsKeyFocus = true
+        panel.makeKey()
+        syncPanelKey()
+    }
+
+    /// Hands the keyboard back before the assistant types into another app.
+    /// True when the island held it.
+    @discardableResult
+    func releaseVoiceKeyboard() -> Bool {
+        guard let panel, panel.isKeyWindow else { return false }
+        resignPanelKey()
+        syncPanelKey()
+        return true
+    }
+
+    /// The pointer on the open island, which holds off the assistant's own close.
+    var pointerInsideIsland: Bool {
+        windowHost?.containsHover(NSEvent.mouseLocation) == true || pointerOverChildWindow(NSEvent.mouseLocation)
+    }
+
+    var voiceHoldsKeyboard: Bool {
+        expanded && selected == .voice && panel?.isKeyWindow == true
+    }
+
+    /// Tells the assistant when its page shows or leaves, by any path: a
+    /// click, the shortcut, a section, Escape or a click away. Either news
+    /// waits for the change to settle, and is dropped if it was undone.
+    private func syncVoicePage() {
+        let shown = expanded && selected == .voice
+        guard shown != voicePageShown else { return }
+        voicePageShown = shown
+        let focus = !openedByHover
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.voicePageShown == shown else { return }
+            if shown { VOIslandBridge.voicePageOpened(focus: focus) } else { VOIslandBridge.voicePageClosed() }
             self.refreshPresentation()
         }
     }
