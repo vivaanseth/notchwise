@@ -7,15 +7,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Vorssaint</string>
+	<string>Vorssaint + VoiceOS</string>
 	<key>CFBundleExecutable</key>
-	<string>Vorssaint</string>
+	<string>VorssaintVoiceOS</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.vorssaint.utils</string>
+	<string>com.vorssaint.voiceos</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLocalizations</key>
@@ -37,7 +37,7 @@
 		<string>zh-HK</string>
 	</array>
 	<key>CFBundleName</key>
-	<string>Vorssaint</string>
+	<string>Vorssaint + VoiceOS</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -55,15 +55,21 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Vorssaint uses Automation to move files, send items to the Trash, open requested commands and control playback in your media apps.</string>
+	<string>Vorssaint uses Automation to move files, send items to the Trash, open requested commands and control playback in your media apps. The VoiceOS assistant uses it to send the messages, emails and notes you ask for, after you confirm them.</string>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>Vorssaint uses each app's audio to adjust its volume in the mixer, to move Dynamic Island's music bars and to include the Mac's sound in the screen recordings you start. Nothing leaves your Mac.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Vorssaint uses Bluetooth only to read the battery level of connected peripherals. Nothing leaves your Mac.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Vorssaint records your microphone only when you turn it on for a screen recording. The audio stays on your Mac unless you choose to create a temporary link.</string>
+	<string>VoiceOS listens while you hold the dictation or assistant key. Vorssaint records your microphone only when you turn it on for a screen recording. The audio stays on your Mac unless you choose to create a temporary link.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>VoiceOS turns your speech into text on this Mac.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Show your upcoming appointments in the notch. Calendar events stay on this Mac.</string>
+	<string>Show your upcoming appointments in the notch, and add the events you ask the VoiceOS assistant for. Calendar events stay on this Mac.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>The VoiceOS assistant creates the reminders you ask for.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>The VoiceOS assistant looks up who you mean when you say "text Mom" or "email Priya".</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Vorssaint shows your camera only in the preview window you open, so you can check how you look before a call. Nothing is recorded or leaves your Mac.</string>
 	<key>NSDownloadsFolderUsageDescription</key>

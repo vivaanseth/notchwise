@@ -47,11 +47,14 @@ struct DockTilePairing<Tile> {
 extension DockTilePairing: Equatable where Tile: Equatable {}
 
 enum DockClickSupport {
-    /// Both local and published builds may be running during development.
-    /// Neither is ever a valid target for the other's global Dock click tap.
+    /// Both local and published builds may be running during development,
+    /// and so may the standalone Vorssaint beside Vorssaint + VoiceOS. None
+    /// is ever a valid target for another's global Dock click tap.
     static func isOwnBundleIdentifier(_ bundleIdentifier: String?) -> Bool {
         bundleIdentifier == "com.vorssaint.utils"
             || bundleIdentifier == "com.vorssaint.utils.dev"
+            || bundleIdentifier == "com.vorssaint.voiceos"
+            || bundleIdentifier == "com.vorssaint.voiceos.dev"
     }
 
     /// The Option-Command-M chord is not unique to Minimize All. Only the

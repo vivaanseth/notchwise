@@ -6,10 +6,11 @@ import Foundation
 enum FanControlIdentifiers {
     static let teamID = "3D485NHW29"
 
+    // Vorssaint + VoiceOS registers its own helper beside the standalone app's.
     #if VORSSAINT_DEVELOPMENT
-    static let appBundleID = "com.vorssaint.utils.dev"
+    static let appBundleID = "com.vorssaint.voiceos.dev"
     #else
-    static let appBundleID = "com.vorssaint.utils"
+    static let appBundleID = "com.vorssaint.voiceos"
     #endif
 
     static let helperID = "\(appBundleID).fan-control"
