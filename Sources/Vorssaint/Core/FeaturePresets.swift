@@ -122,6 +122,8 @@ extension AppFeature {
         case .notchNotifications, .notchGestures, .notchTimer, .notchQueue, .notchDownloads: return .idle
         // It reads only while something is being watched, and stops on its own.
         case .notchWatch: return .idle
+        // VoiceOS hears the fn and ⌘ holds through a keyboard event monitor.
+        case .voiceAssistant: return .keyboard
         // A blink every few seconds and a visit every few minutes, both
         // drawn by Core Animation, with one timer waiting for the next visit.
         case .notchMascot: return .periodic

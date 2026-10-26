@@ -4,6 +4,9 @@
 import AppKit
 
 SuperKeyMappingGuard.runIfRequestedAndExit()
+// The combined app starts from the standalone apps' choices, copied once
+// before registration so its migrations see them as those apps saved them.
+MergedSettingsImport.runOnce()
 Defaults.register()
 NotchControlItem.keyboardLightIsSupported = { BrightnessService.keyboardLightIsSupported }
 MouseAccelerationGuard.runIfRequestedAndExit()
@@ -28,6 +31,11 @@ if NotchPresentationProbe.isRequested(by: CommandLine.arguments) {
     NotchPresentationProbe.runAndExit()
 }
 #endif
+
+// VoiceOS's snapshot and self-test tools: only the island and the assistant.
+if VOHarness.isRequested {
+    VOHarness.runAndExit()
+}
 
 let app = NSApplication.shared
 let delegate = AppDelegate()

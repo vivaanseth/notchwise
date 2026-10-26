@@ -374,6 +374,12 @@ final class FeatureRuntime: ObservableObject {
             if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
             else { NotchWatchService.shared.stop() }
         },
+        // The hotkeys, the dictation pill and the menu bar item come and go
+        // with the feature; the island drops its page on its own sync.
+        .voiceAssistant: {
+            VORuntime.syncWithPreferences()
+            if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
+        },
         // Leaving folds the wings it rests in, and coming back greets.
         .notchMascot: {
             if AppFeature.notch.isAvailable { NotchService.shared.syncWithPreferences() }
