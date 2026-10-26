@@ -152,6 +152,8 @@ struct NotchPagePreview: View {
 
     var body: some View {
         switch module {
+        // A still of the assistant's empty page: a preview never listens.
+        case .voice: voiceStill
         case .timer: NotchTimerView(size: size)
         case .camera: camera
         // The island hands these rows their clearing from outside the page.
@@ -179,6 +181,20 @@ struct NotchPagePreview: View {
         // The live area belongs to the island; the preview explains it instead.
         case .watch: NotchWatchView(size: size)
         }
+    }
+
+    private var voiceStill: some View {
+        VStack(spacing: 10) {
+            VOJarvisGlyph(size: 30)
+            HStack(spacing: 7) {
+                Text("Type or hold")
+                VOKeyCap(label: VOSettings.shared.agentTrigger.keycap, size: 12.5)
+                Text("to speak")
+            }
+            .font(.system(size: 15))
+            .foregroundStyle(.white.opacity(0.5))
+        }
+        .frame(width: size.width, height: size.height)
     }
 
     private var camera: some View {
@@ -390,6 +406,7 @@ extension NotchModule {
     /// can be scanned by eye.
     var settingsTint: Color {
         switch self {
+        case .voice: return VOTheme.accent
         case .controls: return .blue
         case .mixer: return .purple
         case .music: return .pink

@@ -78,6 +78,8 @@ struct NotchEditorStrings {
     /// One line on what a section of the island shows.
     func summary(_ module: NotchModule) -> String {
         switch module {
+        // VoiceOS's own strings, in the language the app shows.
+        case .voice: return FeatureStrings.voiceAssistant(L10n.shared.language).editorSummary
         case .controls: return controlsSummary
         case .mixer: return mixerSummary
         case .music: return musicSummary

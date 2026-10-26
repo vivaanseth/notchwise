@@ -607,6 +607,7 @@ struct SettingsView: View {
         case .about: AboutSettings()
         case .releaseNotes: ReleaseNotesSettings()
         case .support: SupportSettings()
+        case .voiceOS(let page): VOSettingsPage(page: page)
         }
     }
 }

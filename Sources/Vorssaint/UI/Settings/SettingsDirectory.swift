@@ -124,7 +124,22 @@ enum SettingsDirectory {
             SettingsSidebarSection(id: 2, title: categories.files, items: rows(2) + byGroup.files),
         ]
         let remaining = grouped.filter { ![0, 1, 2, 4].contains($0.id) }
-        return [featured[0]] + featured.dropFirst().filter { !$0.items.isEmpty } + remaining
+        // The island's assistant has its pages right after the essentials,
+        // where the Dynamic Island itself is.
+        let voiceOS = voiceOSSection(language: language, isAvailable: isAvailable)
+        return [featured[0]] + voiceOS + featured.dropFirst().filter { !$0.items.isEmpty } + remaining
+    }
+
+    /// The VoiceOS pages, one row each, while the assistant is installed.
+    static func voiceOSSection(language: AppLanguage,
+                               isAvailable: (AppFeature) -> Bool) -> [SettingsSidebarSection] {
+        guard isAvailable(.voiceAssistant) else { return [] }
+        let strings = FeatureStrings.voiceAssistant(language)
+        let rows = VOPage.allCases.map { page in
+            SettingsSidebarItem(id: .page(.voiceOS(page)), destination: FeatureSettingsDestination(.voiceOS(page)),
+                                title: page == .assistant ? strings.pageTitle : page.title, icon: page.symbol)
+        }
+        return [SettingsSidebarSection(id: 20, title: strings.settingsSection, items: rows)]
     }
 
     static func sidebarItems(_ s: Strings,
@@ -162,6 +177,15 @@ enum SettingsDirectory {
             keywords: [s.showMenuBarIcon, FeatureStrings.generalSettings(language).menuBarIconTitle, "SF Symbols"]))
         if BrightnessService.keyboardLightIsSupported {
             items.append(SettingsSearchSupport.keyboardBrightnessShortcutItem(language: language))
+        }
+        // VoiceOS's pages, found by their names and by what they set up.
+        let voice = FeatureStrings.voiceAssistant(language)
+        for page in VOPage.allCases {
+            let keywords = page == .dashboard ? voice.searchKeywords : [voice.settingsSection]
+            items.append(SettingsSearchItem(
+                id: .page(.voiceOS(page)), destination: FeatureSettingsDestination(.voiceOS(page)),
+                title: page == .assistant ? voice.pageTitle : page.title, icon: page.symbol,
+                keywords: keywords, feature: page == .dashboard ? .voiceAssistant : nil))
         }
         return items
     }

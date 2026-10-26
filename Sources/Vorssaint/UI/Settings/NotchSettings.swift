@@ -530,6 +530,13 @@ struct NotchSettings: View {
         case .watch:
             NotchWatchSettingsControls()
                 .toggleStyle(TrailingSwitchToggleStyle())
+        // The assistant keeps its options on VoiceOS's own pages.
+        case .voice:
+            Button(FeatureStrings.voiceAssistant(l10n.language).settingsSection + " → "
+                   + FeatureStrings.voiceAssistant(l10n.language).pageTitle) {
+                SettingsRouter.shared.request(FeatureSettingsDestination(.voiceOS(.assistant)))
+            }
+            .buttonStyle(.link)
         case .mixer, .system, .tools:
             EmptyView()
         }
@@ -857,6 +864,7 @@ struct NotchSettings: View {
     private func moduleFeature(_ module: NotchModule) -> AppFeature? {
         switch module {
         case .controls, .music, .captures, .system: return nil
+        case .voice: return .voiceAssistant
         case .mixer: return .mixer
         case .clipboard: return .clipboardHistory
         case .files: return .shelf

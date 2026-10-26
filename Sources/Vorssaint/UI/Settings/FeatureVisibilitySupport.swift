@@ -10,6 +10,8 @@ enum SettingsPage: Hashable {
     case general, features, energy, monitor
     case mouse, switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
     case shortcuts, advanced, about, releaseNotes, support
+    /// VoiceOS's pages, the VoiceOS section of the sidebar.
+    case voiceOS(VOPage)
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -369,6 +371,7 @@ extension AppFeature {
         case .wallpaper:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .wallpaper)
         case .notch, .notchCalendar, .notchNotifications, .notchGestures, .notchTimer, .notchAccessories, .notchLyrics, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchAgents, .notchWatch: return FeatureSettingsDestination(.notch)
+        case .voiceAssistant: return FeatureSettingsDestination(.voiceOS(.dashboard))
         case .notchMascot: return FeatureSettingsDestination(.notchMascot)
         case .radialMenu: return FeatureSettingsDestination(.radialMenu)
         case .scratchpad:
@@ -427,6 +430,7 @@ enum FeatureVisibilitySupport {
         case .notchMascot: return [.notchMascot]
         case .radialMenu: return [.radialMenu]
         case .commandBar: return [.commandBar]
+        case .voiceOS: return [.voiceAssistant]
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support:
             return []
         }
