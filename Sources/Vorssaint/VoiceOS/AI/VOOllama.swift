@@ -108,10 +108,25 @@ final class VOLocalModels: ObservableObject {
     }
 
     /// Launches the Ollama app (or `ollama serve`) and waits for the API.
+    /// Already serving (Ollama's own login item, or an earlier start), it is
+    /// left alone; otherwise it starts hidden, never in front of the user's work.
     func start() async {
         if running { return }
+        await refresh()
+        if running { return }
         if FileManager.default.fileExists(atPath: "/Applications/Ollama.app") {
-            NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/Ollama.app"))
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = false
+            config.hides = true
+            config.addsToRecentItems = false
+            _ = try? await NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: "/Applications/Ollama.app"),
+                                                              configuration: config)
+            // Its window can still come up once the app has launched; hide it again.
+            for _ in 0..<6 {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                NSRunningApplication.runningApplications(withBundleIdentifier: "com.electron.ollama")
+                    .forEach { $0.hide() }
+            }
         } else if let exe = VOCLIRunner.resolve("ollama") {
             let p = Process()
             p.executableURL = URL(fileURLWithPath: exe)
