@@ -213,6 +213,8 @@ final class NotchService: ObservableObject {
     private var hoverState = NotchHoverState()
     private var hoverIntent = NotchHoverIntent()
     private var openedByHover = false
+    /// A click on the closed island opened it, which leaving closes as a hover opening.
+    private var openedByClick = false
     /// A click inside the open island, which may be what brings another app forward.
     private var clickedSinceOpening = false
     /// Whether the open detail was reached from inside the island, so Escape
@@ -590,6 +592,17 @@ final class NotchService: ObservableObject {
     func openHome() {
         guard let homeModule else { return }
         open(homeModule)
+    }
+
+    /// Leaving closes the island when the pointer opened it, by hover or by a
+    /// click, except while something typed in it is still there to lose.
+    private var leavesOnExit: Bool {
+        openedByHover || (openedByClick && !typingInIsland)
+    }
+
+    private var typingInIsland: Bool {
+        guard let editor = panel?.firstResponder as? NSTextView else { return false }
+        return !editor.string.isEmpty
     }
 
     /// The pointer's moves over the closed island while it waits to open.
@@ -1538,6 +1551,7 @@ final class NotchService: ObservableObject {
         if !expanded {
             detailHasPage = false
             showsKeyboardFocus = false
+            openedByClick = false
         }
         else if appPanel || metric != nil, !showingAppPanel, selectedMetric == nil { detailHasPage = true }
         // Following the closed island ends the moment it opens, before a page
@@ -1747,7 +1761,7 @@ final class NotchService: ObservableObject {
             let delay = NotchSupport.sanitizedHoverDelay(UserDefaults.standard.double(forKey: DefaultsKey.notchHoverDelay))
             DispatchQueue.main.asyncAfter(deadline: .now() + (overActivity ? max(delay, 0.7) : delay), execute: work)
         } else if holdsNotification
-                    || NotchSupport.closesOnPointerExit(expanded: expanded, peeking: peeking, openedByHover: openedByHover) {
+                    || NotchSupport.closesOnPointerExit(expanded: expanded, peeking: peeking, openedByHover: leavesOnExit) {
             let work = DispatchWorkItem { [weak self] in
                 guard let self else { return }
                 self.hoverWork = nil
@@ -1757,7 +1771,7 @@ final class NotchService: ObservableObject {
                 self.releaseNotification()
                 guard !self.pinned, !self.heldDrag, !self.keepsWorkingSurface, self.captureControls == nil,
                       !AssistiveKeyboard.ownsCocoaPoint(NSEvent.mouseLocation),
-                      NotchSupport.closesOnPointerExit(expanded: self.expanded, peeking: self.peeking, openedByHover: self.openedByHover) else { return }
+                      NotchSupport.closesOnPointerExit(expanded: self.expanded, peeking: self.peeking, openedByHover: self.leavesOnExit) else { return }
                 self.collapse()
             }
             hoverWork = work
@@ -1788,7 +1802,7 @@ final class NotchService: ObservableObject {
         // until the pointer leaves, with or without an emphasis to follow.
         let keepsMusicStrip = musicStripNamed || musicStripHeldSong != nil
         let watching = ((hoverEmphasized || followsClosedHover || keepsMusicStrip) && captureHover == nil
-                || !entered && NotchSupport.closesOnPointerExit(expanded: expanded, peeking: peeking, openedByHover: openedByHover))
+                || !entered && NotchSupport.closesOnPointerExit(expanded: expanded, peeking: peeking, openedByHover: leavesOnExit))
             && captureControls == nil && !pinned && !heldDrag && !hiddenUntilHover && !keepsWorkingSurface
             // Once watching, a pointer that leaves and slips back unreported is still seen.
             && (!hoverExitMonitors.isEmpty || windowHost?.containsHover(point) == true)
@@ -2867,6 +2881,8 @@ final class NotchService: ObservableObject {
                 else if !self.expanded, self.compactActivity == .calendar {
                     self.openCountdownEvent()
                 } else { self.toggle() }
+                // Opened by the pointer, the island closes as the pointer leaves.
+                if self.expanded { self.openedByClick = true }
             })
         if panel?.isVisible != true { panel?.orderFrontRegardless() }
         let music = NotchMusicService.shared

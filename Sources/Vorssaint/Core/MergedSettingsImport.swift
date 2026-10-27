@@ -71,6 +71,19 @@ enum MergedSettingsImport {
         defaults.set(true, forKey: hoverHomeKey)
     }
 
+    /// A full-screen app has the display to itself: the island leaves the
+    /// display it covers, and comes back with the desktop. Set once.
+    static let fullscreenKey = "mergedIslandHidesInFullscreen"
+
+    static func hideInFullscreenOnce(_ defaults: UserDefaults = .standard,
+                                     bundleID: String? = Bundle.main.bundleIdentifier) {
+        guard bundleID == mergedBundleID, !defaults.bool(forKey: fullscreenKey) else { return }
+        if defaults.object(forKey: DefaultsKey.notchHideInFullscreen) == nil {
+            defaults.set(true, forKey: DefaultsKey.notchHideInFullscreen)
+        }
+        defaults.set(true, forKey: fullscreenKey)
+    }
+
     /// Runs before `Defaults.register()`, so the migrations there see the
     /// copied values the way the standalone app saved them.
     static func runOnce(_ defaults: UserDefaults = .standard,

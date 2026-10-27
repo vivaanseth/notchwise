@@ -8,6 +8,7 @@ SuperKeyMappingGuard.runIfRequestedAndExit()
 // before registration so its migrations see them as those apps saved them.
 MergedSettingsImport.runOnce()
 MergedSettingsImport.applyHoverHomeOnce()
+MergedSettingsImport.hideInFullscreenOnce()
 Defaults.register()
 NotchControlItem.keyboardLightIsSupported = { BrightnessService.keyboardLightIsSupported }
 MouseAccelerationGuard.runIfRequestedAndExit()

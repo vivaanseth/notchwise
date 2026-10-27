@@ -71,6 +71,13 @@ VoiceOS's own notch window is gone; its look and behaviour live in that island:
   on its way along the menu bar for instance, starts a fresh wait instead. A click before the
   wait ends opens the page that fits; closing the island under the pointer keeps it closed until
   the pointer leaves.
+- **Leaving closes it.** An island opened by the pointer, by hover or by a click on it, closes
+  when the pointer leaves, after the close delay, unless something typed in it is still there
+  (the assistant's field, Scratchpad, a search). One opened by a shortcut or the assistant's key
+  waits for a click away, as before.
+- **Full screen.** The combined app turns on "Hide in full screen" once: while a full-screen app
+  covers a display, the island leaves that display (on one without a camera notch it is gone
+  entirely) and comes back with the desktop. The assistant's key still opens it there.
 - **Home.** The assistant's page, before anything is asked, is the island's home
   (`NotchHubView`): under the field, a calendar card (the date and the next three events,
   "In 8 min" on one about to start, each a click from its place on the Calendar page), a small

@@ -1073,6 +1073,7 @@ def main():
           + "func prepareSuggestions() {}\nfunc rankSuggestions() {}\n"
           + "func notePointer(_ point: CGPoint) {}\nfunc pointerRests() -> Bool { true }\n"
           + "func retryHoverOpening() {}\nvar homeModule: NotchModule? { nil }\n"
+          + "var leavesOnExit: Bool { openedByHover }\n"
           + declaration(notch, "    func show(_ incoming:").replace("NotchSupport.routes(incoming.event)", "true")
             .replace("    func", "    @discardableResult\n    func", 1)
           + "".join(declaration(notch, prefix).replace("    private ", "    ", 1) for prefix in [
@@ -1194,6 +1195,7 @@ def main():
     write("NotchPresentationRefresh.swift", "import AppKit\nimport Foundation\nimport Combine\nimport SwiftUI\n"
           + "extension NotchPresentationRefreshContract {\nfinal class Service: State {\n"
           + "func resignPanelKey() { panel?.resignKey() }\n"
+          + "var openedByClick = false\n"
           + "func hover(_ entered: Bool) {\nlet wasInside = inside\n"
           + "inside = windowHost?.containsHover(NSEvent.mouseLocation) == true\n"
           + "hoverState.update(pointerInside: inside)\nupdateCaptureControlsHover(wasInside: wasInside)\n}\n"
@@ -1301,6 +1303,7 @@ def main():
               .replace("NotchSupport.isEnabled()", "NotchSupport.isEnabled(in: ReviewDefaults.current)")
           + "func removeHoverExitMonitors() {}\n"
           + "func learnChoice(_ module: NotchModule) {}\nvar fittingPage: NotchModule? { nil }\n"
+          + "var openedByClick = false\n"
           + declaration(notch, "    func showScratchpad(")
               .replace("NotchSupport.routesScratchpad()", "NotchSupport.routesScratchpad(in: ReviewDefaults.current)")
           + declaration(notch, "    func showClipboard(")
