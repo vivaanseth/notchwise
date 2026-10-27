@@ -78,7 +78,7 @@ extension FeatureStrings {
             meeting: "In a meeting", media: "While watching", code: "While coding", writing: "While writing",
             time: "Usual at this time", habit: "Used often",
             suggestionsTitle: "Suggestions", learn: "Learn which pages I use",
-            learnHint: "Ranks the island's pages by the app in front, the time of day and what's going on. What it learns stays on this Mac.",
+            learnHint: "Ranks the island’s pages by the app in front, the time of day and what’s going on. What it learns stays on this Mac.",
             forget: "Forget", forgetTitle: "Forget what it learned")
         case .ptBR: return NotchHubStrings(
             forYou: "Para você", allPages: "Todas as páginas", selection: "Texto selecionado",

@@ -564,6 +564,16 @@ final class NotchService: ObservableObject {
         return CGSize(width: dock.width, height: peek.height)
     }
 
+    /// The front window may have changed since its app came forward; the
+    /// suggestions read its kind again as the pointer arrives.
+    private func prepareSuggestions() { NotchIntentService.shared.prepare() }
+
+    /// Ranked before the dock shows, so its first page is there from the first frame.
+    private func rankSuggestions() { NotchIntentService.shared.refresh(modules: hubModules) }
+
+    /// A page asked for by name is a choice the suggestions can learn from.
+    private func learnChoice(_ module: NotchModule) { NotchIntentService.shared.chose(module) }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -1501,10 +1511,9 @@ final class NotchService: ObservableObject {
         if takeFocus { panel.makeKey() }
         if feedback, changesPresentation { provideHapticFeedback() }
         if closesCommandBar { commandBarDidClose() }
-        // A page asked for by name is a choice the hub can learn from; the
-        // assistant's page is the hub itself.
+        // The assistant's page is the hub itself, not a choice among pages.
         if let module, module == destination, module != .voice, !appPanel, !sections, changesPresentation {
-            NotchIntentService.shared.chose(module)
+            learnChoice(module)
         }
     }
 
@@ -1544,7 +1553,7 @@ final class NotchService: ObservableObject {
     /// for the snapshot tool.
     func previewPages() {
         guard running, !suspended, !expanded, captureControls == nil, notice == nil else { return }
-        NotchIntentService.shared.refresh(modules: hubModules)
+        rankSuggestions()
         mutatePresentation(transitionContent: .reveal) { peeking = true }
     }
 
@@ -1599,9 +1608,7 @@ final class NotchService: ObservableObject {
             && windowHost?.isConcealedForMissionControl == false
             : windowHost?.containsHover(point) == true || pointerOverChildWindow(point)
         hoverState.update(pointerInside: inside)
-        // The front window may have changed since its app came forward; the
-        // dock reads its kind again before it shows.
-        if inside, !wasInside, !expanded { NotchIntentService.shared.prepare() }
+        if inside, !wasInside, !expanded { prepareSuggestions() }
         // The music strip names its song only while the pointer stays on the
         // island: leaving ends it, and a name left from before goes on return.
         let unnamesMusic = inside != wasInside && endMusicStripHover(leaving: !inside)
@@ -1672,9 +1679,7 @@ final class NotchService: ObservableObject {
                 if UserDefaults.standard.bool(forKey: DefaultsKey.notchHoverExpands) {
                     self.open(takeFocus: false)
                 } else {
-                    // Ranked before the dock shows, so its first page is
-                    // there from the first frame.
-                    NotchIntentService.shared.refresh(modules: self.hubModules, limit: 3)
+                    self.rankSuggestions()
                     self.mutatePresentation(transitionContent: .reveal) { self.peeking = true }
                     self.provideHapticFeedback()
                 }
