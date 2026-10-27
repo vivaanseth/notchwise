@@ -11,13 +11,12 @@ import Combine
 /// `syncWithPreferences()` at launch and whenever the Voice Assistant feature
 /// is installed or removed in the Features hub.
 @MainActor
-final class VORuntime: NSObject, NSMenuDelegate {
+final class VORuntime: NSObject {
     static let shared = VORuntime()
 
     let hotkeys = VOHotkeyMonitor()
     private(set) var running = false
     private var pill: VODictationPillController?
-    private var statusItem: NSStatusItem?
     private var bag = Set<AnyCancellable>()
     private var settings: VOSettings { VOSettings.shared }
 
@@ -38,7 +37,6 @@ final class VORuntime: NSObject, NSMenuDelegate {
         VOCLIRunner.warmUp()
         pill = VODictationPillController()
         if !harness {
-            setupStatusItem()
             wireHotkeys()
             hotkeys.start()
             VOPermissions.shared.startPolling()
@@ -88,8 +86,6 @@ final class VORuntime: NSObject, NSMenuDelegate {
         VOClaudeWarmPool.shared.drain()
         pill?.close()
         pill = nil
-        if let statusItem { NSStatusBar.system.removeStatusItem(statusItem) }
-        statusItem = nil
     }
 
     // MARK: - Shared with Vorssaint
@@ -130,22 +126,22 @@ final class VORuntime: NSObject, NSMenuDelegate {
         }
     }
 
-    // MARK: - Menu bar item
+    // MARK: - Menu
 
-    private func setupStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.autosaveName = "VoiceOS"
-        item.button?.image = Self.menuBarIcon()
-        item.button?.toolTip = "VoiceOS"
-        let menu = NSMenu()
-        menu.delegate = self
-        item.menu = menu
-        statusItem = item
+    /// VoiceOS's menu lives in Vorssaint's own menu bar item, as a VoiceOS
+    /// submenu of its secondary-click menu: one icon for the one app.
+    nonisolated static func appendMenu(to menu: NSMenu) {
+        MainActor.assumeIsolated {
+            guard shared.running else { return }
+            let submenu = NSMenu()
+            shared.fillMenu(submenu)
+            let item = NSMenuItem(title: "VoiceOS", action: nil, keyEquivalent: "")
+            item.submenu = submenu
+            menu.addItem(item)
+        }
     }
 
-    func menuNeedsUpdate(_ menu: NSMenu) {
-        guard menu == statusItem?.menu else { return }
-        menu.removeAllItems()
+    private func fillMenu(_ menu: NSMenu) {
         menu.addItem(withTitle: "Open VoiceOS", action: #selector(openMain), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Ask the Assistant…", action: #selector(openAgent), keyEquivalent: "").target = self
         menu.addItem(.separator())
@@ -188,23 +184,5 @@ final class VORuntime: NSObject, NSMenuDelegate {
     }
     @objc private func pickPolish(_ sender: NSMenuItem) {
         if let raw = sender.representedObject as? String, let e = VOPolishEngine(rawValue: raw) { settings.polishEngine = e }
-    }
-
-    /// The ▼● mark as a template image for the menu bar.
-    static func menuBarIcon() -> NSImage {
-        let img = NSImage(size: NSSize(width: 24, height: 14), flipped: false) { r in
-            NSColor.black.setFill()
-            let tri = NSBezierPath()
-            tri.move(to: NSPoint(x: 1, y: r.maxY - 1.5))
-            tri.line(to: NSPoint(x: 12, y: r.maxY - 1.5))
-            tri.line(to: NSPoint(x: 6.5, y: 1.5))
-            tri.close()
-            tri.lineJoinStyle = .round
-            tri.fill()
-            NSBezierPath(ovalIn: NSRect(x: 12.5, y: 1.5, width: 11, height: 11)).fill()
-            return true
-        }
-        img.isTemplate = true
-        return img
     }
 }

@@ -68,7 +68,7 @@ VoiceOS's own notch window is gone; its look and behaviour live in that island:
   drives Vorssaint's own login item.
 - **Info.plist**: VoiceOS's Microphone, Speech Recognition, AppleEvents, Calendars, Reminders
   and Contacts strings are merged into Vorssaint's; Contacts is added to the entitlements.
-- **Menu bar**: the VoiceOS menu bar item (▼●) stays, with its provider and cleanup switches.
+- **Menu bar**: one item, Vorssaint's. VoiceOS's menu (open, ask, provider and cleanup switches, history, settings) is its VoiceOS submenu, on a secondary click.
 
 ## AI
 

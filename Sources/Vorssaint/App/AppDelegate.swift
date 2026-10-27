@@ -1531,6 +1531,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             menu.addItem(cleaningItem)
         }
 
+        // VoiceOS's switches, in this one menu bar item.
+        VORuntime.appendMenu(to: menu)
+
         if menu.items.isEmpty == false {
             menu.addItem(.separator())
         }
