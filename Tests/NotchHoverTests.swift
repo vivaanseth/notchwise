@@ -275,9 +275,9 @@ enum NotchHoverTests {
                 compactPulse.updateBounds()
                 let compactResting = compactPulse.surfaceSize
                 compactPulse.hover(true)
-                suite.expect(compactPulse.surfaceSize.height == compactResting.height + (opensOnHover ? 0 : 5)
-                             && compactPulse.hoverEmphasized == !opensOnHover,
-                             "a compact activity waits at rest for a hover opening and pulses for a click opening")
+                suite.expect(compactPulse.surfaceSize.height == compactResting.height + 5
+                             && compactPulse.hoverEmphasized,
+                             "a compact activity pulses under the pointer for a hover opening and a click opening alike")
                 leave(compactPulse)
                 suite.expect(compactPulse.surfaceSize == compactResting,
                              "the compact activity returns to its original size on exit")
@@ -439,11 +439,12 @@ enum NotchHoverTests {
             let resting = service.surfaceSize
             service.hover(true)
             let initial = service.hoverWork
-            suite.expect(!service.hoverEmphasized && service.surfaceSize == resting && initial != nil,
-                         "hover opening keeps either display's island at rest instead of previewing before expansion")
+            suite.expect(service.hoverEmphasized && service.surfaceSize != resting && initial != nil,
+                         "hover opening grows either display's island at once, so the wait reads as seen")
+            let grown = service.surfaceSize
             DispatchQueue.main.advance(0.20)
-            suite.expect(service.openings == 0 && service.surfaceSize == resting,
-                         "the island stays at rest throughout the configured hover opening delay")
+            suite.expect(service.openings == 0 && service.surfaceSize == grown,
+                         "the island stays grown, unopened, throughout the configured hover opening delay")
             service.hover(false) // A tracking exit while the pointer is still inside.
             suite.expect(service.hoverWork === initial, "duplicate tracking events preserve the original opening deadline")
             DispatchQueue.main.advance(0.06)
@@ -710,7 +711,7 @@ enum NotchHoverTests {
             suite.expect(!joined.showsCompactActivityPicker && NSEvent.global.isEmpty && NSEvent.local.isEmpty,
                          "an unreported exit to the display above still hides that picker and releases its observers")
         }
-        // A full opening has no hover emphasis, but still needs an uninterrupted
+        // A full opening grows the island under the pointer, and still needs an uninterrupted
         // stay. Leaving without a tracking exit must discard the old deadline.
         for physical in [false, true] {
             for reduced in [false, true] {
@@ -724,9 +725,9 @@ enum NotchHoverTests {
                     NSEvent.mouseLocation = entry
                     returning.hover(true)
                     let first = returning.hoverWork
-                    suite.expect(!returning.hoverEmphasized && returning.surfaceSize == resting
+                    suite.expect(returning.hoverEmphasized == !reduced && (returning.surfaceSize == resting) == reduced
                                  && NSEvent.global.count == 1 && NSEvent.local.count == 1,
-                                 "hover opening follows the pointer without emphasizing the island, including Reduce Motion")
+                                 "hover opening follows the pointer and grows the island, except with Reduce Motion")
                     DispatchQueue.main.advance(0.4)
                     follow(to: CGPoint(x: top.midX, y: top.maxY + 300), local: local)
                     suite.expect(!returning.inside && first?.isCancelled == true && returning.hoverWork == nil,
@@ -739,7 +740,7 @@ enum NotchHoverTests {
                     suite.expect(returning.hoverWork != nil && returning.hoverWork !== first,
                                  "returning after an unreported exit starts a fresh hover deadline")
                     DispatchQueue.main.advance(0.16)
-                    suite.expect(returning.openings == 0 && returning.surfaceSize == resting,
+                    suite.expect(returning.openings == 0,
                                  "the original opening deadline cannot open an island the pointer left and reentered")
                     DispatchQueue.main.advance(0.43)
                     suite.expect(returning.openings == 0,
@@ -856,8 +857,8 @@ enum NotchHoverTests {
             let top = opening.windowHost!.rect
             NSEvent.mouseLocation = CGPoint(x: top.midX, y: top.maxY - 1)
             opening.hover(true)
-            suite.expect(opening.hoverEmphasized == !expands && NSEvent.global.count == 1 && NSEvent.local.count == 1,
-                         "both hover modes follow the pointer before revealing content, while only the preview emphasizes it")
+            suite.expect(opening.hoverEmphasized && NSEvent.global.count == 1 && NSEvent.local.count == 1,
+                         "both hover modes follow the pointer and grow the island before revealing content")
             DispatchQueue.main.advance(0.26)
             suite.expect((expands ? opening.openings == 1 : opening.peeking)
                             && NSEvent.global.isEmpty && NSEvent.local.isEmpty,

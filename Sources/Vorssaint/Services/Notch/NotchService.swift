@@ -1667,12 +1667,11 @@ final class NotchService: ObservableObject {
         // The music strip names its song only while the pointer stays on the
         // island: leaving ends it, and a name left from before goes on return.
         let unnamesMusic = inside != wasInside && endMusicStripHover(leaving: !inside)
-        // A full hover opening goes straight from its resting size to the page.
-        // The activity picker replaces that opening and keeps its hover response.
-        let opensOnHover = hoverOpeningEnabled
-            && UserDefaults.standard.bool(forKey: DefaultsKey.notchHoverExpands) && !showsCompactActivityPicker
+        // The island grows under the pointer in every opening mode: waiting
+        // to open on hover, it shows the pointer was seen rather than looking
+        // slow to answer, and the opening grows on from there.
         let emphasize = inside && !hiddenInFullscreen && !hiddenUntilHover && !expanded && !peeking && !dragPlaceholder
-            && notice == nil && captureControls == nil && !opensOnHover
+            && notice == nil && captureControls == nil
             && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         if hoverEmphasized != emphasize || showedPicker != showsCompactActivityPicker || unnamesMusic {
             hoverEmphasized = emphasize
