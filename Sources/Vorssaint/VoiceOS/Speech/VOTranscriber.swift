@@ -1,9 +1,42 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Ported from VoiceOS Clone (Speech/Transcriber.swift) into Vorssaint + VoiceOS.
 
+import Contacts
 import Foundation
 import Speech
 import AVFoundation
+
+/// Words recognition should hear as written: the dictionary's, then the
+/// names in Contacts when the app may read them. Names are what a general
+/// recognizer gets wrong most ("Keshav" heard as "case of"). Read at most
+/// every few minutes, and never sent anywhere.
+enum VOVocabulary {
+    private static var cached: (date: Date, names: [String])?
+
+    static func terms(limit: Int) -> [String] {
+        var seen = Set<String>()
+        var terms: [String] = []
+        for term in VOSettings.shared.dictionary.map(\.written) + contactNames() {
+            let trimmed = term.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty, seen.insert(trimmed.lowercased()).inserted else { continue }
+            terms.append(trimmed)
+            if terms.count >= limit { break }
+        }
+        return terms
+    }
+
+    private static func contactNames() -> [String] {
+        if let cached, Date().timeIntervalSince(cached.date) < 600 { return cached.names }
+        guard CNContactStore.authorizationStatus(for: .contacts) == .authorized else { return [] }
+        var names: [String] = []
+        let keys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactNicknameKey] as [CNKeyDescriptor]
+        try? CNContactStore().enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
+            names += [contact.givenName, contact.familyName, contact.nickname].filter { !$0.isEmpty }
+        }
+        cached = (Date(), names)
+        return names
+    }
+}
 
 /// A single listening session: starts the mic, streams partial text (Apple engine), and produces a
 /// final transcript when stopped. Everything here runs on this Mac.
@@ -35,7 +68,8 @@ final class VOSpeechSession {
             req.shouldReportPartialResults = true
             req.addsPunctuation = true
             if rec.supportsOnDeviceRecognition { req.requiresOnDeviceRecognition = true }
-            req.contextualStrings = settings.dictionary.map(\.written)
+            // Apple suggests no more than a hundred phrases.
+            req.contextualStrings = VOVocabulary.terms(limit: 100)
             request = req
             task = rec.recognitionTask(with: req) { [weak self] result, error in
                 let text = result?.bestTranscription.formattedString
@@ -62,12 +96,21 @@ final class VOSpeechSession {
         switch engine {
         case .apple:
             request?.endAudio()
+            // Apple's recognizer draws the words live; Whisper, when it is on
+            // this Mac, hears the whole recording again for the final text,
+            // in parallel, and knows names and the vocabulary far better.
+            let refines = VOWhisper.canRefine && duration > 0.3
+            let refined: Task<String?, Never>? = refines ? Task { try? await VOWhisper.transcribe(samples) } : nil
             let text = await withCheckedContinuation { (c: CheckedContinuation<String, Never>) in
                 finalContinuation = c
                 // Don't wait forever for the recognizer's final pass.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in self?.finish() }
             }
             task?.cancel()
+            // Whisper makes up a "Thank you." over silence; only a recording
+            // Apple heard words in takes its text.
+            if let refined, let better = await refined.value, !better.isEmpty,
+               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return (better, duration) }
             return (text, duration)
         case .whisper:
             guard duration > 0.3 else { return ("", duration) }
@@ -102,6 +145,27 @@ enum VOWhisper {
         return VOCLIRunner.resolve("whisper-cli")
     }
 
+    /// Whisper checks Apple's final text when it is installed and allowed.
+    static var canRefine: Bool {
+        VOSettings.shared.refineWithWhisper && binary != nil && availableModel() != nil
+    }
+
+    /// The chosen model, else any other on this Mac: VoiceOS's own, then one
+    /// MacWhisper downloaded, which is read in place.
+    static func availableModel() -> URL? {
+        if let chosen = modelURL(VOSettings.shared.whisperModel) { return chosen }
+        for model in [VOWhisperModel.baseEn, .smallEn, .tinyEn, .base, .small] {
+            if let url = modelURL(model) { return url }
+        }
+        let macWhisper = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Application Support/MacWhisper/models")
+        let files = (try? FileManager.default.contentsOfDirectory(at: macWhisper, includingPropertiesForKeys: nil)) ?? []
+        let models = files.filter { $0.pathExtension == "bin" && $0.lastPathComponent.hasPrefix("ggml") }
+        for size in ["base.en", "base", "small.en", "small", "tiny"] {
+            if let url = models.first(where: { $0.lastPathComponent.contains(size) }) { return url }
+        }
+        return models.first
+    }
+
     static func modelURL(_ m: VOWhisperModel) -> URL? {
         let candidates = [VOStorage.modelsDirectory.appendingPathComponent(m.fileName),
                           URL(fileURLWithPath: "/usr/local/share/whisper-cpp/\(m.fileName)"),
@@ -113,14 +177,14 @@ enum VOWhisper {
     static func transcribe(_ samples: [Float]) async throws -> String {
         let settings = VOSettings.shared
         guard let bin = binary else { throw VOError("whisper-cli not found. Install with: brew install whisper-cpp") }
-        guard let model = modelURL(settings.whisperModel) else { throw VOError("Download a Whisper model in Dictation settings.") }
+        guard let model = availableModel() else { throw VOError("Download a Whisper model in Dictation settings.") }
         let wav = VOCLIRunner.scratchDirectory().appendingPathComponent("dictation-\(UUID().uuidString).wav")
         try VOAudioCapture.writeWAV(samples, to: wav)
         defer { try? FileManager.default.removeItem(at: wav) }
-        let lang = settings.whisperModel.rawValue.hasSuffix(".en") ? "en" : String(settings.languageCode.prefix(2))
+        let lang = model.lastPathComponent.contains(".en") ? "en" : String(settings.languageCode.prefix(2))
         let threads = max(2, ProcessInfo.processInfo.activeProcessorCount - 1)
         var args = ["-m", model.path, "-f", wav.path, "-l", lang, "-nt", "-np", "-t", "\(threads)"]
-        let prompt = settings.dictionary.map(\.written).joined(separator: ", ")
+        let prompt = VOVocabulary.terms(limit: 60).joined(separator: ", ")
         if !prompt.isEmpty { args += ["--prompt", prompt] }
         let r = try await VOCLIRunner.run(bin, args, timeout: 120)
         return r.stdout

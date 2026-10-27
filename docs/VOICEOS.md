@@ -144,6 +144,22 @@ analysis, very long selections or when the local model asks, then Haiku with thi
 daily cap (25). CodexBar plan checks only run when you open Apps or Insights. On an 8 GB Mac,
 keep one local model for both jobs.
 
+Changed in the combined app:
+
+- **Lookups are searches.** "Find Keshav's LinkedIn", "look up…", "search for…", "google…" and
+  "pull up… on YouTube" skip the model and open the search at once (LinkedIn's people search,
+  YouTube's results or a web search), so nothing is claimed that was never looked up
+  (`VOBrainRouter.lookup`). A lookup about someone on screen ("find his LinkedIn") still goes
+  to the model and the screen. The local prompt also says it cannot browse and must search.
+- **Spoken as it's written.** Each sentence of an answer goes to the voice as soon as it is
+  complete, while the model still writes the rest and its actions
+  (`VOAssistantVoice.stream`/`finishStream`); the words still light up as they're said.
+- **Names heard right.** Apple's recognizer gets the names in Contacts (when the app may read
+  them) and the dictionary as hints. With Whisper on this Mac (`whisper-cli` and a model,
+  VoiceOS's own or one MacWhisper downloaded), the words still appear live from Apple's
+  recognizer, and Whisper hears the recording again, with the same names as its prompt, for the
+  final text (Dictation → Speech recognition → "Check with Whisper"; on by default).
+
 ## First launch
 
 The combined app copies the standalone Vorssaint's preferences (`com.vorssaint.utils`) and

@@ -49,6 +49,7 @@ enum VOLocalPrompts {
         JOB "agent": answer or act. Fields: "escalate" (true only if the request needs long writing, careful multi-step reasoning, or facts you don't know), "say" (one short spoken sentence), "actions" (list, may be empty).
         Action types: \(types.joined(separator: " ")).
         Times are ISO 8601 local, like 2026-10-26T17:00:00. Only add an action when the user asks for it. If a Calculator line is given, use its result.
+        You cannot browse or look anything up yourself. To find a person, profile, page or a fact you don't know, add a web_search and say you're searching; never say you found something.
         Job: agent
         User: Remind me to buy milk at 6pm today
         {"escalate": false, "say": "I'll remind you to buy milk at 6 PM.", "actions": [{"type": "create_reminder", "title": "Buy milk", "due": "2026-10-25T18:00:00"}]}
@@ -58,6 +59,9 @@ enum VOLocalPrompts {
         Job: agent
         User: text Sam I'm running late
         {"escalate": false, "say": "Here's a message to Sam.", "actions": [{"type": "send_message", "to": "Sam", "body": "I'm running late!"}]}
+        Job: agent
+        User: who won the game last night
+        {"escalate": false, "say": "Searching the web for last night's game.", "actions": [{"type": "web_search", "query": "who won the game last night"}]}
         Job: agent
         User: how many days are in a leap year
         {"escalate": false, "say": "A leap year has 366 days.", "actions": []}

@@ -30,6 +30,8 @@ final class VOSettings: ObservableObject {
     @Published var languageCode: String { didSet { d.set(languageCode, forKey: Self.prefix + "languageCode") } }
     @Published var speechEngine: VOSpeechEngine { didSet { d.set(speechEngine.rawValue, forKey: Self.prefix + "speechEngine") } }
     @Published var whisperModel: VOWhisperModel { didSet { d.set(whisperModel.rawValue, forKey: Self.prefix + "whisperModel") } }
+    /// With Apple's engine, Whisper hears the recording again for the final text.
+    @Published var refineWithWhisper: Bool { didSet { d.set(refineWithWhisper, forKey: Self.prefix + "refineWithWhisper") } }
     @Published var polishEngine: VOPolishEngine { didSet { d.set(polishEngine.rawValue, forKey: Self.prefix + "polishEngine") } }
     @Published var removeFillers: Bool { didSet { d.set(removeFillers, forKey: Self.prefix + "removeFillers") } }
     @Published var appAwareStyle: Bool { didSet { d.set(appAwareStyle, forKey: Self.prefix + "appAwareStyle") } }
@@ -79,6 +81,7 @@ final class VOSettings: ObservableObject {
         languageCode = d.string(forKey: Self.prefix + "languageCode") ?? (Locale.current.identifier.replacingOccurrences(of: "_", with: "-").hasPrefix("en") ? Locale.current.identifier.replacingOccurrences(of: "_", with: "-") : "en-US")
         speechEngine = VOSpeechEngine(rawValue: d.string(forKey: Self.prefix + "speechEngine") ?? "") ?? .apple
         whisperModel = VOWhisperModel(rawValue: d.string(forKey: Self.prefix + "whisperModel") ?? "") ?? .baseEn
+        refineWithWhisper = d.object(forKey: Self.prefix + "refineWithWhisper") as? Bool ?? true
         polishEngine = VOPolishEngine(rawValue: d.string(forKey: Self.prefix + "polishEngine") ?? "") ?? .ollama
         removeFillers = d.object(forKey: Self.prefix + "removeFillers") as? Bool ?? true
         appAwareStyle = d.object(forKey: Self.prefix + "appAwareStyle") as? Bool ?? true

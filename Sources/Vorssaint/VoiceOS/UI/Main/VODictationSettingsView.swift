@@ -50,6 +50,13 @@ struct VODictationSettingsView: View {
                     Spacer()
                     VODropdown(options: languages, selection: $settings.languageCode, width: 220)
                 }
+                if settings.speechEngine == .apple {
+                    toggleRow("Check with Whisper",
+                              VOWhisper.binary == nil || VOWhisper.availableModel() == nil
+                                ? "Install whisper-cpp and a Whisper model to hear names and rare words better."
+                                : "Words appear live; Whisper then hears the recording again for the final text.",
+                              $settings.refineWithWhisper)
+                }
                 if settings.speechEngine == .whisper { whisperSection }
             }
 

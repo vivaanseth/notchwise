@@ -90,6 +90,52 @@ enum VOBrainRouter {
     }
 
     /// Does arithmetic the small model would get wrong: "15% of 240", "12 times 7", "3.5 + 2".
+    /// Finding a person, a profile or a page is a search the assistant opens,
+    /// never something the local model may claim it did: such a request goes
+    /// straight to the search, with nothing for the model to make up.
+    nonisolated static func lookup(_ query: String) -> (say: String, action: VOAssistantAction)? {
+        let pattern = #"(?i)^\s*(?:hey\s+\w+[,\s]+)?(?:please\s+)?(?:(?:can|could|would)\s+you\s+)?(?:find|look\s*up|search(?:\s+for)?|google|pull\s+up)\s+(?:me\s+)?(.+?)[\s?.!]*$"#
+        guard let match = query.range(of: pattern, options: .regularExpression),
+              let regex = try? NSRegularExpression(pattern: pattern),
+              let result = regex.firstMatch(in: query, range: NSRange(match, in: query)),
+              let range = Range(result.range(at: 1), in: query) else { return nil }
+        var subject = String(query[range]).trimmingCharacters(in: .whitespaces)
+        // "His LinkedIn" or "this person" points at the screen, which a
+        // search for the pronoun would not find.
+        if subject.range(of: #"(?i)\b(his|her|hers|their|this|that|these|those|him|them|it)\b"#,
+                         options: .regularExpression) != nil { return nil }
+        // Files and the Mac's own things belong to their own actions.
+        if subject.range(of: #"(?i)\b(file|files|folder|document|pdf|download|downloads|screenshot|my\s+(?:mac|calendar|notes|reminders|messages))\b"#,
+                         options: .regularExpression) != nil { return nil }
+        func strip(_ words: String) -> String {
+            subject.replacingOccurrences(of: #"(?i)\b("# + words + #")\b"#, with: " ", options: .regularExpression)
+                .replacingOccurrences(of: #"(?i)['’]s\b"#, with: "", options: .regularExpression)
+                .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespaces)
+        }
+        func encoded(_ text: String) -> String {
+            text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? text
+        }
+        if subject.range(of: #"(?i)\blinked\s*in\b"#, options: .regularExpression) != nil {
+            let who = strip(#"linked\s*in|profile|page|account|on|the|a"#)
+            guard !who.isEmpty else { return nil }
+            // Names are said as names, however they were typed.
+            return ("Searching LinkedIn for \(who.capitalized).",
+                    VOAssistantAction(type: "open_url",
+                                      fields: ["url": "https://www.linkedin.com/search/results/people/?keywords=\(encoded(who))"]))
+        }
+        if subject.range(of: #"(?i)\byou\s*tube\b"#, options: .regularExpression) != nil {
+            let what = strip(#"you\s*tube|video|videos|on|the|a"#)
+            guard !what.isEmpty else { return nil }
+            return ("Searching YouTube for \(what).",
+                    VOAssistantAction(type: "open_url",
+                                      fields: ["url": "https://www.youtube.com/results?search_query=\(encoded(what))"]))
+        }
+        subject = strip("online|on the web|on google")
+        guard !subject.isEmpty else { return nil }
+        return ("Searching the web for \(subject).", VOAssistantAction(type: "web_search", fields: ["query": subject]))
+    }
+
     static func calculatorHint(_ query: String) -> String? {
         let q = query.lowercased().replacingOccurrences(of: ",", with: "")
         if let m = q.firstMatch(of: #/(\d+(?:\.\d+)?)\s*(?:%|percent)\s+of\s+(\d+(?:\.\d+)?)/#),

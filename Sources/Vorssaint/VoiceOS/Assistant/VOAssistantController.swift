@@ -261,8 +261,9 @@ final class VOAssistantController: ObservableObject {
         var route = provider
         var routeModel: String? = nil
         var reason: String? = nil
-        let wantsScreen = (provider.isLocal ? Self.pointsAtScreen(query) : Self.refersToScreen(query)) && shot != nil
-        if provider.isLocal, let r = VOBrainRouter.reasonToEscalate(query: query, hasImage: wantsScreen, selection: ctx.selectedText) {
+        let lookup = VOBrainRouter.lookup(query)
+        let wantsScreen = lookup == nil && (provider.isLocal ? Self.pointsAtScreen(query) : Self.refersToScreen(query)) && shot != nil
+        if provider.isLocal, lookup == nil, let r = VOBrainRouter.reasonToEscalate(query: query, hasImage: wantsScreen, selection: ctx.selectedText) {
             if let target = VOBrainRouter.escalationTarget() {
                 route = target.provider
                 routeModel = target.model
@@ -293,15 +294,27 @@ final class VOAssistantController: ObservableObject {
             $0.via = Self.label(route, model: routeModel, reason: reason)
         }
 
+        // The answer is spoken a sentence at a time as it is written.
+        VOAssistantVoice.shared.beginStream()
         do {
             var parsed: Parsed
-            if route.isLocal {
+            if let found = lookup {
+                // A lookup is a search, opened at once; no model is asked.
+                if let image { try? FileManager.default.removeItem(at: image) }
+                route = .ollama
+                routeModel = nil
+                reason = nil
+                update(turnID) { $0.provider = .ollama; $0.via = "Search" }
+                parsed = Parsed(say: found.say, detail: nil, actions: [found.action], remember: [])
+            } else if route.isLocal {
                 parsed = try await askLocal(turnID: turnID, query: query, ctx: ctx, history: history)
                 if parsed.escalate {
                     if let target = VOBrainRouter.escalationTarget() {
                         route = target.provider
                         routeModel = target.model
                         reason = "the local model asked for help"
+                        // Whatever the local model began to say gives way to the answer.
+                        VOAssistantVoice.shared.beginStream()
                         update(turnID) {
                             $0.provider = route
                             $0.say = ""
@@ -337,14 +350,15 @@ final class VOAssistantController: ObservableObject {
             parsed.remember.forEach { settings.addMemory($0) }
             phase = .answered
             lastActivity = Date()
-            VOAssistantVoice.shared.speak(parsed.say) { [weak self] in self?.scheduleAutoCollapse() }
+            VOAssistantVoice.shared.finishStream(parsed.say) { [weak self] in self?.scheduleAutoCollapse() }
             for item in items where item.state == .running {
                 if dryRun { updateAction(turnID, item.id) { $0.state = .done("(dry run — not executed)") }; continue }
                 await perform(turnID: turnID, actionID: item.id, secondary: false)
             }
             VOHistoryStore.shared.add(VOHistoryItem(mode: .agent, appName: ctx.appName, bundleID: ctx.bundleID, transcript: query,
                                                 output: [parsed.say, parsed.detail ?? ""].filter { !$0.isEmpty }.joined(separator: "\n\n"),
-                                                provider: Self.label(route, model: routeModel, reason: reason), duration: min(spoken, 120),
+                                                provider: lookup != nil ? "Search"
+                                                    : Self.label(route, model: routeModel, reason: reason), duration: min(spoken, 120),
                                                 words: VOTextCleaner.wordCount(query), polished: true))
         } catch {
             if let image { try? FileManager.default.removeItem(at: image) }
@@ -371,6 +385,7 @@ final class VOAssistantController: ObservableObject {
         ) { [weak self] partial in
             guard let self, let say = Self.partialSay(partial), !say.isEmpty else { return }
             self.update(turnID) { $0.say = say }
+            VOAssistantVoice.shared.stream(say)
         }
         var parsed = Self.parse(raw)
         parsed.actions = VOBrainRouter.fixDates(parsed.actions.filter { VOBrainRouter.plausible($0.type, query: query) }, query: query)
@@ -391,6 +406,7 @@ final class VOAssistantController: ObservableObject {
         ) { [weak self] partial in
             guard let self, let say = Self.partialSay(partial), !say.isEmpty else { return }
             self.update(turnID) { $0.say = say }
+            VOAssistantVoice.shared.stream(say)
         }
         var parsed = Self.parse(raw)
         parsed.escalate = false
