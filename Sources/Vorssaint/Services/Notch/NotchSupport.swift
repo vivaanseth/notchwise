@@ -727,6 +727,31 @@ enum BatteryWarning: Equatable {
     case none, early, low
 }
 
+/// A pointer crossing the island on its way to the menu bar or across the
+/// screen does not open it on hover: only one that comes to rest over it
+/// does. The moves the island follows while its hover deadline runs are kept
+/// for a moment and read when the deadline comes.
+struct NotchHoverIntent {
+    /// The moves read back, and how far the pointer may drift in them.
+    static let window: TimeInterval = 0.2
+    static let drift: CGFloat = 5
+    private var samples: [(time: TimeInterval, point: CGPoint)] = []
+
+    mutating func record(_ point: CGPoint, at time: TimeInterval) {
+        samples.append((time, point))
+        samples.removeAll { time - $0.time > Self.window * 2 }
+    }
+
+    mutating func reset() { samples.removeAll() }
+
+    /// Still, or drifting no further than a hand at rest does, during the
+    /// last moment; a pointer that has not moved at all rests.
+    func rests(at time: TimeInterval, current: CGPoint) -> Bool {
+        samples.filter { time - $0.time <= Self.window }
+            .allSatisfy { hypot($0.point.x - current.x, $0.point.y - current.y) <= Self.drift }
+    }
+}
+
 /// Resizing can send hover exits and entries without any pointer movement.
 struct NotchHoverState {
     private(set) var suppressed = false
@@ -1368,13 +1393,18 @@ enum NotchQuickAccessSide: String, CaseIterable, Codable {
     case left, right, bottom
 }
 
+/// A button around the open island. Home and Suggested are the combined
+/// app's: the island's home page, and the page that fits the moment.
 enum NotchQuickAction: Hashable, Identifiable {
     case explore, settings, pin, module(NotchModule), control(NotchControlItem)
+    case home, suggested
 
     var id: String {
         switch self {
         case .explore: return "explore"
         case .settings: return "settings"
+        case .home: return "home"
+        case .suggested: return "suggested"
         case .pin: return "pin"
         case .module(let module): return module.rawValue
         case .control(let item): return "control." + item.rawValue
@@ -1385,6 +1415,8 @@ enum NotchQuickAction: Hashable, Identifiable {
         switch id {
         case "explore": self = .explore
         case "settings": self = .settings
+        case "home": self = .home
+        case "suggested": self = .suggested
         case "pin": self = .pin
         default:
             if id.hasPrefix("control."), let item = NotchControlItem(rawValue: String(id.dropFirst(8))) {
@@ -1395,7 +1427,7 @@ enum NotchQuickAction: Hashable, Identifiable {
     }
 
     static var optionalActions: [Self] {
-        [.explore, .settings, .pin] + NotchModule.allCases.map(Self.module)
+        [.home, .explore, .suggested, .settings, .pin] + NotchModule.allCases.map(Self.module)
             + NotchControlItem.allCases.filter { !$0.isLevel }.map(Self.control)
     }
 
@@ -1403,6 +1435,7 @@ enum NotchQuickAction: Hashable, Identifiable {
         switch self {
         case .module(let module): return NotchSupport.modules(in: defaults).contains(module)
         case .control(let item): return item.isAvailable(in: defaults)
+        case .home, .suggested: return !NotchSupport.modules(in: defaults).isEmpty
         default: return true
         }
     }

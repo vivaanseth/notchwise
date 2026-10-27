@@ -55,13 +55,22 @@ VoiceOS's own notch window is gone; its look and behaviour live in that island:
 
 ## Getting around the island
 
-- **Opening on the page that fits.** A click (or ⌃⌥⌘I) opens what the closed island shows
-  first, as before: a song, a timer, the agents at work. With nothing showing, it opens on the
-  page that clearly fits the moment: AI agents with Claude, Terminal or a code editor in front,
-  the player with a music app, Calendar just before an event, a page picked a few minutes ago.
-  When nothing clearly leads, a near tie included, it opens on the home page.
-  `NotchService.reopeningDestination` → `NotchIntentService.fittingPage`. Settings → Dynamic
-  Island → Behavior → Suggestions → "Open on the page that fits" turns it off.
+- **Hover opens home, a click opens what fits.** The combined app starts on "Expand on hover"
+  (set once; Settings → Dynamic Island → Behavior changes it). Resting the pointer on the closed
+  island opens the home page, the dashboard, without taking the keyboard, and leaving closes it
+  again. A click (or ⌃⌥⌘I) opens what the closed island shows first: a song (Spotify, Netflix in
+  a browser), a timer, the agents at work. With nothing showing, it opens on the page that
+  clearly fits the moment: AI agents with Claude, Terminal or a code editor in front, the player
+  with a music app, Calendar just before an event, a page picked a few minutes ago. When nothing
+  clearly leads, a near tie included, it opens the home page as a hover does.
+  `NotchService.reopeningDestination` → `NotchIntentService.fittingPage`; Settings → Suggestions
+  → "Open on the page that fits" turns that step off.
+- **No accidental opens.** A hover opens the island only when the pointer comes to rest on it
+  (`NotchHoverIntent`: under 5 points of drift over the last 0.2 s) with no mouse button held,
+  after the activation time, which the combined app sets to 0.45 s. A pointer still crossing it,
+  on its way along the menu bar for instance, starts a fresh wait instead. A click before the
+  wait ends opens the page that fits; closing the island under the pointer keeps it closed until
+  the pointer leaves.
 - **Home.** The assistant's page, before anything is asked, is the island's home
   (`NotchHubView`): under the field, a calendar card (the date and the next three events,
   "In 8 min" on one about to start, each a click from its place on the Calendar page), a small
@@ -72,7 +81,17 @@ VoiceOS's own notch window is gone; its look and behaviour live in that island:
   answering, the home steps aside for the conversation.
 - **Page switcher.** The home's top row holds every page as a coloured icon; a dot marks the
   ones the moment suggests. Beside a physical camera, where fewer fit, the last one opens the
-  sections. The buttons around the island (Settings → Dynamic Island → Layout) are unchanged.
+  sections.
+- **Buttons around the island.** Two new kinds of button: **Home** (the house, back to the
+  dashboard from any page) and **Suggested**, which shows and opens the likeliest page that is
+  neither on screen nor a button already, in that page's colour with a spark. The combined app
+  starts with Home, All pages and AI agents on the left; Suggested, Timer and Mixer on the
+  right; Music, Notifications and Clipboard below (set once; Settings → Dynamic Island → Layout
+  changes them). Settings stays on the island's right-click menu and ⌘,.
+- **Live equalizer.** The music bars follow the playing app's sound (Vorssaint's live
+  equalizer, now on in the combined app): a private Core Audio tap on the player and its helper
+  processes, read only while it plays. macOS asks once for permission to record other apps'
+  audio; without it, the bars keep their animation.
 - **Swipe.** Two fingers sideways on an open page, away from its own scrolling lists, turn to the
   next or previous page in the sections' order; on the player they still skip tracks.
 - **Hover dock.** With "Preview on hover" chosen, the pointer resting on the closed island grows

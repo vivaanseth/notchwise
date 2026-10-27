@@ -34,24 +34,41 @@ enum MergedSettingsImport {
         DefaultsKey.notchModuleOrder: NotchModule.voice.rawValue,
     ]
 
-    /// The island's first hub turned on "Preview on hover" once, to show
-    /// its dock of pages. Opening on the page that fits replaced the dock, so
-    /// a click opens the island again, as it did before, unless the opening
-    /// was chosen in Settings since.
-    static let islandHubKey = "mergedIslandHubApplied"
-    static let islandClickKey = "mergedIslandClickRestored"
+    /// Hovering opens the island's home, its dashboard, and a click opens
+    /// the page that fits the moment. The pointer rests a little longer
+    /// before a hover opens it, the bars follow the music playing, and the
+    /// buttons around the island start with Home and a suggestion. Set once,
+    /// when it arrived; Settings changes any of it afterwards.
+    static let hoverHomeKey = "mergedIslandHoverHomeApplied"
+    static let hoverDelay = 0.45
+    static let islandButtons = NotchQuickAccessConfiguration(buttons: [
+        NotchQuickButton(action: .home, side: .left),
+        NotchQuickButton(action: .explore, side: .left),
+        NotchQuickButton(action: .module(.agents), side: .left),
+        NotchQuickButton(action: .suggested, side: .right),
+        NotchQuickButton(action: .module(.timer), side: .right),
+        NotchQuickButton(action: .module(.mixer), side: .right),
+        NotchQuickButton(action: .module(.music), side: .bottom),
+        NotchQuickButton(action: .module(.notifications), side: .bottom),
+        NotchQuickButton(action: .module(.clipboard), side: .bottom),
+    ])
 
-    static func restoreClickOpeningOnce(_ defaults: UserDefaults = .standard,
-                                        bundleID: String? = Bundle.main.bundleIdentifier) {
-        guard bundleID == mergedBundleID, !defaults.bool(forKey: islandClickKey) else { return }
-        if defaults.bool(forKey: islandHubKey),
-           defaults.object(forKey: DefaultsKey.notchOpenOnHover) as? Bool == true,
-           defaults.object(forKey: DefaultsKey.notchHoverExpands) as? Bool == false,
-           defaults.object(forKey: DefaultsKey.notchHideUntilHover) == nil {
-            defaults.removeObject(forKey: DefaultsKey.notchOpenOnHover)
-            defaults.removeObject(forKey: DefaultsKey.notchHoverExpands)
+    static func applyHoverHomeOnce(_ defaults: UserDefaults = .standard,
+                                   bundleID: String? = Bundle.main.bundleIdentifier) {
+        guard bundleID == mergedBundleID, !defaults.bool(forKey: hoverHomeKey) else { return }
+        // Hidden until hover already opens on hover, and stays as chosen.
+        if defaults.object(forKey: DefaultsKey.notchHideUntilHover) as? Bool != true {
+            defaults.set(true, forKey: DefaultsKey.notchOpenOnHover)
+            defaults.set(true, forKey: DefaultsKey.notchHoverExpands)
         }
-        defaults.set(true, forKey: islandClickKey)
+        if defaults.object(forKey: DefaultsKey.notchHoverDelay) == nil {
+            defaults.set(hoverDelay, forKey: DefaultsKey.notchHoverDelay)
+        }
+        if defaults.object(forKey: DefaultsKey.notchLiveEqualizer) == nil {
+            defaults.set(true, forKey: DefaultsKey.notchLiveEqualizer)
+        }
+        defaults.set(islandButtons.encoded, forKey: DefaultsKey.notchQuickAccessLayout)
+        defaults.set(true, forKey: hoverHomeKey)
     }
 
     /// Runs before `Defaults.register()`, so the migrations there see the

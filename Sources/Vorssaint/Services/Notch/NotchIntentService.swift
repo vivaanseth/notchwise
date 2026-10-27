@@ -80,6 +80,12 @@ final class NotchIntentService: ObservableObject {
         return NotchIntentModel.opening(rank(modules, in: context))?.module
     }
 
+    /// The likeliest page now outside `excluding`, for the suggestion button
+    /// around the island; it always names one while any page is left.
+    func suggestedPage(modules: [NotchModule], excluding: Set<NotchModule>) -> NotchModule? {
+        rank(modules, in: context()).first { !excluding.contains($0.module) }?.module
+    }
+
     /// Without learning, the habits are left out and only the moment counts.
     private func rank(_ modules: [NotchModule], in context: NotchIntentContext) -> [NotchIntentSuggestion] {
         (learns ? model : NotchIntentModel()).rank(modules, in: context)

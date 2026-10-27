@@ -1071,6 +1071,8 @@ def main():
                      + "        }\n    }\n#sourceLocation()\n")
     write("NotchHover.swift", "import AppKit\nextension NotchHoverTests {\nfinal class Service: State {\n"
           + "func prepareSuggestions() {}\nfunc rankSuggestions() {}\n"
+          + "func notePointer(_ point: CGPoint) {}\nfunc pointerRests() -> Bool { true }\n"
+          + "func retryHoverOpening() {}\nvar homeModule: NotchModule? { nil }\n"
           + declaration(notch, "    func show(_ incoming:").replace("NotchSupport.routes(incoming.event)", "true")
             .replace("    func", "    @discardableResult\n    func", 1)
           + "".join(declaration(notch, prefix).replace("    private ", "    ", 1) for prefix in [

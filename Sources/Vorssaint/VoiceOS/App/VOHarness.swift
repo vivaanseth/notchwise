@@ -25,6 +25,8 @@ enum VOHarness {
             UserDefaults.standard.register(defaults: MergedSettingsImport.voiceOSIsland.merging([
                 AppFeature.notch.availabilityKey: true,
                 DefaultsKey.notchEnabled: true,
+                // The buttons around the island as the combined app starts them.
+                DefaultsKey.notchQuickAccessLayout: MergedSettingsImport.islandButtons.encoded,
             ]) { _, new in new })
             let app = NSApplication.shared
             let delegate = VOHarnessDelegate()

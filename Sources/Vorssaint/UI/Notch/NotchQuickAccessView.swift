@@ -69,6 +69,8 @@ struct NotchQuickAccessView: View {
     @ObservedObject private var awake = KeepAwakeManager.shared
     @ObservedObject private var microphone = MicMuteService.shared
     @ObservedObject private var recorder = ScreenRecorderService.shared
+    /// The suggestion button follows the moment.
+    @ObservedObject private var intent = NotchIntentService.shared
     @AppStorage(DefaultsKey.notchLiquidGlassEnabled) private var glass = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -83,9 +85,11 @@ struct NotchQuickAccessView: View {
 
     var body: some View {
         let drops = NotchQuickAccessDrops(placements: motion.placements, progress: motion.progress)
+        // Ranked once for every button, and only with a suggestion button.
+        let suggestion = motion.configuration.actions.contains(.suggested) ? suggested : nil
         let buttons = ZStack(alignment: .topLeading) {
             ForEach(motion.placements) { placement in
-                bubble(placement.button)
+                bubble(placement.button, suggested: suggestion)
                     .scaleEffect(0.4 + 0.6 * motion.progress)
                     .opacity(Double(motion.progress))
                     .position(placement.center(progress: motion.progress))
@@ -107,7 +111,13 @@ struct NotchQuickAccessView: View {
         .accessibilityHidden(!motion.interactive)
     }
 
-    private func bubble(_ button: NotchQuickButton) -> some View {
+    /// The page the suggestion button opens, read with the suggestions.
+    private var suggested: NotchModule? {
+        _ = intent.suggestions
+        return service.suggestedPage
+    }
+
+    private func bubble(_ button: NotchQuickButton, suggested: NotchModule?) -> some View {
         let action = button.action ?? .explore
         let isBack = action == .explore && service.showingSections
         let selected: Bool = {
@@ -116,6 +126,10 @@ struct NotchQuickAccessView: View {
             if action == .control(.keepAwake) { return awake.isActive }
             if action == .control(.microphone) { return microphone.isMuted }
             if action == .control(.recording) { return recorder.isRecording }
+            if action == .home {
+                return service.expanded && !service.showingSections && !service.showingAppPanel
+                    && service.selected == service.homeModule
+            }
             if case .module(let module) = action {
                 return !service.showingSections && !service.showingAppPanel && service.selected == module
             }
@@ -133,6 +147,11 @@ struct NotchQuickAccessView: View {
             if microphone.isMuted { symbol = "mic.slash.fill" }
         case .control(.keepAwake) where awake.isActive: symbol = "cup.and.saucer.fill"
         case .control(.recording) where recorder.isRecording: symbol = "stop.circle.fill"
+        case .suggested:
+            if let page = suggested {
+                symbol = page.symbol
+                actionTitle = String(format: FeatureStrings.notchHub(l10n.language).suggestedPage, page.title(l10n.language))
+            }
         default: break
         }
         let title = isBack ? l10n.s.obBack : button.label.isEmpty ? actionTitle : button.label
@@ -141,7 +160,20 @@ struct NotchQuickAccessView: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .medium))
+                // The suggestion wears its page's colour and a spark, so it
+                // reads as the one button that changes by itself.
+                .foregroundStyle(action == .suggested ? (suggested?.hubTint ?? .white) : .white)
+                .contentTransition(.symbolEffect(.replace))
                 .frame(width: NotchQuickAccessLayout.diameter, height: NotchQuickAccessLayout.diameter)
+                .overlay(alignment: .topTrailing) {
+                    if action == .suggested, suggested != nil {
+                        Image(systemName: "sparkle")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .padding(7)
+                            .accessibilityHidden(true)
+                    }
+                }
                 // In glass the drop beneath carries the island's shade, which
                 // the window server does not count as the window's own pixels:
                 // a faint fill keeps the whole circle from passing clicks to
@@ -262,6 +294,8 @@ struct NotchQuickAccessDrop: Shape {
 extension NotchQuickAction {
     var symbol: String {
         switch self {
+        case .home: return "house"
+        case .suggested: return "sparkles"
         case .explore: return "square.grid.2x2"
         case .settings: return "gearshape"
         case .pin: return "pin"
@@ -272,6 +306,8 @@ extension NotchQuickAction {
 
     func title(_ l10n: L10n) -> String {
         switch self {
+        case .home: return FeatureStrings.notchHub(l10n.language).home
+        case .suggested: return FeatureStrings.notchHub(l10n.language).suggested
         case .explore: return FeatureStrings.notch(l10n.language).sectionsTitle
         case .settings: return l10n.s.menuSettings
         case .pin: return FeatureStrings.notch(l10n.language).pin

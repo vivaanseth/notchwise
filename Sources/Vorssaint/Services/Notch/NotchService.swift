@@ -211,6 +211,7 @@ final class NotchService: ObservableObject {
     private var activitySelection = NotchActivitySelection()
     private var activityPickerMenuOpen = false
     private var hoverState = NotchHoverState()
+    private var hoverIntent = NotchHoverIntent()
     private var openedByHover = false
     /// A click inside the open island, which may be what brings another app forward.
     private var clickedSinceOpening = false
@@ -577,6 +578,52 @@ final class NotchService: ObservableObject {
     /// The page that clearly fits what the person is doing, which opening
     /// the island goes to before its home page.
     private var fittingPage: NotchModule? { NotchIntentService.shared.fittingPage(modules: hubModules) }
+
+    /// The island's home: the assistant's page, which holds the dashboard,
+    /// or the home page chosen in Settings without the assistant.
+    var homeModule: NotchModule? {
+        if modules.contains(.voice) { return .voice }
+        let saved = NotchModule(rawValue: UserDefaults.standard.string(forKey: DefaultsKey.notchHomeModule) ?? "")
+        return saved.flatMap { modules.contains($0) ? $0 : nil } ?? modules.first
+    }
+
+    func openHome() {
+        guard let homeModule else { return }
+        open(homeModule)
+    }
+
+    /// The pointer's moves over the closed island while it waits to open.
+    private func notePointer(_ point: CGPoint) {
+        if inside, !expanded { hoverIntent.record(point, at: ProcessInfo.processInfo.systemUptime) }
+        else { hoverIntent.reset() }
+    }
+
+    /// At rest on the island, with no button held as a drag past it would.
+    private func pointerRests() -> Bool {
+        NSEvent.pressedMouseButtons == 0
+            && hoverIntent.rests(at: ProcessInfo.processInfo.systemUptime, current: NSEvent.mouseLocation)
+    }
+
+    /// The hover deadline came while the pointer still moved: a fresh one
+    /// starts, so the island opens once the pointer settles on it.
+    private func retryHoverOpening() {
+        hoverWork = nil
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.inside, !self.expanded else { return }
+            self.hover(true)
+        }
+    }
+
+    /// The page the suggestion button around the island opens: the likeliest
+    /// one now that is neither on screen nor a button of its own.
+    var suggestedPage: NotchModule? {
+        let buttons = Set(NotchQuickAccessConfiguration.current().actions.compactMap { action -> NotchModule? in
+            if case .module(let module) = action { return module }
+            return nil
+        })
+        let shown: Set<NotchModule> = expanded && !showingSections ? [selected] : []
+        return NotchIntentService.shared.suggestedPage(modules: hubModules, excluding: buttons.union(shown))
+    }
 
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
@@ -1517,8 +1564,9 @@ final class NotchService: ObservableObject {
         if takeFocus { panel.makeKey() }
         if feedback, changesPresentation { provideHapticFeedback() }
         if closesCommandBar { commandBarDidClose() }
-        // The assistant's page is the hub itself, not a choice among pages.
-        if let module, module == destination, module != .voice, !appPanel, !sections, changesPresentation {
+        // The assistant's page is the hub itself, not a choice among pages,
+        // and a page a hover opened was no choice either.
+        if let module, module == destination, module != .voice, !appPanel, !sections, changesPresentation, takeFocus {
             learnChoice(module)
         }
     }
@@ -1614,6 +1662,7 @@ final class NotchService: ObservableObject {
             && windowHost?.isConcealedForMissionControl == false
             : windowHost?.containsHover(point) == true || pointerOverChildWindow(point)
         hoverState.update(pointerInside: inside)
+        notePointer(point)
         if inside, !wasInside, !expanded { prepareSuggestions() }
         // The music strip names its song only while the pointer stays on the
         // island: leaving ends it, and a name left from before goes on return.
@@ -1683,7 +1732,12 @@ final class NotchService: ObservableObject {
                 // Following the closed island ends as it opens or peeks.
                 self.removeHoverExitMonitors()
                 if UserDefaults.standard.bool(forKey: DefaultsKey.notchHoverExpands) {
-                    self.open(takeFocus: false)
+                    // Crossing the island on the way elsewhere opens nothing:
+                    // only a pointer at rest on it does, and a fresh deadline
+                    // waits for one still moving. Hovering opens the home, the
+                    // dashboard; a click opens the page that fits.
+                    guard self.pointerRests() else { self.retryHoverOpening(); return }
+                    self.open(self.homeModule, takeFocus: false)
                 } else {
                     self.rankSuggestions()
                     self.mutatePresentation(transitionContent: .reveal) { self.peeking = true }
@@ -1944,6 +1998,9 @@ final class NotchService: ObservableObject {
     func activateQuickAction(_ action: NotchQuickAction) {
         guard NotchSupport.isEnabled(), action.isAvailable() else { return }
         switch action {
+        case .home: openHome()
+        case .suggested:
+            if let page = suggestedPage { select(page) } else { toggleSections() }
         case .explore: toggleSections()
         case .settings: openSettings()
         case .pin: pinned.toggle()
