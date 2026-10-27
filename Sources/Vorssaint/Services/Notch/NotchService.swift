@@ -553,6 +553,17 @@ final class NotchService: ObservableObject {
         modules.contains(.voice) && !voicePageShown && VOIslandBridge.activity != nil
     }
 
+    /// The pages the hub and the hover dock offer: every page but the
+    /// assistant's, which the hub is part of.
+    var hubModules: [NotchModule] { modules.filter { $0 != .voice } }
+
+    /// The closed island grown under the pointer into the dock of pages.
+    var hubPeekSize: CGSize {
+        let peek = geometry.peek
+        let dock = NotchHubLayout.peek(count: hubModules.count, screenWidth: geometry.screen.width, minimumWidth: peek.width)
+        return CGSize(width: dock.width, height: peek.height)
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -969,7 +980,7 @@ final class NotchService: ObservableObject {
             return geometry.notificationPreviewSize(
                 contentHeight: notice.previewContentHeight(width: geometry.notificationPreviewContentWidth))
         }
-        if peeking { return geometry.peek }
+        if peeking { return hubPeekSize }
         if showsCompactActivityPicker { return compactActivityPickerLayout.size }
         if compactActivity != nil {
             var resting = compactActivityGeometry.compactActivitySize
@@ -1182,6 +1193,7 @@ final class NotchService: ObservableObject {
         NotchNotificationService.shared.syncWithPreferences()
         NotchAudioLevelService.shared.syncWithPreferences()
         AgentUsageService.shared.syncWithPreferences()
+        NotchIntentService.shared.syncWithPreferences()
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
         updateFullscreenDisplays()
@@ -1272,6 +1284,7 @@ final class NotchService: ObservableObject {
         NotchLyricsService.shared.stop()
         NotchFileToolsService.shared.stop()
         AgentUsageService.shared.stop()
+        NotchIntentService.shared.stop()
         guard running else { return }
         running = false
         NotchTimerService.shared.stop()
@@ -1488,6 +1501,11 @@ final class NotchService: ObservableObject {
         if takeFocus { panel.makeKey() }
         if feedback, changesPresentation { provideHapticFeedback() }
         if closesCommandBar { commandBarDidClose() }
+        // A page asked for by name is a choice the hub can learn from; the
+        // assistant's page is the hub itself.
+        if let module, module == destination, module != .voice, !appPanel, !sections, changesPresentation {
+            NotchIntentService.shared.chose(module)
+        }
     }
 
     func collapse() {
@@ -1521,6 +1539,14 @@ final class NotchService: ObservableObject {
     }
 
     func toggle() { expanded ? collapse() : open() }
+
+    /// Shows the hover dock as a pointer resting on the closed island would,
+    /// for the snapshot tool.
+    func previewPages() {
+        guard running, !suspended, !expanded, captureControls == nil, notice == nil else { return }
+        NotchIntentService.shared.refresh(modules: hubModules)
+        mutatePresentation(transitionContent: .reveal) { peeking = true }
+    }
 
     /// The island stays on screen, so only a manual resign takes its keyboard.
     /// While Vorssaint stays the active app (its Settings window is open, for
@@ -1573,6 +1599,9 @@ final class NotchService: ObservableObject {
             && windowHost?.isConcealedForMissionControl == false
             : windowHost?.containsHover(point) == true || pointerOverChildWindow(point)
         hoverState.update(pointerInside: inside)
+        // The front window may have changed since its app came forward; the
+        // dock reads its kind again before it shows.
+        if inside, !wasInside, !expanded { NotchIntentService.shared.prepare() }
         // The music strip names its song only while the pointer stays on the
         // island: leaving ends it, and a name left from before goes on return.
         let unnamesMusic = inside != wasInside && endMusicStripHover(leaving: !inside)
@@ -1618,8 +1647,13 @@ final class NotchService: ObservableObject {
             if holdsNotification, let id = notice?.notificationID { holdNotification(id); return }
             guard !hoverState.suppressed, (notice == nil || hiddenUntilHover), !expanded, !peeking, !dragPlaceholder,
                   hoverOpeningEnabled else { return }
-            if !hiddenInFullscreen, compactActivity != nil, compactActivityGeometry.compactActivityWingWidth > 0,
-               !UserDefaults.standard.bool(forKey: DefaultsKey.notchHoverExpands) { return }
+            // Over an activity's wings, the preview waits longer: a click on
+            // the strip opens the activity, and the dock names it first. The
+            // assistant at work keeps its strip, which says what it is doing.
+            let overActivity = !hiddenInFullscreen && compactActivity != nil
+                && compactActivityGeometry.compactActivityWingWidth > 0
+                && !UserDefaults.standard.bool(forKey: DefaultsKey.notchHoverExpands)
+            if overActivity, compactActivity == .voice { return }
             let work = DispatchWorkItem { [weak self] in
                 guard let self else { return }
                 self.hoverWork = nil
@@ -1638,13 +1672,16 @@ final class NotchService: ObservableObject {
                 if UserDefaults.standard.bool(forKey: DefaultsKey.notchHoverExpands) {
                     self.open(takeFocus: false)
                 } else {
+                    // Ranked before the dock shows, so its first page is
+                    // there from the first frame.
+                    NotchIntentService.shared.refresh(modules: self.hubModules, limit: 3)
                     self.mutatePresentation(transitionContent: .reveal) { self.peeking = true }
                     self.provideHapticFeedback()
                 }
             }
             hoverWork = work
             let delay = NotchSupport.sanitizedHoverDelay(UserDefaults.standard.double(forKey: DefaultsKey.notchHoverDelay))
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+            DispatchQueue.main.asyncAfter(deadline: .now() + (overActivity ? max(delay, 0.7) : delay), execute: work)
         } else if holdsNotification
                     || NotchSupport.closesOnPointerExit(expanded: expanded, peeking: peeking, openedByHover: openedByHover) {
             let work = DispatchWorkItem { [weak self] in
@@ -3893,7 +3930,11 @@ final class NotchService: ObservableObject {
         let vertical = NotchGestureSupport.allowsVertical(expanded: expanded, inHeader: inHeader,
                                                           musicSurface: musicSurface,
                                                           control: interaction.control, scroll: interaction.scroll)
-        let horizontal = !interaction.control && !interaction.scroll && !inHeader && musicSurface
+        // Sideways, the player skips tracks; any other open page turns to
+        // the next one, in the sections' order.
+        let flipsPages = expanded && !musicSurface && !showingSections && !showingCommandBar
+            && !showingAppPanel && selectedMetric == nil && modules.count > 1
+        let horizontal = !interaction.control && !interaction.scroll && (musicSurface ? !inHeader : flipsPages)
         let x = NotchGestureSupport.movement(Double(event.scrollingDeltaX), precise: event.hasPreciseScrollingDeltas,
                                              inverted: event.isDirectionInvertedFromDevice)
         let y = NotchGestureSupport.movement(Double(event.scrollingDeltaY), precise: event.hasPreciseScrollingDeltas,
@@ -3909,6 +3950,11 @@ final class NotchService: ObservableObject {
         case .open: open()
         case .close: collapse()
         case .nextTrack, .previousTrack:
+            if flipsPages, let module = NotchSupport.adjacentModule(to: selected, modules: modules,
+                                                                     backwards: action == .previousTrack) {
+                select(module)
+                return true
+            }
             guard musicSurface else { gesture = NotchGestureSupport(); return false }
             NotchMusicService.shared.skipFromGesture(forward: action == .nextTrack)
         }

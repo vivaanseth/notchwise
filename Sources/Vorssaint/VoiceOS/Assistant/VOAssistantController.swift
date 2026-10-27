@@ -54,6 +54,9 @@ final class VOAssistantController: ObservableObject {
     private var session: VOSpeechSession?
     private var screenshot: Task<URL?, Never>?
     private var context: VOFrontContext?
+    /// Text selected in the app in front when the island opened, which the
+    /// hub offers quick asks about.
+    var frontSelection: String? { context?.selectedText }
     private var listenStarted = Date()
     private var collapseWork: DispatchWorkItem?
     private var lastActivity = Date.distantPast

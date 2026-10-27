@@ -34,6 +34,26 @@ enum MergedSettingsImport {
         DefaultsKey.notchModuleOrder: NotchModule.voice.rawValue,
     ]
 
+    /// Added with the island's hub: the closed island previews its pages
+    /// under the pointer, so any page is one click away instead of two. Set
+    /// once, and only on an island still opening on a click, as installed;
+    /// an opening chosen in Settings stays.
+    static let islandHubKey = "mergedIslandHubApplied"
+    static let islandHub: [String: Any] = [
+        DefaultsKey.notchOpenOnHover: true,
+        DefaultsKey.notchHoverExpands: false,
+    ]
+
+    static func applyIslandHubOnce(_ defaults: UserDefaults = .standard,
+                                   bundleID: String? = Bundle.main.bundleIdentifier) {
+        guard bundleID == mergedBundleID, !defaults.bool(forKey: islandHubKey) else { return }
+        let opening = [DefaultsKey.notchOpenOnHover, DefaultsKey.notchHoverExpands, DefaultsKey.notchHideUntilHover]
+        if opening.allSatisfy({ defaults.object(forKey: $0) == nil }) {
+            for (key, value) in islandHub { defaults.set(value, forKey: key) }
+        }
+        defaults.set(true, forKey: islandHubKey)
+    }
+
     /// Runs before `Defaults.register()`, so the migrations there see the
     /// copied values the way the standalone app saved them.
     static func runOnce(_ defaults: UserDefaults = .standard,

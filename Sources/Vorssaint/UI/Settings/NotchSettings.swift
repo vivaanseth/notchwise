@@ -51,6 +51,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchReturnHome) private var returnHome = false
     @AppStorage(DefaultsKey.notchHomeModule) private var homeModule = NotchModule.controls.rawValue
     @AppStorage(DefaultsKey.notchOpensActivity) private var opensActivity = true
+    @AppStorage(DefaultsKey.notchSuggestions) private var suggestions = true
     @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
     @AppStorage(DefaultsKey.notchModuleOrder) private var order = ""
     @AppStorage(DefaultsKey.notchVolume) private var volume = true
@@ -701,6 +702,13 @@ struct NotchSettings: View {
                     .labelsHidden()
                 }
                 switchRow("livephoto", editor.openActivity, caption: editor.openActivityHint, isOn: $opensActivity)
+            }
+            let hub = FeatureStrings.notchHub(l10n.language)
+            SettingsCard(title: hub.suggestionsTitle) {
+                switchRow("sparkles", hub.learn, caption: hub.learnHint, isOn: $suggestions)
+                SettingsRow(symbol: "clock.arrow.circlepath", title: hub.forgetTitle) {
+                    Button(hub.forget) { NotchIntentService.shared.forget() }
+                }
             }
             SettingsCard(title: text.display) {
                 switchRow("arrow.up.left.and.arrow.down.right", text.hideInFullscreen, isOn: $hideInFullscreen)

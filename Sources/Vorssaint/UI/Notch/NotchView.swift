@@ -165,12 +165,10 @@ struct NotchView: View {
                 .transition(.opacity)
             }
         } else if service.peeking {
-            HStack {
-                navigation
-                Spacer(minLength: 8)
-                NotchIconButton(symbol: "chevron.down", title: text.open) { service.open() }
-            }
-            .padding(.horizontal, NotchLayout.horizontalInset).padding(.top, service.geometry.safeContentTop)
+            // The preview is the dock: every page a click away, the likeliest
+            // first. A click on the strip above it opens the island as usual.
+            NotchHubPeek(service: service)
+                .padding(.horizontal, NotchLayout.horizontalInset).padding(.top, service.geometry.safeContentTop)
         } else if let activity = service.compactActivity {
             if service.showsCompactActivityPicker {
                 let layout = service.compactActivityPickerLayout
@@ -535,33 +533,6 @@ struct NotchView: View {
             return nil
         }
         return notice
-    }
-
-    private var navigationTitle: String {
-        let destination = service.reopeningDestination
-        return destination.appPanel || destination.sections
-            ? text.sectionsTitle : destination.module.title(l10n.language)
-    }
-
-    private var navigation: some View {
-        Button(action: service.toggleSections) {
-            HStack(spacing: 9) {
-                Image(systemName: "square.grid.2x2")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
-                Text(navigationTitle)
-                    .font(.system(size: 16, weight: .semibold))
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 10)
-            .frame(height: NotchLayout.navigationHeight)
-            .contentShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 12, lifts: false))
-        .accessibilityLabel(text.switchSection)
-        .accessibilityValue(navigationTitle)
-        .accessibilityIdentifier("notch.navigation")
-        .help(text.switchSection + "  ⌘K")
     }
 
     @ViewBuilder private var content: some View {

@@ -18,34 +18,52 @@ struct VOVoicePage: View {
     @ObservedObject var service: NotchService
     @ObservedObject private var agent = VOAssistantController.shared
     @ObservedObject private var voice = VOAssistantVoice.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Before anything is asked, the page is the island's hub too: what is
+    /// going on, the likeliest pages and every other page below the field.
+    /// Listening or answering, it steps aside for the conversation.
+    private var showsHub: Bool {
+        agent.turns.isEmpty && agent.hint == nil && (agent.phase == .idle || agent.phase == .collapsed)
+            && !service.hubModules.isEmpty
+    }
 
     var body: some View {
-        VOExpandedNotch()
-            .fixedSize(horizontal: false, vertical: true)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { service.updateVoiceHeight($0) }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            // VoiceOS's dark blue fade at the island's foot, out to its
-            // edges; the island's own outline clips it.
-            .background {
-                VOVoiceBackdrop()
-                    .padding(.horizontal, -NotchLayout.horizontalInset)
-                    .padding(.bottom, -NotchLayout.bottomInset)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 0) {
+            VOExpandedNotch()
+            if showsHub {
+                NotchHubView(service: service, selection: agent.frontSelection) { agent.submit($0) }
+                    .padding(.horizontal, 8)
+                    .padding(.top, 14)
+                    .transition(.opacity)
             }
-            .notchBand(leading: {
-                VOJarvisGlyph(size: 17, active: agent.phase == .listening || agent.phase == .thinking || voice.speaking)
-                    .padding(.leading, 6)
-                    .accessibilityHidden(true)
-            }, trailing: {
-                if !agent.turns.isEmpty {
-                    NotchIconButton(symbol: "square.and.pencil", title: "New conversation") {
-                        agent.turns.removeAll()
-                        agent.phase = .idle
-                    }
+        }
+        .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: showsHub)
+        .fixedSize(horizontal: false, vertical: true)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { service.updateVoiceHeight($0) }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // VoiceOS's dark blue fade at the island's foot, out to its
+        // edges; the island's own outline clips it.
+        .background {
+            VOVoiceBackdrop()
+                .padding(.horizontal, -NotchLayout.horizontalInset)
+                .padding(.bottom, -NotchLayout.bottomInset)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .notchBand(leading: {
+            VOJarvisGlyph(size: 17, active: agent.phase == .listening || agent.phase == .thinking || voice.speaking)
+                .padding(.leading, 6)
+                .accessibilityHidden(true)
+        }, trailing: {
+            if !agent.turns.isEmpty {
+                NotchIconButton(symbol: "square.and.pencil", title: "New conversation") {
+                    agent.turns.removeAll()
+                    agent.phase = .idle
                 }
-                NotchIconButton(symbol: "xmark", title: "Close (Esc)") { agent.close() }
-            })
+            }
+            NotchIconButton(symbol: "xmark", title: "Close (Esc)") { agent.close() }
+        })
     }
 }
 

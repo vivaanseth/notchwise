@@ -8,6 +8,8 @@ import CoreGraphics
 /// Apps may always capture their own windows, so this works without Screen Recording permission.
 @MainActor
 enum VOSnapshotter {
+    static var isRequested: Bool { !(ProcessInfo.processInfo.environment["VOICEOS_SNAPSHOT"] ?? "").isEmpty }
+
     static func runIfRequested() -> Bool {
         guard let dir = ProcessInfo.processInfo.environment["VOICEOS_SNAPSHOT"], !dir.isEmpty else { return false }
         let out = URL(fileURLWithPath: dir)
@@ -85,6 +87,12 @@ enum VOSnapshotter {
         island.open(sections: true)
         await pause(1.0)
         shot("17-island-sections.png")
+        island.collapse()
+        await pause(0.9)
+        // The pointer resting on the closed island: the dock of pages.
+        island.previewPages()
+        await pause(1.0)
+        shot("18-island-peek.png")
         island.collapse()
         await pause(0.9)
 

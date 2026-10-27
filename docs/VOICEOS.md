@@ -53,6 +53,38 @@ VoiceOS's own notch window is gone; its look and behaviour live in that island:
   the sections button away. Calls other features make into the island (HUDs, captures, shelf
   drops, Command Bar, companion) are untouched.
 
+## Getting around the island
+
+Every page is one click away, from the closed island or the open one:
+
+- **Hover dock.** The pointer resting on the closed island grows it into a row of every page
+  (Vorssaint's "Preview on hover", which the combined app turns on once if the island still
+  opened on a click). Its first slot names the likeliest page and why ("Playing now", "In 8 min",
+  "Often with Safari"); a dot marks the other suggested ones. A click on an icon opens that
+  page; a click on the strip above opens the hub. Over a live activity's strip the dock waits a
+  little longer, so a click on the strip still opens the activity. `NotchHubPeek`.
+- **Hub.** The assistant's page, before anything is asked, is also the island's dashboard
+  (`NotchHubView`): under the field come "For you" cards for up to three suggested pages
+  (the song with play/pause, the timer with its clock and pause, the next event's title), then
+  every other page with its name. With text selected in the app in front it offers Summarize,
+  Explain and Improve, which ask the assistant about the selection. Listening or answering, the
+  hub steps aside for the conversation.
+- **Swipe.** Two fingers sideways on an open page, away from its own scrolling lists, turn to the
+  next or previous page in the sections' order; on the player they still skip tracks.
+- **Suggestions** (`NotchIntentSupport.swift`, `NotchIntentService.swift`). A small naive Bayes
+  model learns which page is opened in which moment: the app in front (bundle id), the kind of
+  window it shows (one word, *meeting*, *media*, *code* or *writing*, read from the title,
+  which is never stored), the part of the day and weekday or weekend. A page counts as chosen
+  once it stays open 1.5 s. Until it has learned a dozen or so choices, it leans on built-in
+  pairings of kinds of apps with pages (a browser with Clipboard and Downloads, a code editor
+  with AI agents usage and Scratchpad, a call with Camera and Mixer). On top, what's going on
+  right now always counts: a song playing, a running timer, an event within 15 minutes, a
+  download, working agents, a copy in the last 90 s or a capture in the last 3 minutes (only
+  their times are read, never their contents). Counts fade with each new choice. The model is a
+  few kilobytes in the app's preferences; Settings → Dynamic Island → Behavior → Suggestions
+  turns learning off (live signals still rank the pages) or forgets it. It runs no screen
+  capture and loads no second AI model.
+
 ## Conflicts and how they were resolved
 
 - **Super Key** (right ⌘, ⌥, ⌃ or ⇧ when not Caps Lock): Super Key keeps its key. VoiceOS stands
@@ -93,13 +125,14 @@ rest, since the combined app has its own identity.
 ```sh
 ./build.sh                                   # build/stage/Vorssaint + VoiceOS.app
 ./build.sh --test                            # the test suite (about 25 min on an i5)
-Tools/voiceos-harness.sh snapshot /tmp/shots # island states, pill, VoiceOS settings pages
+Tools/voiceos-harness.sh snapshot /tmp/shots # island states, hover dock, pill, VoiceOS settings pages
 Tools/voiceos-harness.sh selftest /tmp/st.txt
 ```
 
 The harness runs a copy with a throwaway bundle id and only the island, the assistant and the
 settings window: no Vorssaint system features, global hotkeys or menu bar items, and actions are
-never executed. Snapshots draw the app's own views, so they need no Screen Recording permission.
+never executed. Snapshots draw the app's own views, so they need no Screen Recording permission,
+and they load no Ollama model and start no Claude session; the self-test does both.
 
 ## Verified, and still to check by hand
 
