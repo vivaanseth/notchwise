@@ -39,6 +39,16 @@ enum NotchIntentTests {
                                calendar: calendar)
         suite.expect(xcode.first?.module == .agents && xcode.first?.reason == .app("Xcode"),
                      "before anything is learned, a coding app suggests the agents' usage")
+        suite.expect(NotchIntentModel.opening(xcode)?.module == .agents,
+                     "a coding app in front opens the island on the agents' usage")
+        let safari = empty.rank(pages + [.downloads],
+                                in: NotchIntentContext(app: "com.apple.Safari", appName: "Safari", date: tuesday),
+                                calendar: calendar)
+        suite.expect(NotchIntentModel.opening(safari) == nil && NotchIntentModel.opening(even) == nil,
+                     "a near tie, or nothing at all, leaves the island to open on its home page")
+        suite.expect(!NotchIntentSignal.copied.opensPage && !NotchIntentSignal.captured.opensPage
+                        && NotchIntentSignal.meetingSoon.opensPage,
+                     "a copy or a capture only hints; an event about to start opens its page")
         suite.expect(NotchIntentPriors.weight(of: .agents, app: "com.jetbrains.intellij") > 0,
                      "a family of apps is matched by its bundle id's prefix")
 

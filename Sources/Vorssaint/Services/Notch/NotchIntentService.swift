@@ -33,8 +33,12 @@ final class NotchIntentService: ObservableObject {
             .flatMap { try? JSONDecoder().decode(NotchIntentModel.self, from: $0) } ?? NotchIntentModel()
     }
 
-    /// Learning and the habits it draws on; live signals rank pages either way.
+    /// Learning and the habits it draws on; the app in front and what is
+    /// going on rank pages either way.
     var learns: Bool { UserDefaults.standard.bool(forKey: DefaultsKey.notchSuggestions) }
+
+    /// Opening the island goes straight to the page that clearly fits.
+    var opensFittingPage: Bool { UserDefaults.standard.bool(forKey: DefaultsKey.notchOpensFittingPage) }
 
     func syncWithPreferences() {
         guard activationObserver == nil else { return }
@@ -61,14 +65,24 @@ final class NotchIntentService: ObservableObject {
     /// Ranks `modules` for this moment and publishes the ones worth showing.
     @discardableResult
     func refresh(modules: [NotchModule], limit: Int = 3) -> [NotchIntentSuggestion] {
-        let context = context()
-        let ranked = learns ? model.rank(modules, in: context)
-            // Without learning, only what is going on decides.
-            : NotchIntentModel().rank(modules, in: NotchIntentContext(date: context.date, signals: context.signals))
-        let notable = NotchIntentModel.notable(ranked, limit: limit)
-        let shown = learns ? notable : notable.filter { if case .live = $0.reason { return true }; return false }
+        let shown = NotchIntentModel.notable(rank(modules, in: context()), limit: limit)
         if suggestions != shown { suggestions = shown }
         return shown
+    }
+
+    /// The page the island opens on when it clearly fits the moment: the
+    /// agents' usage with a coding app in front, the player with a music app,
+    /// a page picked a few minutes ago. A copy or a capture only hints.
+    func fittingPage(modules: [NotchModule]) -> NotchModule? {
+        guard opensFittingPage else { return nil }
+        var context = context()
+        context.signals = context.signals.filter(\.opensPage)
+        return NotchIntentModel.opening(rank(modules, in: context))?.module
+    }
+
+    /// Without learning, the habits are left out and only the moment counts.
+    private func rank(_ modules: [NotchModule], in context: NotchIntentContext) -> [NotchIntentSuggestion] {
+        (learns ? model : NotchIntentModel()).rank(modules, in: context)
     }
 
     /// The person opened `module`; once it stays, the moment it was opened
@@ -120,8 +134,7 @@ final class NotchIntentService: ObservableObject {
            now.timeIntervalSince(copied) < 90 { signals.insert(.copied) }
         if let captured = RecentCaptureService.shared.entries.lazy.map(\.createdAt).max(),
            now.timeIntervalSince(captured) < 180 { signals.insert(.captured) }
-        return NotchIntentContext(app: learns ? front?.id : nil, appName: front?.name,
-                                  scene: learns ? scene : nil, date: now, signals: signals)
+        return NotchIntentContext(app: front?.id, appName: front?.name, scene: scene, date: now, signals: signals)
     }
 
     /// The minutes until the next event, for the hub's calendar card.
@@ -142,7 +155,7 @@ final class NotchIntentService: ObservableObject {
     /// to answer Accessibility never holds the island up, and only the word
     /// it reduces to is kept.
     private func readScene(pid: pid_t, app: String) {
-        guard learns else { scene = nil; return }
+        guard learns || opensFittingPage else { scene = nil; return }
         sceneSerial += 1
         let serial = sceneSerial
         guard AXIsProcessTrusted() else {

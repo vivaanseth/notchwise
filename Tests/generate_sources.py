@@ -1298,7 +1298,7 @@ def main():
           + declaration(notch, "    func open(_ module:")
               .replace("NotchSupport.isEnabled()", "NotchSupport.isEnabled(in: ReviewDefaults.current)")
           + "func removeHoverExitMonitors() {}\n"
-          + "func learnChoice(_ module: NotchModule) {}\n"
+          + "func learnChoice(_ module: NotchModule) {}\nvar fittingPage: NotchModule? { nil }\n"
           + declaration(notch, "    func showScratchpad(")
               .replace("NotchSupport.routesScratchpad()", "NotchSupport.routesScratchpad(in: ReviewDefaults.current)")
           + declaration(notch, "    func showClipboard(")

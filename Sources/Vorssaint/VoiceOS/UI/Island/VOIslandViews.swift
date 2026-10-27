@@ -20,9 +20,10 @@ struct VOVoicePage: View {
     @ObservedObject private var voice = VOAssistantVoice.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Before anything is asked, the page is the island's hub too: what is
-    /// going on, the likeliest pages and every other page below the field.
-    /// Listening or answering, it steps aside for the conversation.
+    /// Before anything is asked, the page is the island's home too: the
+    /// day's events, a small mirror, quick controls and the song playing
+    /// below the field. Listening or answering, it steps aside for the
+    /// conversation.
     private var showsHub: Bool {
         agent.turns.isEmpty && agent.hint == nil && (agent.phase == .idle || agent.phase == .collapsed)
             && !service.hubModules.isEmpty
@@ -55,6 +56,8 @@ struct VOVoicePage: View {
             VOJarvisGlyph(size: 17, active: agent.phase == .listening || agent.phase == .thinking || voice.speaking)
                 .padding(.leading, 6)
                 .accessibilityHidden(true)
+            // The island's pages, at the top of its home.
+            NotchHubPageBar(service: service, reserved: 29)
         }, trailing: {
             if !agent.turns.isEmpty {
                 NotchIconButton(symbol: "square.and.pencil", title: "New conversation") {

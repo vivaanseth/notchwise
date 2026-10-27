@@ -22,12 +22,10 @@ enum VOHarness {
     static func runAndExit() -> Never {
         MainActor.assumeIsolated {
             // Registered, not saved: a real install keeps its own choices.
-            UserDefaults.standard.register(defaults: MergedSettingsImport.voiceOSIsland
-                .merging(MergedSettingsImport.islandHub) { _, new in new }
-                .merging([
-                    AppFeature.notch.availabilityKey: true,
-                    DefaultsKey.notchEnabled: true,
-                ]) { _, new in new })
+            UserDefaults.standard.register(defaults: MergedSettingsImport.voiceOSIsland.merging([
+                AppFeature.notch.availabilityKey: true,
+                DefaultsKey.notchEnabled: true,
+            ]) { _, new in new })
             let app = NSApplication.shared
             let delegate = VOHarnessDelegate()
             app.delegate = delegate

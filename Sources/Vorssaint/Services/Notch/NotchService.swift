@@ -574,6 +574,10 @@ final class NotchService: ObservableObject {
     /// A page asked for by name is a choice the suggestions can learn from.
     private func learnChoice(_ module: NotchModule) { NotchIntentService.shared.chose(module) }
 
+    /// The page that clearly fits what the person is doing, which opening
+    /// the island goes to before its home page.
+    private var fittingPage: NotchModule? { NotchIntentService.shared.fittingPage(modules: hubModules) }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -1404,13 +1408,15 @@ final class NotchService: ObservableObject {
 
     /// Opening without a page shows what the closed island is already
     /// presenting: a mirrored banner, or an activity unless the user turned
-    /// that off. Otherwise the reopening preference decides.
+    /// that off. Next comes the page that clearly fits what the person is
+    /// doing; otherwise the reopening preference decides.
     var reopeningDestination: (module: NotchModule, appPanel: Bool, sections: Bool) {
         if !expanded {
             let opensActivity = UserDefaults.standard.object(forKey: DefaultsKey.notchOpensActivity) as? Bool ?? true
             let activity = notice?.notificationID != nil ? NotchModule.notifications
                 : opensActivity ? compactActivity?.module : nil
             if let activity, modules.contains(activity) { return (activity, false, false) }
+            if let fittingPage { return (fittingPage, false, false) }
             if UserDefaults.standard.bool(forKey: DefaultsKey.notchReturnHome) {
                 let saved = UserDefaults.standard.string(forKey: DefaultsKey.notchHomeModule) ?? ""
                 switch NotchReopeningDestination(rawValue: saved) {

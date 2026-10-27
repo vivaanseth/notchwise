@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
 
+import EventKit
 import SwiftUI
 
 /// The hub and the hover dock share these measures; the service sizes the
@@ -13,11 +14,6 @@ enum NotchHubLayout {
     static let peekDividerRoom: CGFloat = 17
     static let peekMaximumWidth: CGFloat = 720
     static let peekRowHeight: CGFloat = 36
-    static let dockCellHeight: CGFloat = 50
-    static let dockSpacing: CGFloat = 6
-    static let dockMinimumCellWidth: CGFloat = 56
-    static let cardHeight: CGFloat = 50
-
     /// The hover dock for `count` pages: its width, how many icons it
     /// shows, and whether the last slot opens all the pages instead.
     static func peek(count: Int, screenWidth: CGFloat, minimumWidth: CGFloat) -> (width: CGFloat, icons: Int, overflows: Bool) {
@@ -30,60 +26,70 @@ enum NotchHubLayout {
         let slots = CGFloat(icons + (overflows ? 1 : 0))
         return (min(limit, max(minimumWidth, chrome + slots * pitch - peekSpacing)), icons, overflows)
     }
-
-    /// The hub's dock in rows as even as the pages allow.
-    static func dockColumns(count: Int, width: CGFloat) -> Int {
-        guard count > 0 else { return 1 }
-        let widest = max(1, Int((width + dockSpacing) / (dockMinimumCellWidth + dockSpacing)))
-        let rows = (count + widest - 1) / widest
-        return (count + rows - 1) / rows
-    }
 }
 
 extension NotchModule {
-    /// The sections gallery's colours, so a page looks the same everywhere.
+    /// One colour per page, muted, so the switcher and the dock read at a
+    /// glance; the sections gallery keeps its own.
     var hubTint: Color {
         switch self {
         case .music: return .pink
         case .calendar: return .red
         case .timer: return .orange
         case .voice: return Color(red: 0.55, green: 0.75, blue: 1)
-        default: return .white.opacity(0.85)
+        case .agents: return Color(red: 1, green: 0.62, blue: 0.42)
+        case .clipboard: return .teal
+        case .files, .downloads: return Color(red: 0.45, green: 0.7, blue: 1)
+        case .captures, .camera: return .mint
+        case .system: return .green
+        case .tools: return .purple
+        case .scratchpad: return .yellow
+        case .mixer: return .indigo
+        case .notifications: return Color(red: 1, green: 0.42, blue: 0.42)
+        case .watch: return .cyan
+        case .controls: return .white.opacity(0.85)
         }
     }
 }
 
-/// The assistant's page with nothing asked yet: what is going on and what
-/// the person likely wants next, every page one click away, and quick asks
-/// about text selected in the app in front.
+/// The assistant's page with nothing asked yet is the island's home: the
+/// days's events, a small mirror, the controls reached for most and the song
+/// playing, with quick asks about text selected in the app in front.
 struct NotchHubView: View {
     @ObservedObject var service: NotchService
     /// Text selected in the app in front when the island opened.
     let selection: String?
     let ask: (String) -> Void
     @ObservedObject private var intent = NotchIntentService.shared
+    @ObservedObject private var music = NotchMusicService.shared
     @ObservedObject private var l10n = L10n.shared
     private var text: NotchHubStrings { FeatureStrings.notchHub(l10n.language) }
-    private var width: CGFloat { max(0, service.contentSize.width - 16) }
+    private static let side: CGFloat = 196
+    private static let widgetHeight: CGFloat = 206
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             if selection != nil { selectionRow }
-            if !intent.suggestions.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Label(text.forYou, systemImage: "sparkles")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.5))
-                    HStack(spacing: 8) {
-                        ForEach(intent.suggestions) { NotchHubCard(service: service, suggestion: $0) }
+            HStack(alignment: .top, spacing: 10) {
+                NotchHubCalendarWidget(service: service)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Self.widgetHeight)
+                VStack(spacing: 8) {
+                    if NotchCameraSupport.isEnabled() {
+                        NotchHubCameraTile(service: service, size: CGSize(width: Self.side, height: 110))
                     }
+                    NotchHubActions(service: service, rows: NotchCameraSupport.isEnabled() ? 2 : 4)
                 }
+                .frame(width: Self.side, height: Self.widgetHeight, alignment: .top)
             }
-            dock
+            if music.playback != nil, service.modules.contains(.music) {
+                NotchHubNowPlaying(service: service)
+                    .transition(.opacity)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        // Ranked again while the hub shows, so a song starting or a meeting
-        // coming up reaches it without reopening the island.
+        // Ranked again while the home shows, so the switcher's marks follow
+        // a song starting or a meeting coming up.
         .task(id: service.hubModules) {
             while !Task.isCancelled {
                 intent.refresh(modules: service.hubModules)
@@ -117,161 +123,436 @@ struct NotchHubView: View {
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 13))
     }
+}
 
-    private var dock: some View {
-        let pages = service.hubModules
-        let columns = NotchHubLayout.dockColumns(count: pages.count, width: width)
-        let suggested = Set(intent.suggestions.map(\.module))
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: NotchHubLayout.dockSpacing), count: columns),
-                         spacing: NotchHubLayout.dockSpacing) {
-            ForEach(pages) { module in
-                NotchHubDockCell(module: module, suggested: suggested.contains(module), language: l10n.language) {
-                    service.select(module)
+/// The home's widgets share one card.
+private struct NotchHubCard<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        content()
+            .background(.white.opacity(0.06), in: shape)
+            .overlay { shape.strokeBorder(.white.opacity(0.06), lineWidth: 1).allowsHitTesting(false) }
+            .clipShape(shape)
+    }
+}
+
+/// Today's date and the next few events, each a click from its place on
+/// the Calendar page.
+private struct NotchHubCalendarWidget: View {
+    @ObservedObject var service: NotchService
+    @ObservedObject private var calendar = NotchCalendarService.shared
+    @ObservedObject private var permissions = Permissions.shared
+    @ObservedObject private var l10n = L10n.shared
+    private var text: NotchCalendarStrings { FeatureStrings.notchCalendar(l10n.language) }
+    private var locale: Locale { l10n.language.formattingLocale() }
+
+    var body: some View {
+        NotchHubCard {
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                VStack(alignment: .leading, spacing: 8) {
+                    header(context.date)
+                    content(context.date)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+        }
+    }
+
+    private func header(_ now: Date) -> some View {
+        Button { open(nil) } label: {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: -2) {
+                    Text(now.formatted(.dateTime.weekday(.wide).locale(locale)).uppercased())
+                        .font(.system(size: 10.5, weight: .bold))
+                        .foregroundStyle(.red)
+                    Text(now.formatted(.dateTime.day().locale(locale)))
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+                Spacer(minLength: 6)
+                if available, permissions.calendarAccess == .fullAccess, !upcoming(now).isEmpty {
+                    Text(text.next)
+                        .font(.system(size: 10.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .padding(.top, 2)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!available)
+        .help(text.openCalendar)
+    }
+
+    private var available: Bool {
+        service.modules.contains(.calendar) && NotchCalendarSupport.isEnabled()
+    }
+
+    @ViewBuilder private func content(_ now: Date) -> some View {
+        if !available {
+            Text(now.formatted(.dateTime.hour().minute().locale(locale)))
+                .font(.system(size: 34, weight: .light, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(.white.opacity(0.85))
+        } else if permissions.calendarAccess != .fullAccess {
+            VStack(alignment: .leading, spacing: 8) {
+                let denied = permissions.calendarAccess == .denied || permissions.calendarAccess == .restricted
+                Text(denied ? text.denied : text.permission)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
+                NotchPillButton(title: denied ? text.settings : text.allow, prominent: true) {
+                    if denied { permissions.openCalendarSettings() } else { permissions.requestCalendar() }
+                }
+                .disabled(permissions.requestingCalendar)
+            }
+        } else {
+            let upcoming = upcoming(now)
+            if upcoming.isEmpty {
+                Label(text.empty, systemImage: "calendar")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(upcoming) { event in row(event, now: now, first: event.id == upcoming.first?.id) }
                 }
             }
         }
     }
-}
 
-/// One page in the hub's dock: its mark and its name.
-private struct NotchHubDockCell: View {
-    let module: NotchModule
-    let suggested: Bool
-    let language: AppLanguage
-    let action: () -> Void
+    /// The next three events of the coming week.
+    private func upcoming(_ now: Date) -> [NotchCalendarEvent] {
+        Array(NotchCalendarSupport.upcoming(calendar.events, now: now)
+            .filter { $0.start < now.addingTimeInterval(7 * 24 * 3600) }.prefix(3))
+    }
 
-    var body: some View {
-        let title = module.title(language)
-        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
-        Button(action: action) {
-            VStack(spacing: 5) {
-                Image(systemName: module.symbol)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(module.hubTint)
-                    .frame(height: 19)
-                Text(title)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.78))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+    private func row(_ event: NotchCalendarEvent, now: Date, first: Bool) -> some View {
+        let ongoing = event.start <= now && event.end > now
+        let minutes = Int((event.start.timeIntervalSince(now) / 60).rounded(.up))
+        return Button { open(event) } label: {
+            HStack(spacing: 8) {
+                Capsule()
+                    .fill(event.color.color)
+                    .frame(width: 3, height: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(event.title.isEmpty ? text.untitled : event.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text(time(event, now: now))
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 4)
+                if ongoing {
+                    Circle().fill(event.color.color).frame(width: 7, height: 7)
+                        .accessibilityLabel(text.ongoing)
+                } else if first, !event.allDay, minutes > 0, minutes <= 60 {
+                    Text(String(format: FeatureStrings.notchHub(l10n.language).startsIn, minutes))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(event.color.color)
+                        .padding(.horizontal, 7)
+                        .frame(height: 18)
+                        .background(event.color.color.opacity(0.16), in: Capsule())
+                }
             }
-            .padding(.horizontal, 4)
-            .frame(maxWidth: .infinity)
-            .frame(height: NotchHubLayout.dockCellHeight)
-            .background(.white.opacity(suggested ? 0.1 : 0.045), in: shape)
-            .overlay { shape.strokeBorder(.white.opacity(suggested ? 0.22 : 0), lineWidth: 1) }
-            .contentShape(shape)
+            .padding(.horizontal, 6)
+            .frame(height: 38)
+            .background(.white.opacity(first ? 0.06 : 0), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 12, lifts: false))
-        .help(title + "  ⌥⌘" + module.shortcutKey.uppercased())
-        .accessibilityLabel(title)
-        .accessibilityIdentifier("notch.hub.\(module.rawValue)")
+        .buttonStyle(NotchButtonStyle(cornerRadius: 10, lifts: false))
+    }
+
+    private func time(_ event: NotchCalendarEvent, now: Date) -> String {
+        if event.allDay { return text.allDay }
+        if Calendar.current.isDate(event.start, inSameDayAs: now) {
+            let range = event.start.formatted(.dateTime.hour().minute().locale(locale)) + " – "
+                + event.end.formatted(.dateTime.hour().minute().locale(locale))
+            return range
+        }
+        return NotchCalendarSupport.tileStartText(event.start, now: now, locale: locale)
+    }
+
+    private func open(_ event: NotchCalendarEvent?) {
+        if let event { calendar.revealing = event.id }
+        service.select(.calendar)
     }
 }
 
-/// A suggested page with what makes it likely now. The player and the timer
-/// keep their one control on the card, so pausing needs no trip to the page.
-private struct NotchHubCard: View {
+/// A small mirror: one click starts the camera, and leaving the home or
+/// closing the island stops it, as leaving the camera's own page does.
+private struct NotchHubCameraTile: View {
     @ObservedObject var service: NotchService
-    let suggestion: NotchIntentSuggestion
-    @ObservedObject private var music = NotchMusicService.shared
-    @ObservedObject private var timer = NotchTimerService.shared
-    @ObservedObject private var calendar = NotchCalendarService.shared
+    let size: CGSize
+    @ObservedObject private var camera = CameraPreviewService.shared
     @ObservedObject private var l10n = L10n.shared
-    private var module: NotchModule { suggestion.module }
-    private var text: NotchHubStrings { FeatureStrings.notchHub(l10n.language) }
+    private var text: NotchActivityStrings { FeatureStrings.notchActivities(l10n.language) }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-        ZStack(alignment: .trailing) {
-            Button { service.select(module) } label: {
-                HStack(spacing: 9) {
-                    mark
+        Group {
+            if camera.isEmbeddedPresented {
+                CameraPreviewView(size: size, showsCameraMenu: false)
+                    .overlay(alignment: .topTrailing) {
+                        HStack(spacing: 4) {
+                            control("arrow.up.left.and.arrow.down.right", NotchModule.camera.title(l10n.language)) {
+                                service.select(.camera)
+                            }
+                            control("xmark", text.stopCamera) { camera.hideEmbedded() }
+                        }
+                        .padding(6)
+                    }
+            } else {
+                Button { camera.showEmbedded() } label: {
+                    NotchHubCard {
+                        ZStack {
+                            LinearGradient(colors: [Color.mint.opacity(0.16), .clear],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                            VStack(spacing: 7) {
+                                Image(systemName: "web.camera")
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundStyle(.mint)
+                                    .frame(width: 36, height: 36)
+                                    .background(Color.mint.opacity(0.14), in: Circle())
+                                Text(text.startCamera)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.75))
+                                    .lineLimit(1)
+                            }
+                        }
+                        .frame(width: size.width, height: size.height)
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(NotchButtonStyle(cornerRadius: 16, lifts: false))
+                .help(text.cameraHint)
+                .accessibilityLabel(text.startCamera)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .onDisappear { if service.selected != .camera { camera.hideEmbedded() } }
+    }
+
+    private func control(_ symbol: String, _ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(.black.opacity(0.55), in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(NotchButtonStyle(cornerRadius: 11))
+        .help(title)
+        .accessibilityLabel(title)
+    }
+}
+
+/// The controls reached for most, coloured by what they do, lit while on.
+private struct NotchHubActions: View {
+    @ObservedObject var service: NotchService
+    let rows: Int
+    @ObservedObject private var awake = KeepAwakeManager.shared
+    @ObservedObject private var microphone = MicMuteService.shared
+    @ObservedObject private var recorder = ScreenRecorderService.shared
+    @ObservedObject private var l10n = L10n.shared
+    private static let order: [NotchControlItem] = [
+        .screenshot, .recording, .keepAwake, .microphone, .scratchpad, .commandBar, .timer, .speedTest, .mixer,
+        .panel, .calendar, .music,
+    ]
+
+    var body: some View {
+        let items = Array(Self.order.filter { $0.isAvailable() }.prefix(rows * 3))
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
+            ForEach(items) { item in tile(item) }
+        }
+    }
+
+    private func tile(_ item: NotchControlItem) -> some View {
+        let on = active(item)
+        let tint = Self.tint(item)
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        let title = item.title(l10n)
+        return Button { service.activateQuickAction(.control(item)) } label: {
+            Image(systemName: symbol(item, on: on))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(on ? .white : tint)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(maxWidth: .infinity)
+                .frame(height: 41)
+                .background(on ? tint.opacity(0.85) : tint.opacity(0.13), in: shape)
+                .contentShape(shape)
+        }
+        .buttonStyle(NotchButtonStyle(cornerRadius: 12))
+        .help(title)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    private func active(_ item: NotchControlItem) -> Bool {
+        switch item {
+        case .keepAwake: return awake.isActive
+        case .microphone: return microphone.isMuted
+        case .recording: return recorder.isRecording
+        default: return false
+        }
+    }
+
+    private func symbol(_ item: NotchControlItem, on: Bool) -> String {
+        switch item {
+        case .keepAwake: return on ? "cup.and.saucer.fill" : "cup.and.saucer"
+        case .microphone: return on ? "mic.slash.fill" : "mic.fill"
+        case .recording: return on ? "stop.circle.fill" : "record.circle"
+        default: return item.symbol
+        }
+    }
+
+    private static func tint(_ item: NotchControlItem) -> Color {
+        switch item {
+        case .screenshot: return .cyan
+        case .recording, .microphone: return Color(red: 1, green: 0.42, blue: 0.42)
+        case .keepAwake, .timer: return .orange
+        case .scratchpad: return .yellow
+        case .commandBar, .panel: return .purple
+        case .speedTest: return .green
+        case .mixer: return .indigo
+        case .calendar: return .red
+        case .music: return .pink
+        default: return .white
+        }
+    }
+}
+
+/// The song playing, tinted by its cover, with the player's three buttons.
+private struct NotchHubNowPlaying: View {
+    @ObservedObject var service: NotchService
+    @ObservedObject private var music = NotchMusicService.shared
+    @ObservedObject private var l10n = L10n.shared
+    private var player: RadialMenuFeatureStrings { FeatureStrings.radialMenu(l10n.language) }
+
+    var body: some View {
+        let tint = music.artworkTint?.color ?? .pink
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        HStack(spacing: 10) {
+            Button { service.select(.music) } label: {
+                HStack(spacing: 10) {
+                    Group {
+                        if let artwork = music.artwork {
+                            Image(nsImage: artwork).resizable().scaledToFill()
+                        } else {
+                            Image(systemName: NotchModule.music.symbol)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(tint)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(tint.opacity(0.16))
+                        }
+                    }
+                    .frame(width: 36, height: 36)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(title)
+                        Text(music.playback?.track.title ?? NotchModule.music.title(l10n.language))
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
-                        detail
-                            .font(.system(size: 10.5))
-                            .foregroundStyle(.white.opacity(0.55))
-                            .lineLimit(1)
+                        if let artist = music.playback?.track.artist, !artist.isEmpty {
+                            Text(artist)
+                                .font(.system(size: 10.5))
+                                .foregroundStyle(.white.opacity(0.55))
+                                .lineLimit(1)
+                        }
                     }
-                    Spacer(minLength: control == nil ? 0 : 30)
+                    Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 10)
-                .frame(maxWidth: .infinity)
-                .frame(height: NotchHubLayout.cardHeight)
-                .background(.white.opacity(0.075), in: shape)
-                .contentShape(shape)
+                .contentShape(Rectangle())
             }
-            .buttonStyle(NotchButtonStyle(cornerRadius: 14, lifts: false))
-            .accessibilityLabel(title)
-            .accessibilityValue(reason)
-            if let control {
-                NotchIconButton(symbol: control.symbol, title: control.title, action: control.action)
-                    .padding(.trailing, 8)
+            .buttonStyle(.plain)
+            .help(NotchModule.music.title(l10n.language))
+            if music.playback?.isPlaying == true {
+                NotchLiveEqualizerBars(bars: 3, barWidth: 2, height: 11, tint: tint)
+                    .accessibilityHidden(true)
             }
+            control("backward.fill", player.mediaPrevious, .previous)
+            control(music.playback?.isPlaying == true ? "pause.fill" : "play.fill",
+                    music.playback?.isPlaying == true ? l10n.s.actionPause : l10n.s.actionPlay, .toggle)
+            control("forward.fill", player.mediaNext, .next)
         }
-        .frame(maxWidth: .infinity)
+        .padding(.leading, 8)
+        .padding(.trailing, 6)
+        .frame(height: 52)
+        .background {
+            LinearGradient(colors: [tint.opacity(0.28), tint.opacity(0.06)], startPoint: .leading, endPoint: .trailing)
+        }
+        .background(.white.opacity(0.04))
+        .clipShape(shape)
+        .overlay { shape.strokeBorder(.white.opacity(0.06), lineWidth: 1).allowsHitTesting(false) }
     }
 
-    @ViewBuilder private var mark: some View {
-        if module == .music, let artwork = music.artwork {
-            Image(nsImage: artwork).resizable().scaledToFill()
-                .frame(width: 28, height: 28)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-        } else {
+    private func control(_ symbol: String, _ title: String, _ command: NotchMusicService.Command) -> some View {
+        NotchIconButton(symbol: symbol, title: title) { _ = music.send(command) }
+            .disabled(!music.canPerform(command))
+    }
+}
+
+/// The home's top row: every page a click away, coloured as the dock is,
+/// with a dot on the ones the moment suggests. Where the row has no room
+/// for them all, the last place opens the sections.
+struct NotchHubPageBar: View {
+    @ObservedObject var service: NotchService
+    /// Room the row's other controls keep on this side.
+    var reserved: CGFloat = 0
+    @ObservedObject private var intent = NotchIntentService.shared
+    @ObservedObject private var l10n = L10n.shared
+    @Environment(\.notchBand) private var band
+    private static let pitch: CGFloat = 28 + 2
+
+    var body: some View {
+        let pages = service.hubModules
+        // Across the top the trailing controls take their room first: the
+        // close button, and a new conversation's beside it.
+        let room = (band.besideCamera ? band.side : band.side - 12 - 64) - reserved - 8
+        let fits = max(0, Int((room + 2) / Self.pitch))
+        let overflows = pages.count > fits
+        let shown = overflows ? max(0, fits - 1) : pages.count
+        let suggested = Set(intent.suggestions.map(\.module))
+        HStack(spacing: 2) {
+            ForEach(pages.prefix(shown)) { module in
+                icon(module, suggested: suggested.contains(module))
+            }
+            if overflows {
+                NotchIconButton(symbol: "ellipsis", title: FeatureStrings.notchHub(l10n.language).allPages,
+                                action: service.toggleSections)
+            }
+        }
+        .padding(.horizontal, 3)
+        .frame(height: 32)
+        .background(.white.opacity(0.05), in: Capsule())
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(FeatureStrings.notchHub(l10n.language).allPages)
+    }
+
+    private func icon(_ module: NotchModule, suggested: Bool) -> some View {
+        let title = module.title(l10n.language)
+        return Button { service.select(module) } label: {
             Image(systemName: module.symbol)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(module.hubTint)
-                .frame(width: 28, height: 28)
-                .background(module.hubTint.opacity(0.16), in: Circle())
-        }
-    }
-
-    private var title: String {
-        switch module {
-        case .music: return music.playback?.track.title ?? module.title(l10n.language)
-        case .calendar: return calendar.countdown?.event.title ?? module.title(l10n.language)
-        default: return module.title(l10n.language)
-        }
-    }
-
-    private var reason: String {
-        text.reason(suggestion.reason, minutes: NotchIntentService.shared.meetingMinutes)
-    }
-
-    @ViewBuilder private var detail: some View {
-        if module == .timer, timer.session.hasSession {
-            if timer.session.isRunning {
-                TimelineView(.periodic(from: .now, by: 1)) { _ in
-                    Text(NotchTimerSupport.clockText(for: timer.session, at: timer.now)).monospacedDigit()
+                .frame(width: 28, height: 26)
+                .overlay(alignment: .bottom) {
+                    if suggested {
+                        Circle().fill(module.hubTint).frame(width: 3, height: 3).offset(y: 1)
+                    }
                 }
-            } else {
-                Text(NotchTimerSupport.clockText(for: timer.session, at: timer.now)).monospacedDigit()
-            }
-        } else if module == .music, case .live = suggestion.reason, let artist = music.playback?.track.artist {
-            Text(artist)
-        } else {
-            Text(reason)
+                .contentShape(Rectangle())
         }
-    }
-
-    private var control: (symbol: String, title: String, action: () -> Void)? {
-        let strings = l10n.s
-        switch module {
-        case .music:
-            guard let playback = music.playback else { return nil }
-            return (playback.isPlaying ? "pause.fill" : "play.fill",
-                    playback.isPlaying ? strings.actionPause : strings.actionPlay, { _ = music.send(.toggle) })
-        case .timer:
-            guard timer.session.isRunning || timer.session.isPaused else { return nil }
-            return (timer.session.isRunning ? "pause.fill" : "play.fill",
-                    timer.session.isRunning ? strings.actionPause : strings.actionPlay, { timer.pauseOrResume() })
-        default:
-            return nil
-        }
+        .buttonStyle(NotchButtonStyle(cornerRadius: 8))
+        .help(title + "  ⌥⌘" + module.shortcutKey.uppercased())
+        .accessibilityLabel(title)
+        .accessibilityIdentifier("notch.pagebar.\(module.rawValue)")
     }
 }
 

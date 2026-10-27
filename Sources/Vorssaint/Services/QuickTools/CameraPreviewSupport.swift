@@ -19,8 +19,10 @@ enum NotchCameraSupport {
             && NotchSupport.modules(in: defaults).contains(.camera)
     }
 
+    /// The mirror runs on its own page, and small on the island's home, the
+    /// assistant's page, while that shows; leaving either stops it.
     static func canPresent(expanded: Bool, selected: NotchModule, appPanel: Bool,
                            captureControls: Bool, in defaults: UserDefaults = .standard) -> Bool {
-        isEnabled(in: defaults) && expanded && selected == .camera && !appPanel && !captureControls
+        isEnabled(in: defaults) && expanded && (selected == .camera || selected == .voice) && !appPanel && !captureControls
     }
 }

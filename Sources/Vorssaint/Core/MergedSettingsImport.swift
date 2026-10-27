@@ -34,24 +34,24 @@ enum MergedSettingsImport {
         DefaultsKey.notchModuleOrder: NotchModule.voice.rawValue,
     ]
 
-    /// Added with the island's hub: the closed island previews its pages
-    /// under the pointer, so any page is one click away instead of two. Set
-    /// once, and only on an island still opening on a click, as installed;
-    /// an opening chosen in Settings stays.
+    /// The island's first hub turned on "Preview on hover" once, to show
+    /// its dock of pages. Opening on the page that fits replaced the dock, so
+    /// a click opens the island again, as it did before, unless the opening
+    /// was chosen in Settings since.
     static let islandHubKey = "mergedIslandHubApplied"
-    static let islandHub: [String: Any] = [
-        DefaultsKey.notchOpenOnHover: true,
-        DefaultsKey.notchHoverExpands: false,
-    ]
+    static let islandClickKey = "mergedIslandClickRestored"
 
-    static func applyIslandHubOnce(_ defaults: UserDefaults = .standard,
-                                   bundleID: String? = Bundle.main.bundleIdentifier) {
-        guard bundleID == mergedBundleID, !defaults.bool(forKey: islandHubKey) else { return }
-        let opening = [DefaultsKey.notchOpenOnHover, DefaultsKey.notchHoverExpands, DefaultsKey.notchHideUntilHover]
-        if opening.allSatisfy({ defaults.object(forKey: $0) == nil }) {
-            for (key, value) in islandHub { defaults.set(value, forKey: key) }
+    static func restoreClickOpeningOnce(_ defaults: UserDefaults = .standard,
+                                        bundleID: String? = Bundle.main.bundleIdentifier) {
+        guard bundleID == mergedBundleID, !defaults.bool(forKey: islandClickKey) else { return }
+        if defaults.bool(forKey: islandHubKey),
+           defaults.object(forKey: DefaultsKey.notchOpenOnHover) as? Bool == true,
+           defaults.object(forKey: DefaultsKey.notchHoverExpands) as? Bool == false,
+           defaults.object(forKey: DefaultsKey.notchHideUntilHover) == nil {
+            defaults.removeObject(forKey: DefaultsKey.notchOpenOnHover)
+            defaults.removeObject(forKey: DefaultsKey.notchHoverExpands)
         }
-        defaults.set(true, forKey: islandHubKey)
+        defaults.set(true, forKey: islandClickKey)
     }
 
     /// Runs before `Defaults.register()`, so the migrations there see the

@@ -28,6 +28,10 @@ enum NotchIntentSignal: String, CaseIterable {
     func weight(of module: NotchModule) -> Double {
         targets.first { $0.module == module }?.weight ?? 0
     }
+
+    /// A copy or a capture happens all the time and only hints at a page;
+    /// the island suggests it but does not open on it.
+    var opensPage: Bool { self != .copied && self != .captured }
 }
 
 /// What the front window looks like it is for. It is read from the window's
@@ -257,6 +261,16 @@ struct NotchIntentModel: Codable, Equatable {
             if case .live = suggestion.reason { return true }
             return suggestion.confidence >= even * 1.6
         }.prefix(limit))
+    }
+
+    /// The page the island opens on without being asked: one that clearly
+    /// leads, at twice an even share and a quarter ahead of the next, never
+    /// a near tie between two.
+    static func opening(_ ranked: [NotchIntentSuggestion]) -> NotchIntentSuggestion? {
+        guard ranked.count > 1, let first = ranked.first else { return nil }
+        let even = 1 / Double(ranked.count)
+        guard first.confidence >= even * 2, first.confidence >= ranked[1].confidence * 1.25 else { return nil }
+        return first
     }
 
     private func reason(for module: NotchModule, in context: NotchIntentContext,

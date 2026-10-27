@@ -52,6 +52,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchHomeModule) private var homeModule = NotchModule.controls.rawValue
     @AppStorage(DefaultsKey.notchOpensActivity) private var opensActivity = true
     @AppStorage(DefaultsKey.notchSuggestions) private var suggestions = true
+    @AppStorage(DefaultsKey.notchOpensFittingPage) private var opensFittingPage = true
     @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
     @AppStorage(DefaultsKey.notchModuleOrder) private var order = ""
     @AppStorage(DefaultsKey.notchVolume) private var volume = true
@@ -705,6 +706,7 @@ struct NotchSettings: View {
             }
             let hub = FeatureStrings.notchHub(l10n.language)
             SettingsCard(title: hub.suggestionsTitle) {
+                switchRow("wand.and.stars", hub.fitting, caption: hub.fittingHint, isOn: $opensFittingPage)
                 switchRow("sparkles", hub.learn, caption: hub.learnHint, isOn: $suggestions)
                 SettingsRow(symbol: "clock.arrow.circlepath", title: hub.forgetTitle) {
                     Button(hub.forget) { NotchIntentService.shared.forget() }

@@ -916,6 +916,8 @@ enum DefaultsKey {
     static let notchHomeModule = "notchHomeModule"
     /// The hub and the hover dock learn which pages go with which moments.
     static let notchSuggestions = "notchSuggestions"
+    /// Opening the island goes to the page that clearly fits the moment.
+    static let notchOpensFittingPage = "notchOpensFittingPage"
     static let notchOpensActivity = "notchOpensActivity"
     static let notchHiddenModules = "notchHiddenModules"
     static let notchModuleOrder = "notchModuleOrder"
@@ -1514,6 +1516,7 @@ enum Defaults {
         DefaultsKey.notchReturnHome: false,
         DefaultsKey.notchHomeModule: NotchModule.controls.rawValue,
         DefaultsKey.notchSuggestions: true,
+        DefaultsKey.notchOpensFittingPage: true,
         DefaultsKey.notchOpensActivity: true,
         DefaultsKey.notchHiddenModules: "",
         DefaultsKey.notchModuleOrder: "",

@@ -55,34 +55,41 @@ VoiceOS's own notch window is gone; its look and behaviour live in that island:
 
 ## Getting around the island
 
-Every page is one click away, from the closed island or the open one:
-
-- **Hover dock.** The pointer resting on the closed island grows it into a row of every page
-  (Vorssaint's "Preview on hover", which the combined app turns on once if the island still
-  opened on a click). Its first slot names the likeliest page and why ("Playing now", "In 8 min",
-  "Often with Safari"); a dot marks the other suggested ones. A click on an icon opens that
-  page; a click on the strip above opens the hub. Over a live activity's strip the dock waits a
-  little longer, so a click on the strip still opens the activity. `NotchHubPeek`.
-- **Hub.** The assistant's page, before anything is asked, is also the island's dashboard
-  (`NotchHubView`): under the field come "For you" cards for up to three suggested pages
-  (the song with play/pause, the timer with its clock and pause, the next event's title), then
-  every other page with its name. With text selected in the app in front it offers Summarize,
-  Explain and Improve, which ask the assistant about the selection. Listening or answering, the
-  hub steps aside for the conversation.
+- **Opening on the page that fits.** A click (or ⌃⌥⌘I) opens what the closed island shows
+  first, as before: a song, a timer, the agents at work. With nothing showing, it opens on the
+  page that clearly fits the moment: AI agents with Claude, Terminal or a code editor in front,
+  the player with a music app, Calendar just before an event, a page picked a few minutes ago.
+  When nothing clearly leads, a near tie included, it opens on the home page.
+  `NotchService.reopeningDestination` → `NotchIntentService.fittingPage`. Settings → Dynamic
+  Island → Behavior → Suggestions → "Open on the page that fits" turns it off.
+- **Home.** The assistant's page, before anything is asked, is the island's home
+  (`NotchHubView`): under the field, a calendar card (the date and the next three events,
+  "In 8 min" on one about to start, each a click from its place on the Calendar page), a small
+  camera mirror that starts on a click and stops when the home closes, six colour-coded quick
+  controls (screenshot, recording, Keep Awake, microphone mute, Scratchpad, Command Bar; lit
+  while on), and the song playing, tinted by its cover, with previous, play/pause and next.
+  With text selected in the app in front it offers Summarize, Explain and Improve. Listening or
+  answering, the home steps aside for the conversation.
+- **Page switcher.** The home's top row holds every page as a coloured icon; a dot marks the
+  ones the moment suggests. Beside a physical camera, where fewer fit, the last one opens the
+  sections. The buttons around the island (Settings → Dynamic Island → Layout) are unchanged.
 - **Swipe.** Two fingers sideways on an open page, away from its own scrolling lists, turn to the
   next or previous page in the sections' order; on the player they still skip tracks.
+- **Hover dock.** With "Preview on hover" chosen, the pointer resting on the closed island grows
+  it into a dock of every page, the likeliest first (`NotchHubPeek`). The combined app opens on
+  a click, as Vorssaint does.
 - **Suggestions** (`NotchIntentSupport.swift`, `NotchIntentService.swift`). A small naive Bayes
   model learns which page is opened in which moment: the app in front (bundle id), the kind of
   window it shows (one word, *meeting*, *media*, *code* or *writing*, read from the title,
   which is never stored), the part of the day and weekday or weekend. A page counts as chosen
-  once it stays open 1.5 s. Until it has learned a dozen or so choices, it leans on built-in
-  pairings of kinds of apps with pages (a browser with Clipboard and Downloads, a code editor
-  with AI agents usage and Scratchpad, a call with Camera and Mixer). On top, what's going on
-  right now always counts: a song playing, a running timer, an event within 15 minutes, a
-  download, working agents, a copy in the last 90 s or a capture in the last 3 minutes (only
-  their times are read, never their contents). Counts fade with each new choice. The model is a
-  few kilobytes in the app's preferences; Settings → Dynamic Island → Behavior → Suggestions
-  turns learning off (live signals still rank the pages) or forgets it. It runs no screen
+  once it stays open 1.5 s; pages the island opened on by itself teach nothing. Until it has
+  learned about eight choices, it leans on built-in pairings of kinds of apps with pages (a
+  browser with Clipboard and Downloads, a code editor with AI agents usage and Scratchpad, a
+  call with Camera and Mixer). On top, what's going on right now counts: a song playing, a
+  running timer, an event within 15 minutes, a download, working agents, and, as hints only, a
+  copy in the last 90 s or a capture in the last 3 minutes (only their times are read, never
+  their contents). Counts fade with each new choice. The model is a few kilobytes in the app's
+  preferences; Settings → Suggestions turns learning off or forgets it. It runs no screen
   capture and loads no second AI model.
 
 ## Conflicts and how they were resolved

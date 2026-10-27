@@ -7,7 +7,7 @@ SuperKeyMappingGuard.runIfRequestedAndExit()
 // The combined app starts from the standalone apps' choices, copied once
 // before registration so its migrations see them as those apps saved them.
 MergedSettingsImport.runOnce()
-MergedSettingsImport.applyIslandHubOnce()
+MergedSettingsImport.restoreClickOpeningOnce()
 Defaults.register()
 NotchControlItem.keyboardLightIsSupported = { BrightnessService.keyboardLightIsSupported }
 MouseAccelerationGuard.runIfRequestedAndExit()

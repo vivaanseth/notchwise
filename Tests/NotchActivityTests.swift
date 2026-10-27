@@ -1039,6 +1039,8 @@ enum NotchActivityTests {
                && NotchAccessorySupport.isEnabled(in: defaults), "turning them back on restores their activity")
         suite.expect(NotchCameraSupport.canPresent(expanded: true, selected: .camera, appPanel: false,
             captureControls: false, in: defaults), "the mirror can start only on its selected, expanded surface")
+        suite.expect(NotchCameraSupport.canPresent(expanded: true, selected: .voice, appPanel: false,
+            captureControls: false, in: defaults), "the island's home shows the small mirror too")
         suite.expect(!NotchCameraSupport.canPresent(expanded: false, selected: .camera, appPanel: false,
             captureControls: false, in: defaults)
             && !NotchCameraSupport.canPresent(expanded: true, selected: .music, appPanel: false,
