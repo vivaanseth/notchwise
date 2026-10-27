@@ -371,6 +371,11 @@ struct NotchView: View {
             if !wraps {
                 bandLeading(band)
                 items.leading
+                // Every page reaches every other from its row, in what room
+                // its own controls leave; the home draws its bar itself.
+                if service.selected != .voice, !service.showingSections, !showsDetail {
+                    NotchHubPageBar(service: service)
+                }
             }
         } trailing: {
             if makesRoom {

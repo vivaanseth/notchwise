@@ -145,6 +145,10 @@ private struct NotchHubCalendarWidget: View {
     @ObservedObject private var calendar = NotchCalendarService.shared
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var l10n = L10n.shared
+    /// The next month of events, read for this card alone: the island keeps
+    /// only the week it shows elsewhere.
+    @State private var month: [NotchCalendarEvent] = []
+    private static let reader = NotchCalendarReader()
     private var text: NotchCalendarStrings { FeatureStrings.notchCalendar(l10n.language) }
     private var locale: Locale { l10n.language.formattingLocale() }
 
@@ -159,6 +163,19 @@ private struct NotchHubCalendarWidget: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
+        .task(id: calendar.events) { await readMonth() }
+        .onChange(of: permissions.calendarAccess) { Task { await readMonth() } }
+    }
+
+    /// Read again whenever the island reads its week, so an edit in
+    /// Calendar reaches the card too.
+    private func readMonth() async {
+        guard available, permissions.calendarAccess == .fullAccess else { month = []; return }
+        let start = Calendar.current.startOfDay(for: Date())
+        guard let end = Calendar.current.date(byAdding: .day, value: 31, to: start) else { return }
+        let read = await Self.reader.read(interval: DateInterval(start: start, end: end),
+                                          excluded: NotchCalendarSupport.excludedCalendars())
+        month = NotchCalendarSupport.ordered(read)
     }
 
     private func header(_ now: Date) -> some View {
@@ -217,17 +234,49 @@ private struct NotchHubCalendarWidget: View {
                     .foregroundStyle(.white.opacity(0.5))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(upcoming) { event in row(event, now: now, first: event.id == upcoming.first?.id) }
+                // A month ahead, a day at a time, scrolled within the card.
+                ScrollView(.vertical) {
+                    LazyVStack(alignment: .leading, spacing: 6) {
+                        ForEach(Array(days(upcoming, now: now).enumerated()), id: \.offset) { _, day in
+                            if day.date.map({ !Calendar.current.isDate($0, inSameDayAs: now) }) ?? false {
+                                Text(dayTitle(day.date!, now: now))
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.45))
+                                    .padding(.top, 4)
+                                    .padding(.leading, 6)
+                            }
+                            ForEach(day.events) { event in
+                                row(event, now: now, first: event.id == upcoming.first?.id)
+                            }
+                        }
+                    }
+                    .padding(.bottom, 4)
                 }
+                .scrollIndicators(.automatic)
+                .notchScrollEdgeFade()
             }
         }
     }
 
-    /// The next three events of the coming week.
+    /// Every event still to come in the month read, or in the island's week
+    /// until that read arrives.
     private func upcoming(_ now: Date) -> [NotchCalendarEvent] {
-        Array(NotchCalendarSupport.upcoming(calendar.events, now: now)
-            .filter { $0.start < now.addingTimeInterval(7 * 24 * 3600) }.prefix(3))
+        NotchCalendarSupport.upcoming(month.isEmpty ? calendar.events : month, now: now)
+    }
+
+    /// The events by the day they start, today's first.
+    private func days(_ events: [NotchCalendarEvent], now: Date) -> [(date: Date?, events: [NotchCalendarEvent])] {
+        var days: [(date: Date?, events: [NotchCalendarEvent])] = []
+        for event in events {
+            let day = Calendar.current.startOfDay(for: max(event.start, now))
+            if let last = days.last, last.date == day { days[days.count - 1].events.append(event) }
+            else { days.append((day, [event])) }
+        }
+        return days
+    }
+
+    private func dayTitle(_ day: Date, now: Date) -> String {
+        day.formatted(.dateTime.weekday(.wide).day().month(.abbreviated).locale(locale))
     }
 
     private func row(_ event: NotchCalendarEvent, now: Date, first: Bool) -> some View {
@@ -271,7 +320,8 @@ private struct NotchHubCalendarWidget: View {
 
     private func time(_ event: NotchCalendarEvent, now: Date) -> String {
         if event.allDay { return text.allDay }
-        if Calendar.current.isDate(event.start, inSameDayAs: now) {
+        // The day's heading names the day; the row needs only the hours.
+        if Calendar.current.isDate(event.start, inSameDayAs: event.end) || event.start <= now {
             let range = event.start.formatted(.dateTime.hour().minute().locale(locale)) + " – "
                 + event.end.formatted(.dateTime.hour().minute().locale(locale))
             return range
@@ -503,45 +553,58 @@ private struct NotchHubNowPlaying: View {
 /// for them all, the last place opens the sections.
 struct NotchHubPageBar: View {
     @ObservedObject var service: NotchService
-    /// Room the row's other controls keep on this side.
-    var reserved: CGFloat = 0
     @ObservedObject private var intent = NotchIntentService.shared
     @ObservedObject private var l10n = L10n.shared
-    @Environment(\.notchBand) private var band
+    /// The room the row leaves the bar, which it fills with as many pages
+    /// as fit; the page's own controls in the row take theirs first.
+    @State private var room: CGFloat = 0
     private static let pitch: CGFloat = 28 + 2
 
+    /// On the home every other page; on any other page the home leads them,
+    /// so every page is a click from every other.
+    private var pages: [NotchModule] {
+        service.selected == .voice ? service.hubModules : service.modules
+    }
+
     var body: some View {
-        let pages = service.hubModules
-        // Across the top the trailing controls take their room first: the
-        // close button, and a new conversation's beside it.
-        let room = (band.besideCamera ? band.side : band.side - 12 - 64) - reserved - 8
-        let fits = max(0, Int((room + 2) / Self.pitch))
+        let pages = pages
+        let fits = max(0, Int((room - 6 + 2) / Self.pitch))
         let overflows = pages.count > fits
         let shown = overflows ? max(0, fits - 1) : pages.count
         let suggested = Set(intent.suggestions.map(\.module))
-        HStack(spacing: 2) {
-            ForEach(pages.prefix(shown)) { module in
-                icon(module, suggested: suggested.contains(module))
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { room = $0 }
+            .overlay(alignment: .leading) {
+                if fits > 0 {
+                    HStack(spacing: 2) {
+                        ForEach(pages.prefix(shown)) { module in
+                            icon(module, suggested: suggested.contains(module))
+                        }
+                        if overflows {
+                            NotchIconButton(symbol: "ellipsis", title: FeatureStrings.notchHub(l10n.language).allPages,
+                                            action: service.toggleSections)
+                        }
+                    }
+                    .padding(.horizontal, 3)
+                    .frame(height: 32)
+                    .background(.white.opacity(0.05), in: Capsule())
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel(FeatureStrings.notchHub(l10n.language).allPages)
+                }
             }
-            if overflows {
-                NotchIconButton(symbol: "ellipsis", title: FeatureStrings.notchHub(l10n.language).allPages,
-                                action: service.toggleSections)
-            }
-        }
-        .padding(.horizontal, 3)
-        .frame(height: 32)
-        .background(.white.opacity(0.05), in: Capsule())
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(FeatureStrings.notchHub(l10n.language).allPages)
     }
 
     private func icon(_ module: NotchModule, suggested: Bool) -> some View {
-        let title = module.title(l10n.language)
+        let title = module == .voice ? FeatureStrings.notchHub(l10n.language).home : module.title(l10n.language)
+        let current = service.selected == module && !service.showingSections
         return Button { service.select(module) } label: {
-            Image(systemName: module.symbol)
+            Image(systemName: module == .voice ? "house" : module.symbol)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(module.hubTint)
                 .frame(width: 28, height: 26)
+                .background(.white.opacity(current ? 0.16 : 0), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(alignment: .bottom) {
                     if suggested {
                         Circle().fill(module.hubTint).frame(width: 3, height: 3).offset(y: 1)

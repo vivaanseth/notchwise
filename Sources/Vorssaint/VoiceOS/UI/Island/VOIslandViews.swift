@@ -57,7 +57,7 @@ struct VOVoicePage: View {
                 .padding(.leading, 6)
                 .accessibilityHidden(true)
             // The island's pages, at the top of its home.
-            NotchHubPageBar(service: service, reserved: 29)
+            NotchHubPageBar(service: service)
         }, trailing: {
             if !agent.turns.isEmpty {
                 NotchIconButton(symbol: "square.and.pencil", title: "New conversation") {
