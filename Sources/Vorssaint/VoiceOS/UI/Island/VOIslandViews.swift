@@ -17,7 +17,6 @@ private struct VOTurnsHeightKey: PreferenceKey {
 struct VOVoicePage: View {
     @ObservedObject var service: NotchService
     @ObservedObject private var agent = VOAssistantController.shared
-    @ObservedObject private var voice = VOAssistantVoice.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Before anything is asked, the page is the island's home too: the
@@ -27,6 +26,20 @@ struct VOVoicePage: View {
     private var showsHub: Bool {
         agent.turns.isEmpty && agent.hint == nil && (agent.phase == .idle || agent.phase == .collapsed)
             && !service.hubModules.isEmpty
+    }
+
+    private var lilGuyState: LilGuyState {
+        switch agent.phase {
+        case .listening, .transcribing: return .listening
+        case .thinking: return .thinking
+        default: return agent.turns.last?.actions.contains { $0.state == .running } == true ? .working : .idle
+        }
+    }
+
+    /// Once per answer: success, or an error when it failed.
+    private var lilGuyReaction: (state: LilGuyState, id: Int)? {
+        guard agent.phase == .answered, let turn = agent.turns.last, !turn.thinking else { return nil }
+        return (turn.error == nil ? .success : .error, turn.id.hashValue)
     }
 
     var body: some View {
@@ -53,8 +66,11 @@ struct VOVoicePage: View {
                 .accessibilityHidden(true)
         }
         .notchBand(leading: {
-            VOJarvisGlyph(size: 17, active: agent.phase == .listening || agent.phase == .thinking || voice.speaking)
-                .padding(.leading, 6)
+            // Lil Guy is the assistant's face: listening, thinking, working,
+            // then glad or cross at how it went.
+            LilGuyView(state: lilGuyState, reaction: lilGuyReaction, size: 24)
+                .frame(width: 24, height: 24)
+                .padding(.leading, 4)
                 .accessibilityHidden(true)
             // The island's pages, at the top of its home.
             NotchHubPageBar(service: service)

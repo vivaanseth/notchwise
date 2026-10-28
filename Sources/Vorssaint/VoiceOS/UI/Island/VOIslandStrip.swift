@@ -46,7 +46,8 @@ struct VOVoiceStrip: View {
         let mark = min(15, max(10, height - 10))
         return HStack(spacing: 0) {
             Group {
-                if wing >= 24 { VOJarvisGlyph(size: mark, active: true) }
+                // Lil Guy, the assistant's face, shows what it is doing.
+                if wing >= 24 { LilGuyView(state: activity.lilGuy, size: mark + 4).frame(width: mark + 4, height: mark + 4) }
             }
             .padding(.leading, geometry.compactActivityEdgeInset(boxHeight: mark, radius: mark / 2))
             .frame(width: wing, height: height, alignment: .leading)
@@ -67,8 +68,8 @@ struct VOVoiceStrip: View {
         let geometry = displayGeometry ?? service.geometry
         let side = NotchCapsuleLayout.side(geometry)
         return HStack(spacing: NotchCapsuleLayout.spacing) {
-            VOJarvisGlyph(size: NotchCapsuleLayout.symbolSize + 1, active: true)
-                .frame(width: NotchCapsuleLayout.symbolWidth)
+            LilGuyView(state: activity.lilGuy, size: NotchCapsuleLayout.symbolSize + 5)
+                .frame(width: NotchCapsuleLayout.symbolWidth, height: NotchCapsuleLayout.symbolSize + 5)
             Text(activity.reading)
                 .font(Font(NotchCapsuleLayout.titleFont as CTFont))
                 .lineLimit(1).fixedSize()
@@ -93,16 +94,28 @@ struct VOVoiceStrip: View {
     }
 }
 
+extension VOIslandActivity {
+    /// Lil Guy's face for what the assistant is doing.
+    var lilGuy: LilGuyState {
+        switch self {
+        case .listening: return .listening
+        case .thinking: return .thinking
+        case .speaking: return .idle
+        case .confirming: return .curious
+        }
+    }
+}
+
 /// What the idle island grows to show under the pointer, as VoiceOS's idle
-/// notch did: the Jarvis mark, "Ask VoiceOS" and a quiet wave. A click opens
-/// the assistant ready for typing.
+/// notch did: Lil Guy perking up, "Ask VoiceOS" and a quiet wave. A click
+/// opens the assistant ready for typing.
 struct VOAskHoverContent: View {
     let geometry: NotchGeometry
     let size: CGSize
 
     var body: some View {
         HStack(spacing: 6) {
-            VOJarvisGlyph(size: 12)
+            LilGuyView(state: .curious, size: 16).frame(width: 16, height: 16)
             Spacer(minLength: 4)
             Text("Ask VoiceOS").font(.system(size: 10.5, weight: .medium)).foregroundColor(.white.opacity(0.6))
                 .lineLimit(1).fixedSize()

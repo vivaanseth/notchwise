@@ -57,7 +57,8 @@ struct NotchMascotSettings: View {
                 NotchMascotStageCard(look: look, side: restingSide, awake: enabled, canGreet: enabled && islandOn,
                                      visits: visits, reactions: reactions, hides: hidesWhenIdle, text: text,
                                      language: l10n.language)
-                appearance
+                // The companion is Lil Guy, whose look is his own: the robot's
+                // styles, shapes and colours no longer apply.
                 behavior
                 commandBarCard
             }
@@ -107,90 +108,6 @@ struct NotchMascotSettings: View {
         }
         .padding(12)
         .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    // MARK: Appearance
-
-    private var appearance: some View {
-        SettingsCard(title: text.appearance) {
-            SettingsRow(symbol: "paintpalette", title: text.style) { EmptyView() }
-            HStack(spacing: 10) {
-                ForEach(NotchMascotStyle.allCases) { item in
-                    NotchMascotChoiceTile(title: text.style(item), selected: look.style == item) {
-                        style = item.rawValue
-                    } preview: {
-                        NotchMascotView(look: NotchMascotLook(style: item, shape: look.shape, palette: look.palette),
-                                        size: 30, idles: false)
-                            .frame(width: 30, height: 30)
-                            .frame(width: 64, height: 42)
-                            .background(Color.black, in: Capsule())
-                    }
-                }
-            }
-            .padding(.leading, settingsRowTextInset)
-            if look.style == .minimal {
-                SettingsRow(symbol: "circle.square", title: text.shape) {
-                    Text(text.shape(look.shape)).foregroundStyle(.secondary)
-                }
-                .transition(.opacity)
-                shapes
-                    .transition(.opacity)
-            }
-            SettingsRow(symbol: "swatchpalette", title: text.color) {
-                Text(text.palette(look.palette)).foregroundStyle(.secondary)
-            }
-            swatches
-        }
-        .animation(animation, value: look.style)
-    }
-
-    private var shapes: some View {
-        HStack(spacing: 8) {
-            ForEach(NotchMascotShape.allCases) { item in
-                let selected = look.shape == item
-                Button { shape = item.rawValue } label: {
-                    NotchMascotView(look: NotchMascotLook(style: .minimal, shape: item, palette: look.palette),
-                                    size: 24, idles: false)
-                        .frame(width: 24, height: 24)
-                        .frame(width: 58, height: 40)
-                        .background(Color.black, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .padding(2)
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 2))
-                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .help(text.shape(item))
-                .accessibilityLabel(text.shape(item))
-                .accessibilityAddTraits(selected ? .isSelected : [])
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: selected)
-            }
-        }
-        .padding(.leading, settingsRowTextInset)
-    }
-
-    private var swatches: some View {
-        HStack(spacing: 8) {
-            ForEach(NotchMascotPalette.allCases) { item in
-                let selected = look.palette == item
-                Button { palette = item.rawValue } label: {
-                    Circle()
-                        .fill(LinearGradient(colors: [Color(cgColor: item.light.cgColor), Color(cgColor: item.shade.cgColor)],
-                                             startPoint: .top, endPoint: .bottom))
-                        .frame(width: 22, height: 22)
-                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
-                        .padding(3)
-                        .overlay(Circle().strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 2))
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .help(text.palette(item))
-                .accessibilityLabel(text.palette(item))
-                .accessibilityAddTraits(selected ? .isSelected : [])
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: selected)
-            }
-        }
-        .padding(.leading, settingsRowTextInset)
     }
 
     // MARK: Behavior

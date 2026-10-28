@@ -118,6 +118,32 @@ VoiceOS's own notch window is gone; its look and behaviour live in that island:
   preferences; Settings → Suggestions turns learning off or forgets it. It runs no screen
   capture and loads no second AI model.
 
+## Lil Guy, the island's character
+
+Vorssaint's robot companion is gone; in its place is Lil Guy, the character from the
+`LilGuyFaces` package (an ESP32 project's eyes on a round black screen). His C++ face engine is
+vendored in `Sources/LilGuyFace` and built by `build.sh` into a static library the app links;
+Swift drives it through a small C interface (`LilGuyFace.h`) and shows his face in a layer
+(`LilGuyFace.swift`). The black of his screen is clear, so he sits on the island's own black.
+
+- **Where he lives.** Everywhere the companion did: resting in the closed island's wing, walking
+  through on visits, coming out over an activity to react, and in its Settings preview. The
+  robot's hops, squashes and strolls carry him; his own engine blinks, glances, follows the
+  pointer and dozes off after a long rest. Settings → Companion keeps its behaviour options; the
+  robot's styles, shapes and colours are gone.
+- **What he does.** The island's moments play his measured clips and states: a finished task or
+  download celebrates with sparkles, charging or petting him brings floating hearts, a timer
+  ending startles him, a screenshot is a long blink, a failure makes him dizzy, unlocking wakes
+  him, Keep Awake makes him yawn or go wide-eyed, an event starting pulses bolts in his pupils,
+  a timer starting gets a smug blink and music a smiling streak.
+- **The assistant's face.** He replaces the VoiceOS mark in the island: in the assistant page's
+  top row, in the closed island's strip while it works, and in "Ask VoiceOS" under the pointer.
+  He listens, looks up while it thinks, squints while an action runs, then smiles with a
+  sparkle when it answers or goes red-eyed when it fails.
+- **Cost.** He draws only when his face changes: between blinks and glances the engine says
+  when he next moves and nothing runs until then. Moving, a frame is about 1.5 ms on this Mac;
+  out of sight he stops.
+
 ## Conflicts and how they were resolved
 
 - **Super Key** (right ⌘, ⌥, ⌃ or ⇧ when not Caps Lock): Super Key keeps its key. VoiceOS stands

@@ -54,6 +54,10 @@ final class NotchMascotRig: NSObject {
     private let face = CALayer()
     private let leftEye = CAShapeLayer()
     private let rightEye = CAShapeLayer()
+    /// Lil Guy, the face the companion shows. The robot's body and eyes stay
+    /// hidden; its hops, squashes, tilts and strolls carry him, and his own
+    /// engine blinks, glances and plays his clips.
+    let lilGuy = LilGuyFace(sleeps: false)
     private var blinks = 0
     /// It grew sleepy on its own after a long rest, rather than being shown
     /// so, and anything that happens wakes it.
@@ -74,6 +78,7 @@ final class NotchMascotRig: NSObject {
         squasher.addSublayer(tilter)
         for layer in [ears, antenna, bulb, fill, visor, shine] { tilter.addSublayer(layer) }
         tilter.addSublayer(attention)
+        tilter.addSublayer(lilGuy.layer)
         attention.addSublayer(face)
         face.addSublayer(leftEye)
         face.addSublayer(rightEye)
@@ -162,6 +167,10 @@ final class NotchMascotRig: NSObject {
         leftEye.contentsScale = scale
         rightEye.contentsScale = scale
         apply(mood.expression, animated: false)
+        let body: [CALayer] = [ears, antenna, bulb, fill, visor, shine, self.face]
+        for layer in body { layer.isHidden = true }
+        lilGuy.place(in: box, scale: scale)
+        lilGuy.show(mood)
     }
 
     // MARK: Faces
@@ -170,6 +179,7 @@ final class NotchMascotRig: NSObject {
         guard mood != self.mood else { return }
         let previous = self.mood
         self.mood = mood
+        lilGuy.show(mood)
         dozed = false
         if mood != .sleepy { blinks = 0 }
         apply(mood.expression, animated: animated && !reduceMotion)
@@ -240,6 +250,7 @@ final class NotchMascotRig: NSObject {
     /// keeps on its own stays as it was.
     func turn(to mood: NotchMascotMood, at time: CFTimeInterval) {
         guard size > 0 else { return }
+        lilGuy.at(time) { [lilGuy] in lilGuy.show(mood) }
         let from = self.mood.expression, to = mood.expression
         for (layer, eyes, right) in [(leftEye, (from.left, to.left), false), (rightEye, (from.right, to.right), true)] {
             let morph = CABasicAnimation(keyPath: "path")
@@ -274,6 +285,7 @@ final class NotchMascotRig: NSObject {
         blinks = 0
         dozed = false
         apply(mood.expression, animated: false)
+        lilGuy.show(mood)
     }
 
     // MARK: Attention
@@ -312,6 +324,9 @@ final class NotchMascotRig: NSObject {
     /// keys typed in a row keep them there. Without it, they stay. Each turn
     /// starts where the eyes are, never where the last one meant to go.
     func attend(to target: CGPoint, hold: TimeInterval? = nil) {
+        // Shares of its size, at most about a twelfth across and a twentieth
+        // down, are Lil Guy's whole range.
+        lilGuy.look(x: target.x / 0.08, y: target.y / 0.05, hold: hold ?? 3)
         guard size > 0, !reduceMotion else { return }
         attended = CACurrentMediaTime()
         let from = attention.presentation()?.transform ?? attention.transform
@@ -340,6 +355,7 @@ final class NotchMascotRig: NSObject {
 
     /// Its eyes come back to the face it keeps, after `delay`.
     func lookAhead(after delay: TimeInterval = 0) {
+        lilGuy.at(CACurrentMediaTime() + delay) { [lilGuy] in lilGuy.lookAhead() }
         guard size > 0 else { return }
         let from = attention.presentation()?.transform ?? attention.transform
         CATransaction.begin()
@@ -362,6 +378,11 @@ final class NotchMascotRig: NSObject {
     // MARK: Cues
 
     func play(_ cue: NotchMascotCue) {
+        switch cue {
+        case .celebrate: lilGuy.set(.celebrate)
+        case .glance: lilGuy.set(.curious)
+        case .look: break
+        }
         guard size > 0, !reduceMotion else {
             if cue == .celebrate, reduceMotion { flashFace(.happy, duration: 1) }
             return
@@ -496,6 +517,7 @@ final class NotchMascotRig: NSObject {
     /// Reduce Motion it only changes face.
     func react(_ reaction: NotchMascotReaction, lift: CGFloat) {
         guard size > 0 else { return }
+        lilGuy.react(reaction)
         // Whatever it is, it wakes up for it.
         if dozed, reaction != .wakeUp { setMood(.idle, animated: !reduceMotion) }
         blinks = 0
@@ -671,6 +693,14 @@ final class NotchMascotRig: NSObject {
         // for a strip drawn after it, until the island moves on.
         guard now < start + path.duration || (holdsEnd && !reduceMotion) else { return }
         visitEnds = start + path.duration
+        // Lil Guy greets on the way, and is himself again after.
+        if path.greeting.upperBound > path.greeting.lowerBound {
+            lilGuy.at(start + path.greeting.lowerBound) { [lilGuy] in lilGuy.show(greeting) }
+            lilGuy.at(start + path.greeting.upperBound) { [weak self] in
+                guard let self else { return }
+                self.lilGuy.show(self.mood)
+            }
+        }
         if reduceMotion {
             // No stroll: it fades in where it would greet, says hello and fades out.
             let still = CAKeyframeAnimation(keyPath: "position")
@@ -733,6 +763,7 @@ final class NotchMascotRig: NSObject {
 
     /// Blinks wait while the layer is out of sight, and `visible` resumes them.
     func setIdles(_ idles: Bool, visible: Bool) {
+        lilGuy.visible = visible
         let wanted = idles && visible
         guard wanted != self.idles else { return }
         self.idles = wanted

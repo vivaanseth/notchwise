@@ -27,6 +27,8 @@ enum VOHarness {
                 DefaultsKey.notchEnabled: true,
                 // The buttons around the island as the combined app starts them.
                 DefaultsKey.notchQuickAccessLayout: MergedSettingsImport.islandButtons.encoded,
+                // Lil Guy resting in the island, as the combined app starts.
+                DefaultsKey.notchMascotEnabled: true,
             ]) { _, new in new })
             let app = NSApplication.shared
             let delegate = VOHarnessDelegate()
