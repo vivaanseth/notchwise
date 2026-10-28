@@ -140,6 +140,19 @@ Swift drives it through a small C interface (`LilGuyFace.h`) and shows his face 
   top row, in the closed island's strip while it works, and in "Ask VoiceOS" under the pointer.
   He listens, looks up while it thinks, squints while an action runs, then smiles with a
   sparkle when it answers or goes red-eyed when it fails.
+- **The open island.** He sits in the top row of every page and reacts to each page he sees:
+  hearts on the player while a song plays, bolts in his pupils on Calendar before an event,
+  sweat on System while the processor is busy, a squint on Captures, thinking dots on Agents, a
+  smug blink on Timer, wide eyes at the camera. A click pokes him (a giggle, now and then a wink);
+  four quick ones make him dizzy.
+- **The screen.** While he is on screen (`LilGuyDirector`): his eyes follow the pointer anywhere
+  on the island's display; an app coming forward gets a glance that fits it (a call, music,
+  code, writing, Finder, a browser); a copy gets a quick blink; a busy processor makes him sweat
+  and then cool off; a low battery makes him sad or worried; after 11 pm his fidgets turn
+  sleepy; five minutes with nobody at the Mac and he sleeps, waking with a peek, or a startle
+  after a long time away. Every minute or two he fidgets from about twenty idle clips.
+- **Variety.** Joy, love, anger, sadness, startles, dizziness, waking, yawns and perks each draw
+  from a set of clips. 62 of the 66 clips are used; the rest are holds and exit transitions.
 - **Cost.** He draws only when his face changes: between blinks and glances the engine says
   when he next moves and nothing runs until then. Moving, a frame is about 1.5 ms on this Mac;
   out of sight he stops.

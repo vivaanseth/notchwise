@@ -19,12 +19,6 @@ enum LilGuyGesture: UInt8 {
     case giggle, love, wink, dizzy
 }
 
-/// The measured clips the island plays for its moments, by the engine's ids.
-enum LilGuyClip: UInt8 {
-    case boltPupilPulse = 17, smileStreakBlink = 18, longClosedBlink = 24, greenBlinkGrowWide = 49
-    case blinkToHalfLidsUp = 51, blinkIntoSmug = 56, heartEyesWake = 61
-}
-
 /// One Lil Guy: the face engine and the layer that shows it. It draws only
 /// when the face changes; between blinks and glances it is still, and the
 /// engine says when it next moves, so a face at rest costs nothing. Out of
@@ -46,6 +40,7 @@ final class LilGuyFace {
         didSet {
             guard visible != oldValue else { return }
             if visible { draw() } else { timer?.invalidate(); timer = nil }
+            LilGuyDirector.shared.visibilityChanged()
         }
     }
 
@@ -59,6 +54,7 @@ final class LilGuyFace {
         layer.minificationFilter = .trilinear
         layer.magnificationFilter = .linear
         layer.actions = ["contents": NSNull(), "bounds": NSNull(), "position": NSNull(), "frame": NSNull()]
+        LilGuyDirector.shared.register(self)
     }
 
     deinit {
@@ -86,10 +82,14 @@ final class LilGuyFace {
 
     func set(_ state: LilGuyState) {
         // His smile is two thin arcs, which vanish at the island's size;
-        // these clips say the same in colour.
+        // these clips say the same in colour, a different one each time.
         switch state {
-        case .success, .happy: play(.smileStreakBlink); return
-        case .celebrate: play(.heartEyesWake); return
+        case .success, .happy: play(LilGuyRepertoire.joy.randomElement()!); return
+        case .celebrate: play(LilGuyRepertoire.love.randomElement()!); return
+        case .error: play(LilGuyRepertoire.anger.randomElement()!); return
+        case .cancelled: play(LilGuyRepertoire.sadness.randomElement()!); return
+        case .surprised: play(LilGuyRepertoire.startle.randomElement()!); return
+        case .playful: gesture(.wink); return
         default: break
         }
         if state.persists { lg_face_set_state(face, state.rawValue, now) } else { lg_face_react(face, state.rawValue, now) }
@@ -122,6 +122,17 @@ final class LilGuyFace {
     }
 
     var asleep: Bool { LilGuyState(rawValue: lg_face_state(face)) == .sleeping }
+
+    /// In the middle of a clip, a reaction, a blink or a change of face.
+    var isBusy: Bool {
+        let time = now
+        return Int32(bitPattern: lg_face_next_change(face, time) &- time) <= 33
+    }
+
+    /// Seeing a page of the open island.
+    func enter(_ page: NotchModule) {
+        if let clip = LilGuyRepertoire.page(page, hot: LilGuyDirector.shared.processorHot) { play(clip) }
+    }
 
     /// Runs `action` at `time` on the media clock, or now if that has passed.
     func at(_ time: CFTimeInterval, _ action: @escaping () -> Void) {
@@ -161,17 +172,17 @@ final class LilGuyFace {
         if asleep, reaction != .wakeUp { lg_face_wake(face, now) }
         switch reaction {
         case .celebrate: set(.celebrate)
-        case .love: gesture(.love)
+        case .love: play(LilGuyRepertoire.love.randomElement()!)
         case .surprised: set(.surprised)
-        case .flash: play(.longClosedBlink)
-        case .confused: gesture(.dizzy)
-        case .wakeUp: wake()
-        case .yawn: play(.blinkToHalfLidsUp)
-        case .perk: play(.greenBlinkGrowWide)
+        case .flash: play(.squintShut)
+        case .confused: play(LilGuyRepertoire.dizzy.randomElement()!)
+        case .wakeUp: wake(); play(LilGuyRepertoire.waking.randomElement()!)
+        case .yawn: play(LilGuyRepertoire.yawn.randomElement()!)
+        case .perk: play(LilGuyRepertoire.perk.randomElement()!)
         case .bounce: play(.boltPupilPulse)
         case .hush: play(.longClosedBlink)
         case .ready: play(.blinkIntoSmug)
-        case .groove: play(.smileStreakBlink)
+        case .groove: play(LilGuyRepertoire.groove.randomElement()!)
         }
     }
 
@@ -215,6 +226,8 @@ struct LilGuyView: NSViewRepresentable {
     var state: LilGuyState
     /// Replayed once each time it changes: a reaction over the state.
     var reaction: (state: LilGuyState, id: Int)? = nil
+    /// The open island's page, which he reacts to on seeing it.
+    var page: NotchModule? = nil
     var size: CGFloat
 
     func makeNSView(context: Context) -> LilGuyHostView { LilGuyHostView() }
@@ -222,6 +235,7 @@ struct LilGuyView: NSViewRepresentable {
     func updateNSView(_ view: LilGuyHostView, context: Context) {
         view.size = size
         view.show(state, reaction: reaction)
+        view.see(page)
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: LilGuyHostView, context: Context) -> CGSize? {
@@ -233,6 +247,7 @@ final class LilGuyHostView: NSView {
     private let lilGuy = LilGuyFace()
     private var shown: LilGuyState?
     private var reacted: Int?
+    private var seen: NotchModule?
     var size: CGFloat = 20 { didSet { needsLayout = true } }
 
     override init(frame: NSRect) {
@@ -257,6 +272,16 @@ final class LilGuyHostView: NSView {
             lilGuy.set(reaction.state)
         }
     }
+
+    func see(_ page: NotchModule?) {
+        guard page != seen else { return }
+        seen = page
+        if let page { lilGuy.enter(page) }
+    }
+
+    // A click pokes him; four quick ones make him dizzy.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override func mouseDown(with event: NSEvent) { LilGuyDirector.shared.poke(lilGuy) }
 
     override func layout() {
         super.layout()

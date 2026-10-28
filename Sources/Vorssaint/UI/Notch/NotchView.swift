@@ -369,6 +369,13 @@ struct NotchView: View {
         // controls there stay mounted, so a search keeps its focus.
         return NotchBandRow(band: band, covered: feedback == nil ? nil : side) {
             if !wraps {
+                // Lil Guy keeps every page company, and makes something of
+                // each one he sees; the assistant's page has its own.
+                if service.selected != .voice, !service.showingSections {
+                    LilGuyView(state: .idle, page: showsDetail ? nil : service.selected, size: 22)
+                        .frame(width: 22, height: 22)
+                        .accessibilityHidden(true)
+                }
                 bandLeading(band)
                 items.leading
                 // Every page reaches every other from its row, in what room
