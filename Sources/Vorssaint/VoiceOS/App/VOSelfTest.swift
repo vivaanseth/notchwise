@@ -143,6 +143,32 @@ enum VOSelfTest {
             VOWhisperServer.shared.stop()
         }
 
+        // 5. Kokoro's voices rendered to files, never played: how long the
+        // model takes to load and each sentence to render, against its length.
+        if ProcessInfo.processInfo.environment["VOICEOS_TEST_VOICE"] == "1" {
+            let posix = Locale(identifier: "en_US_POSIX")
+            log += "== Voice (Kokoro \(VOKokoro.isInstalled ? "installed" : "not installed"))\n"
+            let sentences = ["Opening Keshav Arun's LinkedIn.", "Sure. I've set a reminder to call your mom tomorrow at five."]
+            for persona in VOAssistantVoice.personas where persona.kokoro != nil && ["jarvis", "samantha"].contains(persona.id) {
+                guard let voice = persona.kokoro else { continue }
+                for sentence in sentences {
+                    let t = Date()
+                    do {
+                        let url = try await VOKokoro.shared.render(sentence, sid: voice.sid, accent: voice.accent, speed: 1)
+                        let file = try AVAudioFile(forReading: url)
+                        let seconds = Double(file.length) / file.fileFormat.sampleRate
+                        log += String(format: "%@: %.2fs to render %.1fs  %@\n", locale: posix, persona.name,
+                                      Date().timeIntervalSince(t), seconds, sentence)
+                        try? FileManager.default.removeItem(at: url)
+                    } catch {
+                        log += "\(persona.name): FAILED \(error.localizedDescription)\n"
+                    }
+                }
+            }
+            VOKokoro.shared.stop()
+            log += "\n"
+        }
+
         settings.agentVoiceEnabled = voiceWas
         if override != nil { settings.agentProvider = providerWas }
         settings.escalationDailyLimit = limitWas

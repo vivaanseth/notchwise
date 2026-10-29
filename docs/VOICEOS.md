@@ -212,6 +212,21 @@ Changed in the combined app:
   answer within 5 s, it opens the site's people search as before. Only the name and the site's
   name go to Bing, as a typed search would. `VOICEOS_NO_MODELS=1` runs the dry-run self-test on
   lookups without starting a local model.
+- **A natural voice.** With Kokoro installed (`Tools/install-kokoro.sh`: a Python environment
+  with sherpa-onnx 1.12.40, about 13 MB from PyPI, and Kokoro's int8 multi-language v1.0 model,
+  about 132 MB from k2-fsa/sherpa-onnx's GitHub releases, about 260 MB on disk in
+  `VoiceOS Clone/kokoro`), the assistant speaks with Kokoro, an 82-million-parameter neural
+  voice, on this Mac (`VOKokoro`). Each persona has its own: Jarvis is George (British),
+  Samantha is Heart, Karen Bella, Moira Emma, Rishi Michael, Tessa Isabella; Fred stays robotic.
+  sherpa-onnx stays at 1.12.40: 2.x reads Kokoro's words only from its word lists and silently
+  drops any other, names included, where 1.12.40 sounds them out with espeak-ng. A small Python
+  helper keeps the model loaded, renders a sentence at a time to a WAV on two threads and ends
+  with the app (its input closes) or after ten idle minutes; it loads while you are still
+  asking. The next sentence renders while one plays, and the words light up at its pace. On
+  this Mac it renders at about 1.6–1.9 times the speech's own length (4.2 s for a 2.7-second
+  sentence), so the voice starts a few seconds after the text and pauses between sentences. A
+  sentence it cannot render is spoken by the system voice in its turn. Assistant → Natural
+  voice turns it off.
 - **Spoken as it's written.** Each sentence of an answer goes to the voice as soon as it is
   complete, while the model still writes the rest and its actions
   (`VOAssistantVoice.stream`/`finishStream`); the words still light up as they're said.

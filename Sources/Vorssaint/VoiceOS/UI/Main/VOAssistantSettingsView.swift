@@ -36,6 +36,19 @@ struct VOAssistantSettingsView: View {
                     .contentShape(Rectangle())
                 }
                 .opacity(settings.agentVoiceEnabled ? 1 : 0.5)
+                HStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Natural voice").font(.system(size: 14))
+                        Text(VOKokoro.isInstalled
+                             ? "Kokoro, a neural voice, on this Mac. Each sentence takes a moment to render; Fred stays robotic."
+                             : "Install Kokoro with Tools/install-kokoro.sh to hear a neural voice instead of the system one.")
+                            .font(.system(size: 12)).foregroundColor(VOTheme.tertiary)
+                    }
+                    Spacer()
+                    VOToggle(isOn: $settings.agentNaturalVoice)
+                        .disabled(!VOKokoro.isInstalled)
+                }
+                .opacity(settings.agentVoiceEnabled ? 1 : 0.5)
             }
 
             VOCard {

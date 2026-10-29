@@ -45,6 +45,8 @@ final class VOSettings: ObservableObject {
     @Published var agentVoiceEnabled: Bool { didSet { d.set(agentVoiceEnabled, forKey: Self.prefix + "agentVoiceEnabled") } }
     @Published var agentVoiceSpeed: VOVoiceSpeed { didSet { d.set(agentVoiceSpeed.rawValue, forKey: Self.prefix + "agentVoiceSpeed") } }
     @Published var agentVoice: String { didSet { d.set(agentVoice, forKey: Self.prefix + "agentVoice") } }
+    /// Kokoro's natural voice for the persona, when it is installed.
+    @Published var agentNaturalVoice: Bool { didSet { d.set(agentNaturalVoice, forKey: Self.prefix + "agentNaturalVoice") } }
     @Published var capabilities: [String: Bool] { didSet { d.set(capabilities, forKey: Self.prefix + "capabilities") } }
 
     // Providers
@@ -101,6 +103,7 @@ final class VOSettings: ObservableObject {
         agentVoiceEnabled = d.object(forKey: Self.prefix + "agentVoiceEnabled") as? Bool ?? true
         agentVoiceSpeed = VOVoiceSpeed(rawValue: d.string(forKey: Self.prefix + "agentVoiceSpeed") ?? "") ?? .normal
         agentVoice = d.string(forKey: Self.prefix + "agentVoice") ?? "jarvis"
+        agentNaturalVoice = d.object(forKey: Self.prefix + "agentNaturalVoice") as? Bool ?? true
         capabilities = d.dictionary(forKey: Self.prefix + "capabilities") as? [String: Bool] ?? [:]
 
         connectionModes = d.dictionary(forKey: Self.prefix + "connectionModes") as? [String: String] ?? [:]

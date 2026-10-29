@@ -160,6 +160,8 @@ final class VOAssistantController: ObservableObject {
             return
         }
         VOAssistantVoice.shared.stop()
+        // Kokoro loads while the question is asked, ready for the answer.
+        VOAssistantVoice.shared.warmUp()
         VODictationController.shared.cancel()
         if !expanded { context = VOAccessibility.frontContext() }
         if Date().timeIntervalSince(lastActivity) > 300, !hasPendingWork { turns.removeAll() }

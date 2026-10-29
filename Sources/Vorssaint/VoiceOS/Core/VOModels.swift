@@ -236,6 +236,14 @@ enum VOVoiceSpeed: String, Codable, CaseIterable, Identifiable {
         case .fast: return 0.57
         }
     }
+    /// Kokoro's own pace, where 1 is as it was trained.
+    var kokoroSpeed: Double {
+        switch self {
+        case .slow: return 0.88
+        case .normal: return 1.0
+        case .fast: return 1.15
+        }
+    }
 }
 
 struct VODictionaryEntry: Codable, Identifiable, Hashable {

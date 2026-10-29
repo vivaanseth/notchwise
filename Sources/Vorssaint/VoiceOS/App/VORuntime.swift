@@ -51,7 +51,10 @@ final class VORuntime: NSObject {
             .sink { _ in
                 VOClaudeWarmPool.shared.drain()
                 // Posted on the main thread, as the app quits.
-                MainActor.assumeIsolated { VOWhisperServer.shared.stop() }
+                MainActor.assumeIsolated {
+                    VOWhisperServer.shared.stop()
+                    VOKokoro.shared.stop()
+                }
             }
             .store(in: &bag)
 
