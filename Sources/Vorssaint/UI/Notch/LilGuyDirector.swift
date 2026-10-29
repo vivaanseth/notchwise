@@ -167,8 +167,9 @@ final class LilGuyDirector {
         fidget?.invalidate(); fidget = nil
     }
 
-    /// His eyes go where the pointer is on the island's display: across it,
-    /// and down the farther it is below the island.
+    /// His eyes go where the pointer is: around him, the nearer the more
+    /// exactly, or across the island's display for a face that cannot say
+    /// where it is, and down the farther it is below the island.
     private func pointerMoved() {
         let now = CACurrentMediaTime()
         guard now - lastLookTime > 0.12 else { return }
@@ -181,8 +182,18 @@ final class LilGuyDirector {
         let y = max(-1, min(1, (screen.maxY - point.y) / screen.height * 2.4 - 0.4))
         guard abs(x - lastLook.x) > 0.04 || abs(y - lastLook.y) > 0.04 else { return }
         lastLook = CGPoint(x: x, y: y)
-        for face in shown where !face.isBusy { face.look(x: x, y: y, hold: 2.5) }
+        for face in shown where !face.isBusy {
+            if let center = face.anchor?() {
+                face.look(x: (point.x - center.x) / Self.gazeReach.width,
+                          y: (center.y - point.y) / Self.gazeReach.height, hold: 2.5)
+            } else {
+                face.look(x: x, y: y, hold: 2.5)
+            }
+        }
     }
+
+    /// How far from him the pointer has his eyes all the way to one side.
+    private static let gazeReach = CGSize(width: 420, height: 320)
 
     private func appCameForward(_ app: NSRunningApplication?) {
         guard let id = app?.bundleIdentifier, id != Bundle.main.bundleIdentifier,

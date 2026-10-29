@@ -19,6 +19,12 @@ enum LilGuyGesture: UInt8 {
     case giggle, love, wink, dizzy
 }
 
+/// What a click on him does: a poke, or his room in the open island,
+/// where he is big enough to poke. Holding him pets him either way.
+enum LilGuyTap {
+    case poke, openRoom
+}
+
 /// One Lil Guy: the face engine and the layer that shows it. It draws only
 /// when the face changes; between blinks and glances it is still, and the
 /// engine says when it next moves, so a face at rest costs nothing. Out of
@@ -34,6 +40,16 @@ final class LilGuyFace {
     /// The part of the round screen the eyes live in, which fills the
     /// layer's box: its centre and side, in the engine's 240-pixel space.
     static let crop = (center: CGPoint(x: 120, y: 128), side: CGFloat(176))
+
+    /// How much bigger than his box he is drawn, about its centre: a face
+    /// swelling with a voice. Drawn by his own layer, which eases into it.
+    var swell: CGFloat = 1 {
+        didSet { if swell != oldValue { orient() } }
+    }
+
+    /// Where he is on screen, so his eyes follow the pointer around him;
+    /// without it they follow it across the island's display.
+    var anchor: (() -> CGPoint?)?
 
     /// Whether the face is on screen; out of sight nothing is drawn.
     var visible = false {
@@ -68,12 +84,19 @@ final class LilGuyFace {
     func place(in box: CGRect, scale: CGFloat) {
         let k = box.width / Self.crop.side
         let full = CGFloat(Self.side) * k
-        layer.frame = CGRect(x: box.midX - Self.crop.center.x * k, y: box.midY - Self.crop.center.y * k,
-                             width: full, height: full)
+        // Bounds and position, which a swell's transform leaves alone, as a frame would not.
+        layer.bounds = CGRect(x: 0, y: 0, width: full, height: full)
+        layer.position = CGPoint(x: box.midX - Self.crop.center.x * k + full / 2,
+                                 y: box.midY - Self.crop.center.y * k + full / 2)
         layer.contentsScale = scale
-        // Under a flipped view the bitmap would draw upside down, turning
-        // smiles into frowns; the layer turns it back.
-        layer.setAffineTransform(layer.contentsAreFlipped() ? CGAffineTransform(scaleX: 1, y: -1) : .identity)
+        orient()
+    }
+
+    /// Under a flipped view the bitmap would draw upside down, turning
+    /// smiles into frowns; the layer turns it back.
+    private func orient() {
+        let upright = layer.contentsAreFlipped() ? CGAffineTransform(scaleX: 1, y: -1) : .identity
+        layer.setAffineTransform(upright.scaledBy(x: swell, y: swell))
     }
 
     private var now: UInt32 { UInt32(max(0, CACurrentMediaTime() - epoch) * 1000) &+ 1 }
@@ -229,11 +252,23 @@ struct LilGuyView: NSViewRepresentable {
     /// The open island's page, which he reacts to on seeing it.
     var page: NotchModule? = nil
     var size: CGFloat
+    var tap: LilGuyTap = .poke
+    /// Drawn this much bigger by his own layer, which SwiftUI's scaling
+    /// would hand to a separate drawing of the page.
+    var swell: CGFloat = 1
+    /// Hands over the face itself, for a host that plays with him.
+    var onFace: ((LilGuyFace) -> Void)? = nil
 
-    func makeNSView(context: Context) -> LilGuyHostView { LilGuyHostView() }
+    func makeNSView(context: Context) -> LilGuyHostView {
+        let view = LilGuyHostView()
+        onFace?(view.face)
+        return view
+    }
 
     func updateNSView(_ view: LilGuyHostView, context: Context) {
         view.size = size
+        view.tap = tap
+        view.face.swell = swell
         view.show(state, reaction: reaction)
         view.see(page)
     }
@@ -248,13 +283,25 @@ final class LilGuyHostView: NSView {
     private var shown: LilGuyState?
     private var reacted: Int?
     private var seen: NotchModule?
+    private var pressed: CFTimeInterval?
     var size: CGFloat = 20 { didSet { needsLayout = true } }
+    var tap = LilGuyTap.poke
+    var face: LilGuyFace { lilGuy }
+    /// Held this long, a click pets him instead.
+    private static let petAfter: CFTimeInterval = 0.45
 
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
         layer?.masksToBounds = false
         layer?.addSublayer(lilGuy.layer)
+        lilGuy.anchor = { [weak self] in self?.screenCenter }
+    }
+
+    private var screenCenter: CGPoint? {
+        guard let window else { return nil }
+        let center = convert(CGPoint(x: bounds.midX, y: bounds.midY), to: nil)
+        return window.convertPoint(toScreen: center)
     }
 
     @available(*, unavailable)
@@ -279,9 +326,22 @@ final class LilGuyHostView: NSView {
         if let page { lilGuy.enter(page) }
     }
 
-    // A click pokes him; four quick ones make him dizzy.
+    // A click pokes him, and four quick ones make him dizzy; a small one
+    // opens his room instead. Held, he is petted.
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    override func mouseDown(with event: NSEvent) { LilGuyDirector.shared.poke(lilGuy) }
+    override func mouseDown(with event: NSEvent) { pressed = CACurrentMediaTime() }
+
+    override func mouseUp(with event: NSEvent) {
+        guard let pressed else { return }
+        self.pressed = nil
+        if CACurrentMediaTime() - pressed >= Self.petAfter {
+            lilGuy.play(LilGuyRepertoire.love.randomElement()!)
+        } else if tap == .openRoom {
+            LilGuyRoom.shared.open()
+        } else {
+            LilGuyDirector.shared.poke(lilGuy)
+        }
+    }
 
     override func layout() {
         super.layout()

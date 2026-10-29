@@ -86,6 +86,15 @@ VoiceOS's own notch window is gone; its look and behaviour live in that island:
   while on), and the song playing, tinted by its cover, with previous, play/pause and next.
   With text selected in the app in front it offers Summarize, Explain and Improve. Listening or
   answering, the home steps aside for the conversation.
+- **Every control.** The Controls page has a tile for each of the menu panel's controls the
+  island had no way to: **Fan Control** (with the fans' speed on it, lit while the app holds them
+  up; it opens the fan card), **Quick Toggles**, **Features** (the panel's switches for the app's
+  own features) and **Wallpaper**, each opening that panel section inside the island, and **All
+  controls**, the whole panel with its tabs for every section (Keep Awake, Brightness, Sound,
+  System, Network, Disk, Power, Fans, Utilities, Features, Toggles, Wallpaper). The combined app
+  shows All controls once (`MergedSettingsImport.showAllControlsOnce`); the rest show on their own
+  when their feature is installed. Fan Control and Quick Toggles are on the home's quick controls
+  too, and any of them can be a button around the island (Settings → Dynamic Island → Layout).
 - **Page switcher.** The home's top row holds every page as a coloured icon; a dot marks the
   ones the moment suggests. Beside a physical camera, where fewer fit, the last one opens the
   sections.
@@ -143,10 +152,16 @@ Swift drives it through a small C interface (`LilGuyFace.h`) and shows his face 
 - **The open island.** He sits in the top row of every page and reacts to each page he sees:
   hearts on the player while a song plays, bolts in his pupils on Calendar before an event,
   sweat on System while the processor is busy, a squint on Captures, thinking dots on Agents, a
-  smug blink on Timer, wide eyes at the camera. A click pokes him (a giggle, now and then a wink);
-  four quick ones make him dizzy.
-- **The screen.** While he is on screen (`LilGuyDirector`): his eyes follow the pointer anywhere
-  on the island's display; an app coming forward gets a glance that fits it (a call, music,
+  smug blink on Timer, wide eyes at the camera. Holding him pets him (hearts).
+- **Big.** Asked something out loud, he comes out of his corner at four times the size to
+  listen, swelling a little with your voice, and goes back once the answer shows. A click on his
+  face in any page's top row opens **his room** (`LilGuyRoom.swift`): Lil Guy as big as the page
+  allows, in a softly breathing light, his eyes following the pointer around him, with Pet,
+  Tickle, Wink, Spin, Nap or Wake up, and Surprise me (any of his clips, sometimes mirrored).
+  There a click pokes him (a giggle, now and then a wink), four quick ones make him dizzy, and
+  holding him pets him. Escape, the way back, or another page puts him back.
+- **The screen.** While he is on screen (`LilGuyDirector`): his eyes follow the pointer around
+  him; an app coming forward gets a glance that fits it (a call, music,
   code, writing, Finder, a browser); a copy gets a quick blink; a busy processor makes him sweat
   and then cool off; a low battery makes him sad or worried; after 11 pm his fidgets turn
   sleepy; five minutes with nobody at the Mac and he sleeps, waking with a peek, or a startle

@@ -45,6 +45,15 @@ struct NotchHubStrings {
     let allControls: String
     /// The menu panel's switches for the app's features.
     let features: String
+    /// Lil Guy's room: how to play with him, and what to do with him there.
+    let roomHint: String
+    let pet: String
+    let tickle: String
+    let wink: String
+    let spin: String
+    let nap: String
+    let wakeUp: String
+    let surprise: String
 
     func reason(_ reason: NotchIntentReason, minutes: Int?) -> String {
         switch reason {
@@ -92,7 +101,9 @@ extension FeatureStrings {
             fitting: "Open on the page that fits",
             fittingHint: "When the app in front or what’s going on clearly points to one page, like AI agents while you code, the island opens there instead of on its home page.",
             forget: "Forget", forgetTitle: "Forget what it learned",
-            allControls: "All controls", features: "Features")
+            allControls: "All controls", features: "Features",
+            roomHint: "Click him to play · hold to pet",
+            pet: "Pet", tickle: "Tickle", wink: "Wink", spin: "Spin", nap: "Nap", wakeUp: "Wake up", surprise: "Surprise me")
         case .ptBR: return NotchHubStrings(
             allPages: "Todas as páginas", home: "Início", suggested: "Sugerida", suggestedPage: "Sugerida: %@",
             selection: "Texto selecionado",
@@ -107,7 +118,9 @@ extension FeatureStrings {
             fitting: "Abrir na página certa",
             fittingHint: "Quando o app em primeiro plano ou o que está acontecendo aponta claramente para uma página, como os agentes de IA enquanto você programa, a ilha abre nela em vez da página inicial.",
             forget: "Esquecer", forgetTitle: "Esquecer o que aprendeu",
-            allControls: "Todos os controles", features: "Recursos")
+            allControls: "Todos os controles", features: "Recursos",
+            roomHint: "Clique para brincar · segure para fazer carinho",
+            pet: "Carinho", tickle: "Cócegas", wink: "Piscar", spin: "Girar", nap: "Cochilo", wakeUp: "Acordar", surprise: "Surpreenda-me")
         case .tr: return NotchHubStrings(
             allPages: "Tüm sayfalar", home: "Ana sayfa", suggested: "Önerilen", suggestedPage: "Önerilen: %@",
             selection: "Seçili metin",
@@ -122,7 +135,9 @@ extension FeatureStrings {
             fitting: "Uygun sayfada aç",
             fittingHint: "Öndeki uygulama ya da olup biten açıkça bir sayfayı gösteriyorsa, örneğin kod yazarken yapay zekâ ajanları, ada ana sayfası yerine orada açılır.",
             forget: "Unut", forgetTitle: "Öğrendiklerini unut",
-            allControls: "Tüm kontroller", features: "Özellikler")
+            allControls: "Tüm kontroller", features: "Özellikler",
+            roomHint: "Oynamak için tıkla · sevmek için basılı tut",
+            pet: "Sev", tickle: "Gıdıkla", wink: "Göz kırp", spin: "Döndür", nap: "Uyu", wakeUp: "Uyan", surprise: "Şaşırt beni")
         case .ru: return NotchHubStrings(
             allPages: "Все страницы", home: "Главная", suggested: "Предложенная", suggestedPage: "Предложено: %@",
             selection: "Выделенный текст",
@@ -137,7 +152,9 @@ extension FeatureStrings {
             fitting: "Открывать подходящую страницу",
             fittingHint: "Когда активное приложение или происходящее явно указывает на одну страницу, например ИИ-агенты во время программирования, остров открывается на ней, а не на главной.",
             forget: "Забыть", forgetTitle: "Забыть изученное",
-            allControls: "Всё управление", features: "Функции")
+            allControls: "Всё управление", features: "Функции",
+            roomHint: "Нажми, чтобы поиграть · удерживай, чтобы погладить",
+            pet: "Погладить", tickle: "Пощекотать", wink: "Подмигнуть", spin: "Закружить", nap: "Вздремнуть", wakeUp: "Разбудить", surprise: "Удиви меня")
         case .es: return NotchHubStrings(
             allPages: "Todas las páginas", home: "Inicio", suggested: "Sugerida", suggestedPage: "Sugerida: %@",
             selection: "Texto seleccionado",
@@ -152,7 +169,9 @@ extension FeatureStrings {
             fitting: "Abrir en la página adecuada",
             fittingHint: "Cuando la app en primer plano o lo que está pasando apunta claramente a una página, como los agentes de IA mientras programas, la isla se abre ahí en lugar de en su página de inicio.",
             forget: "Olvidar", forgetTitle: "Olvidar lo aprendido",
-            allControls: "Todos los controles", features: "Funciones")
+            allControls: "Todos los controles", features: "Funciones",
+            roomHint: "Haz clic para jugar · mantén pulsado para acariciarlo",
+            pet: "Acariciar", tickle: "Cosquillas", wink: "Guiñar", spin: "Girar", nap: "Siesta", wakeUp: "Despertar", surprise: "Sorpréndeme")
         case .sk: return NotchHubStrings(
             allPages: "Všetky stránky", home: "Domov", suggested: "Navrhovaná", suggestedPage: "Navrhované: %@",
             selection: "Označený text",
@@ -167,7 +186,9 @@ extension FeatureStrings {
             fitting: "Otvoriť na vhodnej stránke",
             fittingHint: "Keď aplikácia v popredí alebo to, čo sa deje, jasne ukazuje na jednu stránku, napríklad AI agentov pri programovaní, ostrov sa otvorí na nej namiesto domovskej stránky.",
             forget: "Zabudnúť", forgetTitle: "Zabudnúť naučené",
-            allControls: "Všetky ovládače", features: "Funkcie")
+            allControls: "Všetky ovládače", features: "Funkcie",
+            roomHint: "Klikni a hraj sa · podrž a pohladkaj",
+            pet: "Pohladkať", tickle: "Pošteklit", wink: "Žmurknúť", spin: "Zatočiť", nap: "Zdriemnuť", wakeUp: "Zobudiť", surprise: "Prekvap ma")
         case .de: return NotchHubStrings(
             allPages: "Alle Seiten", home: "Start", suggested: "Vorgeschlagen", suggestedPage: "Vorschlag: %@",
             selection: "Markierter Text",
@@ -182,7 +203,9 @@ extension FeatureStrings {
             fitting: "Auf der passenden Seite öffnen",
             fittingHint: "Wenn die App im Vordergrund oder das, was gerade passiert, klar auf eine Seite zeigt, etwa KI-Agenten beim Programmieren, öffnet sich die Insel dort statt auf ihrer Startseite.",
             forget: "Vergessen", forgetTitle: "Gelerntes vergessen",
-            allControls: "Alle Steuerungen", features: "Funktionen")
+            allControls: "Alle Steuerungen", features: "Funktionen",
+            roomHint: "Klicken zum Spielen · halten zum Streicheln",
+            pet: "Streicheln", tickle: "Kitzeln", wink: "Zwinkern", spin: "Drehen", nap: "Nickerchen", wakeUp: "Aufwecken", surprise: "Überrasch mich")
         case .fr: return NotchHubStrings(
             allPages: "Toutes les pages", home: "Accueil", suggested: "Suggérée", suggestedPage: "Suggestion : %@",
             selection: "Texte sélectionné",
@@ -197,7 +220,9 @@ extension FeatureStrings {
             fitting: "Ouvrir sur la page qui convient",
             fittingHint: "Quand l’app au premier plan ou ce qui se passe désigne clairement une page, comme les agents IA pendant que vous codez, l’île s’ouvre dessus plutôt que sur sa page d’accueil.",
             forget: "Oublier", forgetTitle: "Oublier ce qui a été appris",
-            allControls: "Toutes les commandes", features: "Fonctions")
+            allControls: "Toutes les commandes", features: "Fonctions",
+            roomHint: "Cliquez pour jouer · maintenez pour le caresser",
+            pet: "Caresser", tickle: "Chatouiller", wink: "Clin d’œil", spin: "Tourner", nap: "Sieste", wakeUp: "Réveiller", surprise: "Surprends-moi")
         case .it: return NotchHubStrings(
             allPages: "Tutte le pagine", home: "Home", suggested: "Suggerita", suggestedPage: "Suggerita: %@",
             selection: "Testo selezionato",
@@ -212,7 +237,9 @@ extension FeatureStrings {
             fitting: "Apri sulla pagina adatta",
             fittingHint: "Quando l’app in primo piano o ciò che sta succedendo indica chiaramente una pagina, come gli agenti IA mentre programmi, l’isola si apre lì invece che sulla pagina principale.",
             forget: "Dimentica", forgetTitle: "Dimentica ciò che ha imparato",
-            allControls: "Tutti i controlli", features: "Funzioni")
+            allControls: "Tutti i controlli", features: "Funzioni",
+            roomHint: "Fai clic per giocare · tieni premuto per accarezzarlo",
+            pet: "Accarezza", tickle: "Solletico", wink: "Occhiolino", spin: "Gira", nap: "Pisolino", wakeUp: "Sveglia", surprise: "Sorprendimi")
         case .ja: return NotchHubStrings(
             allPages: "すべてのページ", home: "ホーム", suggested: "おすすめ", suggestedPage: "おすすめ: %@",
             selection: "選択中のテキスト",
@@ -227,7 +254,9 @@ extension FeatureStrings {
             fitting: "合うページで開く",
             fittingHint: "手前のアプリやいま起きていることがはっきり1つのページを示すとき（コーディング中のAIエージェントなど）、アイランドはホームではなくそのページで開きます。",
             forget: "消去", forgetTitle: "学習内容を消去",
-            allControls: "すべてのコントロール", features: "機能")
+            allControls: "すべてのコントロール", features: "機能",
+            roomHint: "クリックで遊ぶ・長押しでなでる",
+            pet: "なでる", tickle: "くすぐる", wink: "ウインク", spin: "くるくる", nap: "お昼寝", wakeUp: "起こす", surprise: "おまかせ")
         case .ko: return NotchHubStrings(
             allPages: "모든 페이지", home: "홈", suggested: "추천", suggestedPage: "추천: %@",
             selection: "선택한 텍스트",
@@ -242,7 +271,9 @@ extension FeatureStrings {
             fitting: "알맞은 페이지로 열기",
             fittingHint: "앞에 있는 앱이나 진행 중인 일이 한 페이지를 분명히 가리키면(코딩 중의 AI 에이전트 등) 아일랜드가 홈 대신 그 페이지로 열립니다.",
             forget: "지우기", forgetTitle: "학습한 내용 지우기",
-            allControls: "모든 제어", features: "기능")
+            allControls: "모든 제어", features: "기능",
+            roomHint: "클릭해서 놀기 · 길게 눌러 쓰다듬기",
+            pet: "쓰다듬기", tickle: "간지럽히기", wink: "윙크", spin: "빙글빙글", nap: "낮잠", wakeUp: "깨우기", surprise: "놀래 줘")
         case .uk: return NotchHubStrings(
             allPages: "Усі сторінки", home: "Головна", suggested: "Запропонована", suggestedPage: "Пропозиція: %@",
             selection: "Виділений текст",
@@ -257,7 +288,9 @@ extension FeatureStrings {
             fitting: "Відкривати потрібну сторінку",
             fittingHint: "Коли активна програма або те, що відбувається, чітко вказує на одну сторінку, як-от ШІ-агенти під час програмування, острів відкривається на ній, а не на головній.",
             forget: "Забути", forgetTitle: "Забути вивчене",
-            allControls: "Усе керування", features: "Функції")
+            allControls: "Усе керування", features: "Функції",
+            roomHint: "Натисни, щоб погратися · утримуй, щоб погладити",
+            pet: "Погладити", tickle: "Полоскотати", wink: "Підморгнути", spin: "Закружляти", nap: "Подрімати", wakeUp: "Розбудити", surprise: "Здивуй мене")
         case .zhHans: return NotchHubStrings(
             allPages: "全部页面", home: "主页", suggested: "推荐", suggestedPage: "推荐：%@",
             selection: "所选文本",
@@ -272,7 +305,9 @@ extension FeatureStrings {
             fitting: "打开到合适的页面",
             fittingHint: "当前台 App 或正在发生的事明确指向某个页面时（例如编程时的 AI 智能体），灵动岛会直接打开到该页面，而不是主页。",
             forget: "忘记", forgetTitle: "忘记已学内容",
-            allControls: "所有控制", features: "功能")
+            allControls: "所有控制", features: "功能",
+            roomHint: "点击和他玩 · 按住摸摸他",
+            pet: "摸摸", tickle: "挠痒痒", wink: "眨眼", spin: "转圈", nap: "小睡", wakeUp: "叫醒", surprise: "给我惊喜")
         case .zhTW: return NotchHubStrings(
             allPages: "所有頁面", home: "主頁", suggested: "推薦", suggestedPage: "推薦：%@",
             selection: "選取的文字",
@@ -287,7 +322,9 @@ extension FeatureStrings {
             fitting: "開啟到合適的頁面",
             fittingHint: "當前景 App 或正在發生的事明確指向某個頁面時（例如寫程式時的 AI 代理），動態島會直接開啟到該頁面，而不是主頁。",
             forget: "忘記", forgetTitle: "忘記已學內容",
-            allControls: "所有控制項", features: "功能")
+            allControls: "所有控制項", features: "功能",
+            roomHint: "點一下和他玩 · 按住摸摸他",
+            pet: "摸摸", tickle: "搔癢", wink: "眨眼", spin: "轉圈", nap: "小睡", wakeUp: "叫醒", surprise: "給我驚喜")
         case .zhHK: return NotchHubStrings(
             allPages: "所有頁面", home: "主頁", suggested: "推介", suggestedPage: "推介：%@",
             selection: "揀咗嘅文字",
@@ -302,7 +339,9 @@ extension FeatureStrings {
             fitting: "打開到啱嘅頁面",
             fittingHint: "當前台 App 或者而家發生緊嘅事明顯指向某一頁（例如寫程式時嘅 AI 代理），動態島會直接打開嗰頁，而唔係主頁。",
             forget: "忘記", forgetTitle: "忘記學到嘅嘢",
-            allControls: "所有控制項", features: "功能")
+            allControls: "所有控制項", features: "功能",
+            roomHint: "㩒一下同佢玩 · 㩒住摸下佢",
+            pet: "摸摸", tickle: "搔癢", wink: "眨眼", spin: "轉圈", nap: "瞓一陣", wakeUp: "叫醒", surprise: "俾個驚喜我")
         }
     }
 }
