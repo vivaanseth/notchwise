@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Vorssaint
+
 import Foundation
 
 /// Finds the page a lookup means, a person's profile, so the assistant opens

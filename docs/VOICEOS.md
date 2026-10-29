@@ -220,6 +220,23 @@ Changed in the combined app:
   VoiceOS's own or one MacWhisper downloaded), the words still appear live from Apple's
   recognizer, and Whisper hears the recording again, with the same names as its prompt, for the
   final text (Dictation → Speech recognition → "Check with Whisper"; on by default).
+- **Whisper instead of Apple.** Where `whisper-cli` and a Whisper model are installed, Whisper
+  (whisper.cpp) is the speech engine by default, for dictation and the assistant alike;
+  Dictation → Speech recognition switches back to Apple. Its words appear as you talk: while the
+  key is held it hears the recording so far again whenever half a second more has come in with
+  speech in it, so a pause before letting go gets one pass and none over the silence after; the
+  last pass, if it heard all the speech, is the final text at once. The model stays
+  loaded in whisper.cpp's own server (`VOWhisperServer`: `whisper-server` on 127.0.0.1, a
+  random port, six threads, no text carried from one pass to the next), which stops after ten
+  idle minutes and with the app. Whisper reads its full thirty-second window on every pass: a
+  window the recording's size is several times faster but makes the base model loop on made-up
+  words for up to forty seconds about one pass in four. On this Mac (a 2019 i5) the base model
+  takes about three seconds a pass, so the live words come in steps that far apart, and the
+  final text up to a pass after the key is let go; a smaller model (Tiny, in the model list) is
+  faster and a little less exact. Live passes decode once, greedily; the final one may retry
+  warmer. A recording that never reached speech level gives no text, so Whisper's made-up
+  "Thank you." over silence never lands. MacWhisper's models count as installed in the model
+  list. The self-test takes `VOICEOS_TEST_AUDIO` (a 16 kHz mono WAV) and logs each pass.
 
 ## First launch
 

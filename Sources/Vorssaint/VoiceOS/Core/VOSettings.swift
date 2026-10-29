@@ -79,8 +79,12 @@ final class VOSettings: ObservableObject {
         doubleTapHandsFree = d.object(forKey: Self.prefix + "doubleTapHandsFree") as? Bool ?? true
 
         languageCode = d.string(forKey: Self.prefix + "languageCode") ?? (Locale.current.identifier.replacingOccurrences(of: "_", with: "-").hasPrefix("en") ? Locale.current.identifier.replacingOccurrences(of: "_", with: "-") : "en-US")
-        speechEngine = VOSpeechEngine(rawValue: d.string(forKey: Self.prefix + "speechEngine") ?? "") ?? .apple
-        whisperModel = VOWhisperModel(rawValue: d.string(forKey: Self.prefix + "whisperModel") ?? "") ?? .baseEn
+        // Whisper, when it is on this Mac, hears names and rare words far
+        // better than Apple's recognizer, and now shows its words live too.
+        speechEngine = VOSpeechEngine(rawValue: d.string(forKey: Self.prefix + "speechEngine") ?? "")
+            ?? (VOWhisper.isInstalled ? .whisper : .apple)
+        whisperModel = VOWhisperModel(rawValue: d.string(forKey: Self.prefix + "whisperModel") ?? "")
+            ?? [VOWhisperModel.baseEn, .base, .smallEn, .small, .tinyEn].first { VOWhisper.modelURL($0) != nil } ?? .baseEn
         refineWithWhisper = d.object(forKey: Self.prefix + "refineWithWhisper") as? Bool ?? true
         polishEngine = VOPolishEngine(rawValue: d.string(forKey: Self.prefix + "polishEngine") ?? "") ?? .ollama
         removeFillers = d.object(forKey: Self.prefix + "removeFillers") as? Bool ?? true

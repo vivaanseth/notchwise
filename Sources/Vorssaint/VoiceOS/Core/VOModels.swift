@@ -165,7 +165,7 @@ enum VOSpeechEngine: String, Codable, CaseIterable, Identifiable {
     var detail: String {
         self == .apple
             ? "Streams as you talk. Runs offline on this Mac."
-            : "whisper.cpp on your CPU. Most accurate, a beat slower."
+            : "whisper.cpp on this Mac. Words appear as you talk, and it knows names far better."
     }
 }
 

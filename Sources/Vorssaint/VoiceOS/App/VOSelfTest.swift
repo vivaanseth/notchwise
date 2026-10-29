@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Ported from VoiceOS Clone (App/SelfTest.swift) into Vorssaint + VoiceOS.
 
+import AVFoundation
 import AppKit
 
 /// Developer aid: `VOICEOS_SELFTEST=/path/log.txt` runs one dictation cleanup and one agent request through
@@ -12,6 +13,15 @@ enum VOSelfTest {
         let provider = VOProviderID(rawValue: ProcessInfo.processInfo.environment["VOICEOS_PROVIDER"] ?? "")
         Task { await run(URL(fileURLWithPath: path), provider: provider) }
         return true
+    }
+
+    /// A 16 kHz mono recording's samples, as the microphone gives them.
+    private static func samples(_ path: String) -> [Float]? {
+        guard let file = try? AVAudioFile(forReading: URL(fileURLWithPath: path)),
+              file.processingFormat.sampleRate == Double(VOWhisper.rate), file.processingFormat.channelCount == 1,
+              let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)),
+              (try? file.read(into: buffer)) != nil, let data = buffer.floatChannelData?[0] else { return nil }
+        return Array(UnsafeBufferPointer(start: data, count: Int(buffer.frameLength)))
     }
 
     /// `VOICEOS_NO_MODELS=1`: only the assistant's lookups, which need no
@@ -110,6 +120,27 @@ enum VOSelfTest {
             } catch {
                 log += "\n== Image FAILED: \(error.localizedDescription)\n"
             }
+        }
+
+        // 4. Speech from a recording (never the microphone), passed to Whisper
+        // as it is while listening: the first seconds, then more, then all.
+        if let path = ProcessInfo.processInfo.environment["VOICEOS_TEST_AUDIO"], let samples = Self.samples(path) {
+            let posix = Locale(identifier: "en_US_POSIX")
+            let seconds = Double(samples.count) / Double(VOWhisper.rate)
+            log += String(format: "== Speech (%.1fs of audio, %@)\n", locale: posix, seconds,
+                          VOWhisper.availableModel()?.lastPathComponent ?? "no model")
+            var t = Date()
+            let ready = await VOWhisperServer.shared.prepare()
+            log += String(format: "server: %@ (%.1fs)\n", locale: posix, ready ? "ready" : "unavailable", Date().timeIntervalSince(t))
+            for second in stride(from: 1.0, to: seconds, by: 2.0) {
+                t = Date()
+                let text = (try? await VOWhisper.transcribe(Array(samples.prefix(Int(second) * VOWhisper.rate)), live: true)) ?? "(failed)"
+                log += String(format: "live %4.1fs: %.2fs  %@\n", locale: posix, second, Date().timeIntervalSince(t), text)
+            }
+            t = Date()
+            let text = (try? await VOWhisper.transcribe(samples)) ?? "(failed)"
+            log += String(format: "final:      %.2fs  %@\n\n", locale: posix, Date().timeIntervalSince(t), text)
+            VOWhisperServer.shared.stop()
         }
 
         settings.agentVoiceEnabled = voiceWas

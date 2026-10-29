@@ -48,7 +48,11 @@ final class VORuntime: NSObject {
                 .store(in: &bag)
         }
         NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
-            .sink { _ in VOClaudeWarmPool.shared.drain() }
+            .sink { _ in
+                VOClaudeWarmPool.shared.drain()
+                // Posted on the main thread, as the app quits.
+                MainActor.assumeIsolated { VOWhisperServer.shared.stop() }
+            }
             .store(in: &bag)
 
         VOProviderManager.shared.refreshAll()

@@ -44,6 +44,18 @@ final class VOAudioCapture {
         startedAt = Date()
     }
 
+    /// How many 16 kHz samples have come in so far.
+    var count: Int {
+        lock.lock(); defer { lock.unlock() }
+        return samples.count
+    }
+
+    /// The 16 kHz samples so far, while it keeps listening.
+    func snapshot() -> [Float] {
+        lock.lock(); defer { lock.unlock() }
+        return samples
+    }
+
     /// Stops capture and returns the 16 kHz samples plus the spoken duration.
     @discardableResult
     func stop() -> (samples: [Float], duration: Double) {
