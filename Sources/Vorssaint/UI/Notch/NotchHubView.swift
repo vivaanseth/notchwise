@@ -412,8 +412,8 @@ private struct NotchHubActions: View {
     @ObservedObject private var recorder = ScreenRecorderService.shared
     @ObservedObject private var l10n = L10n.shared
     private static let order: [NotchControlItem] = [
-        .screenshot, .recording, .keepAwake, .microphone, .scratchpad, .commandBar, .timer, .speedTest, .mixer,
-        .panel, .calendar, .music,
+        .screenshot, .recording, .keepAwake, .fans, .microphone, .scratchpad, .commandBar, .timer, .toggles,
+        .speedTest, .mixer, .panel, .calendar, .music,
     ]
 
     var body: some View {
@@ -473,6 +473,8 @@ private struct NotchHubActions: View {
         case .mixer: return .indigo
         case .calendar: return .red
         case .music: return .pink
+        case .fans: return .teal
+        case .toggles: return .blue
         default: return .white
         }
     }

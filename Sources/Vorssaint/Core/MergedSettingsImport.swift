@@ -84,6 +84,21 @@ enum MergedSettingsImport {
         defaults.set(true, forKey: fullscreenKey)
     }
 
+    /// Everything the app controls has a tile on the island's Controls page:
+    /// All controls, hidden until now, joins the panel's own sections there.
+    /// Set once, after `Defaults.register()`, so a first launch's migrations
+    /// still see an island nobody has set up.
+    static let allControlsKey = "mergedIslandShowsAllControls"
+
+    static func showAllControlsOnce(_ defaults: UserDefaults = .standard,
+                                    bundleID: String? = Bundle.main.bundleIdentifier) {
+        guard bundleID == mergedBundleID, !defaults.bool(forKey: allControlsKey) else { return }
+        let hidden = (defaults.string(forKey: DefaultsKey.notchHiddenControls) ?? NotchControlItem.defaultHidden)
+            .split(separator: ",").map(String.init).filter { $0 != NotchControlItem.panel.rawValue }
+        defaults.set(hidden.joined(separator: ","), forKey: DefaultsKey.notchHiddenControls)
+        defaults.set(true, forKey: allControlsKey)
+    }
+
     /// Runs before `Defaults.register()`, so the migrations there see the
     /// copied values the way the standalone app saved them.
     static func runOnce(_ defaults: UserDefaults = .standard,

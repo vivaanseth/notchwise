@@ -41,6 +41,10 @@ struct NotchHubStrings {
     let fittingHint: String
     let forget: String
     let forgetTitle: String
+    /// The Controls tile that opens every section of the menu panel in the island.
+    let allControls: String
+    /// The menu panel's switches for the app's features.
+    let features: String
 
     func reason(_ reason: NotchIntentReason, minutes: Int?) -> String {
         switch reason {
@@ -87,7 +91,8 @@ extension FeatureStrings {
             learnHint: "Ranks the island’s pages by the app in front, the time of day and what’s going on. What it learns stays on this Mac.",
             fitting: "Open on the page that fits",
             fittingHint: "When the app in front or what’s going on clearly points to one page, like AI agents while you code, the island opens there instead of on its home page.",
-            forget: "Forget", forgetTitle: "Forget what it learned")
+            forget: "Forget", forgetTitle: "Forget what it learned",
+            allControls: "All controls", features: "Features")
         case .ptBR: return NotchHubStrings(
             allPages: "Todas as páginas", home: "Início", suggested: "Sugerida", suggestedPage: "Sugerida: %@",
             selection: "Texto selecionado",
@@ -101,7 +106,8 @@ extension FeatureStrings {
             learnHint: "Ordena as páginas da ilha pelo app em primeiro plano, a hora do dia e o que está acontecendo. O que aprende fica neste Mac.",
             fitting: "Abrir na página certa",
             fittingHint: "Quando o app em primeiro plano ou o que está acontecendo aponta claramente para uma página, como os agentes de IA enquanto você programa, a ilha abre nela em vez da página inicial.",
-            forget: "Esquecer", forgetTitle: "Esquecer o que aprendeu")
+            forget: "Esquecer", forgetTitle: "Esquecer o que aprendeu",
+            allControls: "Todos os controles", features: "Recursos")
         case .tr: return NotchHubStrings(
             allPages: "Tüm sayfalar", home: "Ana sayfa", suggested: "Önerilen", suggestedPage: "Önerilen: %@",
             selection: "Seçili metin",
@@ -115,7 +121,8 @@ extension FeatureStrings {
             learnHint: "Adanın sayfalarını öndeki uygulamaya, günün saatine ve olup bitene göre sıralar. Öğrendikleri bu Mac’te kalır.",
             fitting: "Uygun sayfada aç",
             fittingHint: "Öndeki uygulama ya da olup biten açıkça bir sayfayı gösteriyorsa, örneğin kod yazarken yapay zekâ ajanları, ada ana sayfası yerine orada açılır.",
-            forget: "Unut", forgetTitle: "Öğrendiklerini unut")
+            forget: "Unut", forgetTitle: "Öğrendiklerini unut",
+            allControls: "Tüm kontroller", features: "Özellikler")
         case .ru: return NotchHubStrings(
             allPages: "Все страницы", home: "Главная", suggested: "Предложенная", suggestedPage: "Предложено: %@",
             selection: "Выделенный текст",
@@ -129,7 +136,8 @@ extension FeatureStrings {
             learnHint: "Упорядочивает страницы острова по активному приложению, времени суток и происходящему. Всё изученное остаётся на этом Mac.",
             fitting: "Открывать подходящую страницу",
             fittingHint: "Когда активное приложение или происходящее явно указывает на одну страницу, например ИИ-агенты во время программирования, остров открывается на ней, а не на главной.",
-            forget: "Забыть", forgetTitle: "Забыть изученное")
+            forget: "Забыть", forgetTitle: "Забыть изученное",
+            allControls: "Всё управление", features: "Функции")
         case .es: return NotchHubStrings(
             allPages: "Todas las páginas", home: "Inicio", suggested: "Sugerida", suggestedPage: "Sugerida: %@",
             selection: "Texto seleccionado",
@@ -143,7 +151,8 @@ extension FeatureStrings {
             learnHint: "Ordena las páginas de la isla según la app en primer plano, la hora del día y lo que está pasando. Lo que aprende se queda en este Mac.",
             fitting: "Abrir en la página adecuada",
             fittingHint: "Cuando la app en primer plano o lo que está pasando apunta claramente a una página, como los agentes de IA mientras programas, la isla se abre ahí en lugar de en su página de inicio.",
-            forget: "Olvidar", forgetTitle: "Olvidar lo aprendido")
+            forget: "Olvidar", forgetTitle: "Olvidar lo aprendido",
+            allControls: "Todos los controles", features: "Funciones")
         case .sk: return NotchHubStrings(
             allPages: "Všetky stránky", home: "Domov", suggested: "Navrhovaná", suggestedPage: "Navrhované: %@",
             selection: "Označený text",
@@ -157,7 +166,8 @@ extension FeatureStrings {
             learnHint: "Zoraďuje stránky ostrova podľa aplikácie v popredí, dennej doby a toho, čo sa deje. Čo sa naučí, zostáva v tomto Macu.",
             fitting: "Otvoriť na vhodnej stránke",
             fittingHint: "Keď aplikácia v popredí alebo to, čo sa deje, jasne ukazuje na jednu stránku, napríklad AI agentov pri programovaní, ostrov sa otvorí na nej namiesto domovskej stránky.",
-            forget: "Zabudnúť", forgetTitle: "Zabudnúť naučené")
+            forget: "Zabudnúť", forgetTitle: "Zabudnúť naučené",
+            allControls: "Všetky ovládače", features: "Funkcie")
         case .de: return NotchHubStrings(
             allPages: "Alle Seiten", home: "Start", suggested: "Vorgeschlagen", suggestedPage: "Vorschlag: %@",
             selection: "Markierter Text",
@@ -171,7 +181,8 @@ extension FeatureStrings {
             learnHint: "Ordnet die Seiten der Insel nach der App im Vordergrund, der Tageszeit und dem, was gerade passiert. Was es lernt, bleibt auf diesem Mac.",
             fitting: "Auf der passenden Seite öffnen",
             fittingHint: "Wenn die App im Vordergrund oder das, was gerade passiert, klar auf eine Seite zeigt, etwa KI-Agenten beim Programmieren, öffnet sich die Insel dort statt auf ihrer Startseite.",
-            forget: "Vergessen", forgetTitle: "Gelerntes vergessen")
+            forget: "Vergessen", forgetTitle: "Gelerntes vergessen",
+            allControls: "Alle Steuerungen", features: "Funktionen")
         case .fr: return NotchHubStrings(
             allPages: "Toutes les pages", home: "Accueil", suggested: "Suggérée", suggestedPage: "Suggestion : %@",
             selection: "Texte sélectionné",
@@ -185,7 +196,8 @@ extension FeatureStrings {
             learnHint: "Classe les pages de l’île selon l’app au premier plan, l’heure et ce qui se passe. Ce qu’il apprend reste sur ce Mac.",
             fitting: "Ouvrir sur la page qui convient",
             fittingHint: "Quand l’app au premier plan ou ce qui se passe désigne clairement une page, comme les agents IA pendant que vous codez, l’île s’ouvre dessus plutôt que sur sa page d’accueil.",
-            forget: "Oublier", forgetTitle: "Oublier ce qui a été appris")
+            forget: "Oublier", forgetTitle: "Oublier ce qui a été appris",
+            allControls: "Toutes les commandes", features: "Fonctions")
         case .it: return NotchHubStrings(
             allPages: "Tutte le pagine", home: "Home", suggested: "Suggerita", suggestedPage: "Suggerita: %@",
             selection: "Testo selezionato",
@@ -199,7 +211,8 @@ extension FeatureStrings {
             learnHint: "Ordina le pagine dell’isola in base all’app in primo piano, all’ora del giorno e a cosa sta succedendo. Ciò che impara resta su questo Mac.",
             fitting: "Apri sulla pagina adatta",
             fittingHint: "Quando l’app in primo piano o ciò che sta succedendo indica chiaramente una pagina, come gli agenti IA mentre programmi, l’isola si apre lì invece che sulla pagina principale.",
-            forget: "Dimentica", forgetTitle: "Dimentica ciò che ha imparato")
+            forget: "Dimentica", forgetTitle: "Dimentica ciò che ha imparato",
+            allControls: "Tutti i controlli", features: "Funzioni")
         case .ja: return NotchHubStrings(
             allPages: "すべてのページ", home: "ホーム", suggested: "おすすめ", suggestedPage: "おすすめ: %@",
             selection: "選択中のテキスト",
@@ -213,7 +226,8 @@ extension FeatureStrings {
             learnHint: "手前のアプリ、時間帯、いま起きていることでアイランドのページを並べ替えます。学習内容はこのMacに残ります。",
             fitting: "合うページで開く",
             fittingHint: "手前のアプリやいま起きていることがはっきり1つのページを示すとき（コーディング中のAIエージェントなど）、アイランドはホームではなくそのページで開きます。",
-            forget: "消去", forgetTitle: "学習内容を消去")
+            forget: "消去", forgetTitle: "学習内容を消去",
+            allControls: "すべてのコントロール", features: "機能")
         case .ko: return NotchHubStrings(
             allPages: "모든 페이지", home: "홈", suggested: "추천", suggestedPage: "추천: %@",
             selection: "선택한 텍스트",
@@ -227,7 +241,8 @@ extension FeatureStrings {
             learnHint: "앞에 있는 앱, 시간대, 진행 중인 일에 따라 아일랜드의 페이지를 정렬합니다. 학습한 내용은 이 Mac에만 남습니다.",
             fitting: "알맞은 페이지로 열기",
             fittingHint: "앞에 있는 앱이나 진행 중인 일이 한 페이지를 분명히 가리키면(코딩 중의 AI 에이전트 등) 아일랜드가 홈 대신 그 페이지로 열립니다.",
-            forget: "지우기", forgetTitle: "학습한 내용 지우기")
+            forget: "지우기", forgetTitle: "학습한 내용 지우기",
+            allControls: "모든 제어", features: "기능")
         case .uk: return NotchHubStrings(
             allPages: "Усі сторінки", home: "Головна", suggested: "Запропонована", suggestedPage: "Пропозиція: %@",
             selection: "Виділений текст",
@@ -241,7 +256,8 @@ extension FeatureStrings {
             learnHint: "Упорядковує сторінки острова за активною програмою, часом доби й тим, що відбувається. Усе вивчене лишається на цьому Mac.",
             fitting: "Відкривати потрібну сторінку",
             fittingHint: "Коли активна програма або те, що відбувається, чітко вказує на одну сторінку, як-от ШІ-агенти під час програмування, острів відкривається на ній, а не на головній.",
-            forget: "Забути", forgetTitle: "Забути вивчене")
+            forget: "Забути", forgetTitle: "Забути вивчене",
+            allControls: "Усе керування", features: "Функції")
         case .zhHans: return NotchHubStrings(
             allPages: "全部页面", home: "主页", suggested: "推荐", suggestedPage: "推荐：%@",
             selection: "所选文本",
@@ -255,7 +271,8 @@ extension FeatureStrings {
             learnHint: "根据前台 App、时段和正在发生的事情排列灵动岛的页面。学到的内容只保留在这台 Mac 上。",
             fitting: "打开到合适的页面",
             fittingHint: "当前台 App 或正在发生的事明确指向某个页面时（例如编程时的 AI 智能体），灵动岛会直接打开到该页面，而不是主页。",
-            forget: "忘记", forgetTitle: "忘记已学内容")
+            forget: "忘记", forgetTitle: "忘记已学内容",
+            allControls: "所有控制", features: "功能")
         case .zhTW: return NotchHubStrings(
             allPages: "所有頁面", home: "主頁", suggested: "推薦", suggestedPage: "推薦：%@",
             selection: "選取的文字",
@@ -269,7 +286,8 @@ extension FeatureStrings {
             learnHint: "依照前景 App、時段和正在發生的事排列動態島的頁面。學到的內容只保留在這台 Mac 上。",
             fitting: "開啟到合適的頁面",
             fittingHint: "當前景 App 或正在發生的事明確指向某個頁面時（例如寫程式時的 AI 代理），動態島會直接開啟到該頁面，而不是主頁。",
-            forget: "忘記", forgetTitle: "忘記已學內容")
+            forget: "忘記", forgetTitle: "忘記已學內容",
+            allControls: "所有控制項", features: "功能")
         case .zhHK: return NotchHubStrings(
             allPages: "所有頁面", home: "主頁", suggested: "推介", suggestedPage: "推介：%@",
             selection: "揀咗嘅文字",
@@ -283,7 +301,8 @@ extension FeatureStrings {
             learnHint: "跟前台 App、時段同而家發生緊嘅事排列動態島嘅頁面。學到嘅嘢只會留喺呢部 Mac。",
             fitting: "打開到啱嘅頁面",
             fittingHint: "當前台 App 或者而家發生緊嘅事明顯指向某一頁（例如寫程式時嘅 AI 代理），動態島會直接打開嗰頁，而唔係主頁。",
-            forget: "忘記", forgetTitle: "忘記學到嘅嘢")
+            forget: "忘記", forgetTitle: "忘記學到嘅嘢",
+            allControls: "所有控制項", features: "功能")
         }
     }
 }

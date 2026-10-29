@@ -38,11 +38,14 @@ enum NotchDestinationContract {
         struct Reader { func rememberPasteTarget() {} }
     }
     enum QuickLauncherService { static var shared = QuickLauncherContract.Launcher() }
+    enum PanelSectionID { case fanControl, toggles, controls, wallpaper }
     enum MenuPanelFocus {
         static let shared = Focus()
         final class Focus {
             var normalRequests = 0
+            var sectionRequests: [PanelSectionID] = []
             func showNormalPanel() { normalRequests += 1 }
+            func focus(_ section: PanelSectionID) { sectionRequests.append(section) }
         }
     }
     final class Timer {

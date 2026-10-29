@@ -1315,7 +1315,10 @@ enum NotchControlSetupRequirement: Equatable {
 }
 
 enum NotchControlItem: String, CaseIterable, Identifiable {
-    case volume, brightness, keyboardLight, music, mixer, keepAwake, timer, calendar, microphone, screenshot, recording, speedTest, panel, commandBar, scratchpad
+    case volume, brightness, keyboardLight, music, mixer, keepAwake, timer, calendar
+    /// The menu panel's controls, each opening its own section in the island.
+    case fans, toggles, features, wallpaper
+    case microphone, screenshot, recording, speedTest, panel, commandBar, scratchpad
     static let defaultHidden = "keyboardLight,microphone,screenshot,recording,speedTest,panel,commandBar,scratchpad"
     var id: String { rawValue }
 
@@ -1346,6 +1349,10 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .music: return NotchModule.music.symbol
         case .timer: return NotchModule.timer.symbol
         case .calendar: return NotchModule.calendar.symbol
+        case .fans: return AppFeature.fanControl.symbolName
+        case .toggles: return AppFeature.quickToggles.symbolName
+        case .features: return "switch.2"
+        case .wallpaper: return AppFeature.wallpaper.symbolName
         }
     }
 
@@ -1359,7 +1366,10 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .recording: return .feature(.screenRecorder)
         case .commandBar: return .feature(.commandBar)
         case .scratchpad: return .feature(.scratchpad)
-        case .panel: return .none
+        case .panel, .features: return .none
+        case .fans: return .feature(.fanControl)
+        case .toggles: return .feature(.quickToggles)
+        case .wallpaper: return .feature(.wallpaper)
         case .mixer: return .page(.mixer, feature: .mixer)
         case .speedTest: return .page(.system, feature: .monitorNetwork)
         case .music: return .page(.music, feature: nil)
@@ -1381,7 +1391,10 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .speedTest: return AppFeature.monitorNetwork.isAvailable(in: defaults) && NotchSupport.modules(in: defaults).contains(.system)
         case .commandBar: return AppFeature.commandBar.isAvailable(in: defaults)
         case .scratchpad: return AppFeature.scratchpad.isAvailable(in: defaults)
-        case .panel: return true
+        case .panel, .features: return true
+        case .fans: return AppFeature.fanControl.isAvailable(in: defaults)
+        case .toggles: return AppFeature.quickToggles.isAvailable(in: defaults)
+        case .wallpaper: return AppFeature.wallpaper.isAvailable(in: defaults)
         case .music: return NotchSupport.modules(in: defaults).contains(.music)
         case .timer: return NotchSupport.modules(in: defaults).contains(.timer)
         case .calendar: return NotchSupport.modules(in: defaults).contains(.calendar)

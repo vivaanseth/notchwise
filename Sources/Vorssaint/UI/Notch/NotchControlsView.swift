@@ -112,6 +112,9 @@ struct NotchControlsView: View {
             NotchActionTile(symbol: item.symbol, title: item.title(l10n), action: service.openScratchpad)
         case .timer: NotchTimerTile(service: service)
         case .calendar: NotchCalendarTile(service: service)
+        case .fans: NotchFanTile(service: service)
+        case .toggles, .features, .wallpaper:
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) { service.activateQuickAction(.control(item)) }
         case .volume, .brightness, .keyboardLight, .music: EmptyView()
         }
     }
@@ -128,13 +131,17 @@ extension NotchControlItem {
         case .screenshot: return FeatureStrings.recentCaptures(l10n.language).screenshot
         case .recording: return FeatureStrings.recorder(l10n.language).pageTitle
         case .speedTest: return l10n.s.speedTestRun
-        case .panel: return FeatureStrings.notch(l10n.language).panel
+        case .panel: return FeatureStrings.notchHub(l10n.language).allControls
         case .mixer: return l10n.s.mixerSection
         case .commandBar: return FeatureStrings.commandBar(l10n.language).pageTitle
         case .scratchpad: return FeatureStrings.scratchpad(l10n.language).pageTitle
         case .music: return NotchModule.music.title(l10n.language)
         case .timer: return NotchModule.timer.title(l10n.language)
         case .calendar: return NotchModule.calendar.title(l10n.language)
+        case .fans: return FeatureStrings.fanControl(l10n.language).title
+        case .toggles: return FeatureStrings.quickToggles(l10n.language).pageTitle
+        case .features: return FeatureStrings.notchHub(l10n.language).features
+        case .wallpaper: return FeatureStrings.wallpaper(l10n.language).pageTitle
         }
     }
 }
@@ -543,6 +550,25 @@ private struct NotchCalendarTile: View {
             reading: event.map {
                 NotchCalendarSupport.tileStartText($0.start, now: now, locale: l10n.language.formattingLocale())
             }) { service.select(.calendar) }
+    }
+}
+
+/// The fans' speed on the tile, lit while the app holds them above the
+/// system's own; the tile opens the fan controls in the island.
+private struct NotchFanTile: View {
+    let service: NotchService
+    @ObservedObject private var monitor = SystemMonitor.shared
+    @ObservedObject private var fans = FanControlService.shared
+    @ObservedObject private var l10n = L10n.shared
+
+    var body: some View {
+        let strings = FeatureStrings.fanControl(l10n.language)
+        let speed = monitor.snapshot.fanSpeeds.max()
+        NotchActionTile(symbol: NotchControlItem.fans.symbol, title: strings.title,
+                        reading: speed.map { String(format: strings.rpmFormat, Int($0.rounded())) },
+                        active: fans.snapshot.isCooling) {
+            service.activateQuickAction(.control(.fans))
+        }
     }
 }
 

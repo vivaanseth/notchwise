@@ -1887,7 +1887,8 @@ enum NotchTests {
                      "a saved island choice stays configured even if the master switch was never used")
 
         suite.expect(!NotchSupport.isEnabled(in: defaults), "notch is opt-in")
-        suite.expect(NotchSupport.controls(in: defaults) == [.volume, .brightness, .music, .mixer, .keepAwake, .timer, .calendar],
+        suite.expect(NotchSupport.controls(in: defaults) == [.volume, .brightness, .music, .mixer, .keepAwake, .timer, .calendar,
+                                                         .toggles, .features],
                "home defaults prioritize playback and everyday system controls")
         defaults.set(false, forKey: DefaultsKey.notchTimerEnabled)
         defaults.set(false, forKey: DefaultsKey.notchCalendarEnabled)
@@ -2196,7 +2197,7 @@ enum NotchTests {
         suite.expect(!NotchSupport.modules(in: defaults).contains(.mixer)
                && !NotchSupport.controls(in: defaults).contains(.volume), "mixer availability gates its module and volume control")
         defaults.set(true, forKey: AppFeature.mixer.availabilityKey)
-        suite.expect(NotchControlItem.allCases.filter { $0.setupRequirement == .none } == [.panel],
+        suite.expect(NotchControlItem.allCases.filter { $0.setupRequirement == .none } == [.features, .panel],
                      "every unavailable island control with a setup path has a navigation target")
         suite.expect(NotchControlItem.allCases.filter(\.isLevel) == [.volume, .brightness, .keyboardLight]
                      && !NotchQuickAction.optionalActions.contains(.control(.keyboardLight)),

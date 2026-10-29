@@ -2032,6 +2032,10 @@ final class NotchService: ObservableObject {
             case .calendar: select(.calendar)
             case .commandBar: perform { CommandBarService.shared.show() }
             case .scratchpad: openScratchpad()
+            case .fans: if metricIsAvailable(.fan) { showMetric(.fan) } else { openAppPanel(section: .fanControl) }
+            case .toggles: openAppPanel(section: .toggles)
+            case .features: openAppPanel(section: .controls)
+            case .wallpaper: openAppPanel(section: .wallpaper)
             case .volume, .brightness, .keyboardLight: select(.controls)
             }
         }
@@ -2060,9 +2064,10 @@ final class NotchService: ObservableObject {
         return true
     }
 
-    func openAppPanel(toggle: Bool = false) {
+    /// `section`: the panel's section to show first; its tabs reach the rest.
+    func openAppPanel(toggle: Bool = false, section: PanelSectionID? = nil) {
         if toggle, expanded, showingAppPanel, !showingSections, !showingCommandBar { collapse(); return }
-        MenuPanelFocus.shared.showNormalPanel()
+        if let section { MenuPanelFocus.shared.focus(section) } else { MenuPanelFocus.shared.showNormalPanel() }
         open(.controls, appPanel: true)
         // The toggling route is the menu bar's. Opened from there, the panel
         // has nothing behind it and closes on Escape, like the menu panel.
@@ -4486,6 +4491,9 @@ final class NotchService: ObservableObject {
         if needs, AppFeature.monitorDisk.isAvailable { detailNeeds.disk = true }
         if needs, AppFeature.fanControl.isAvailable { detailNeeds.fanSpeed = true }
         if needs, AppFeature.connectedDevices.isAvailable { detailNeeds.connectedDevices = true }
+        // The Fan Control tile reads the fans' speed.
+        if expanded, selected == .controls, selectedMetric == nil, !showingAppPanel, !showingSections, !showingCommandBar,
+           NotchSupport.controls().contains(.fans) { detailNeeds.fanSpeed = true }
         SystemMonitor.shared.setNotchDetailNeeds(detailNeeds)
         if needs != notchNeedsMonitor {
             notchNeedsMonitor = needs
