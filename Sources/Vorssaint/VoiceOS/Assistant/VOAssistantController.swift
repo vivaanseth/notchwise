@@ -305,7 +305,7 @@ final class VOAssistantController: ObservableObject {
                 routeModel = nil
                 reason = nil
                 update(turnID) { $0.provider = .ollama; $0.via = "Search" }
-                parsed = Parsed(say: found.say, detail: nil, actions: [found.action], remember: [])
+                parsed = await Self.resolve(found)
             } else if route.isLocal {
                 parsed = try await askLocal(turnID: turnID, query: query, ctx: ctx, history: history)
                 if parsed.escalate {
@@ -373,6 +373,33 @@ final class VOAssistantController: ObservableObject {
                                                 duration: min(spoken, 120), words: VOTextCleaner.wordCount(query), polished: false,
                                                 error: error.localizedDescription))
         }
+    }
+
+    /// A person looked up on a site opens on their profile: the first one
+    /// the search engine finds that carries every word of their name, with
+    /// any others listed. Without one, the site's own search opens instead.
+    private static func resolve(_ found: (say: String, action: VOAssistantAction,
+                                          person: (site: VOWebLookup.Site, name: String)?)) async -> Parsed {
+        guard let person = found.person else {
+            return Parsed(say: found.say, detail: nil, actions: [found.action], remember: [])
+        }
+        let site = person.site
+        let hits = VOWebLookup.profiles(await VOWebLookup.search("\(person.name) \(site.name)"), on: site, named: person.name)
+        guard let best = hits.first else {
+            return Parsed(say: "I couldn't pin down one profile, so here's \(site.name)'s search for \(person.name).",
+                          detail: nil, actions: [found.action], remember: [])
+        }
+        func link(_ hit: VOWebLookup.Hit) -> String {
+            "[\(hit.title.replacingOccurrences(of: "]", with: ")"))](\(hit.url.absoluteString))"
+        }
+        var detail = link(best)
+        let others = hits.dropFirst().prefix(3)
+        if !others.isEmpty {
+            detail += "\n\nAlso named \(person.name):\n" + others.map { "- " + link($0) }.joined(separator: "\n")
+                + "\n- [Everyone on \(site.name)](\(found.action["url"]))"
+        }
+        return Parsed(say: "Opening \(person.name)'s \(site.name).", detail: detail,
+                      actions: [VOAssistantAction(type: "open_url", fields: ["url": best.url.absoluteString])], remember: [])
     }
 
     /// Small local model with a strict JSON schema, few-shot prompt and sanity checks.

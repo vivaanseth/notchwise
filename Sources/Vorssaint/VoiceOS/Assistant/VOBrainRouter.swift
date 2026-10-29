@@ -89,11 +89,13 @@ enum VOBrainRouter {
         }
     }
 
-    /// Does arithmetic the small model would get wrong: "15% of 240", "12 times 7", "3.5 + 2".
     /// Finding a person, a profile or a page is a search the assistant opens,
     /// never something the local model may claim it did: such a request goes
-    /// straight to the search, with nothing for the model to make up.
-    nonisolated static func lookup(_ query: String) -> (say: String, action: VOAssistantAction)? {
+    /// straight to the search, with nothing for the model to make up. A
+    /// person on a site comes with `person`, so the assistant can look for
+    /// the profile itself before settling for the site's own search.
+    nonisolated static func lookup(_ query: String)
+        -> (say: String, action: VOAssistantAction, person: (site: VOWebLookup.Site, name: String)?)? {
         let pattern = #"(?i)^\s*(?:hey\s+\w+[,\s]+)?(?:please\s+)?(?:(?:can|could|would)\s+you\s+)?(?:find|look\s*up|search(?:\s+for)?|google|pull\s+up)\s+(?:me\s+)?(.+?)[\s?.!]*$"#
         guard let match = query.range(of: pattern, options: .regularExpression),
               let regex = try? NSRegularExpression(pattern: pattern),
@@ -116,26 +118,28 @@ enum VOBrainRouter {
         func encoded(_ text: String) -> String {
             text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? text
         }
-        if subject.range(of: #"(?i)\blinked\s*in\b"#, options: .regularExpression) != nil {
-            let who = strip(#"linked\s*in|profile|page|account|on|the|a"#)
+        if let site = VOWebLookup.site(in: subject) {
+            let who = strip(site.spoken + #"|profile|page|account|handle|on|the|a"#)
             guard !who.isEmpty else { return nil }
             // Names are said as names, however they were typed.
-            return ("Searching LinkedIn for \(who.capitalized).",
-                    VOAssistantAction(type: "open_url",
-                                      fields: ["url": "https://www.linkedin.com/search/results/people/?keywords=\(encoded(who))"]))
+            let name = who.capitalized
+            return ("Searching \(site.name) for \(name).",
+                    VOAssistantAction(type: "open_url", fields: ["url": site.search(who).absoluteString]),
+                    (site, name))
         }
         if subject.range(of: #"(?i)\byou\s*tube\b"#, options: .regularExpression) != nil {
             let what = strip(#"you\s*tube|video|videos|on|the|a"#)
             guard !what.isEmpty else { return nil }
             return ("Searching YouTube for \(what).",
                     VOAssistantAction(type: "open_url",
-                                      fields: ["url": "https://www.youtube.com/results?search_query=\(encoded(what))"]))
+                                      fields: ["url": "https://www.youtube.com/results?search_query=\(encoded(what))"]), nil)
         }
         subject = strip("online|on the web|on google")
         guard !subject.isEmpty else { return nil }
-        return ("Searching the web for \(subject).", VOAssistantAction(type: "web_search", fields: ["query": subject]))
+        return ("Searching the web for \(subject).", VOAssistantAction(type: "web_search", fields: ["query": subject]), nil)
     }
 
+    /// Does arithmetic the small model would get wrong: "15% of 240", "12 times 7", "3.5 + 2".
     static func calculatorHint(_ query: String) -> String? {
         let q = query.lowercased().replacingOccurrences(of: ",", with: "")
         if let m = q.firstMatch(of: #/(\d+(?:\.\d+)?)\s*(?:%|percent)\s+of\s+(\d+(?:\.\d+)?)/#),

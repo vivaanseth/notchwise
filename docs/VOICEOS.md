@@ -205,6 +205,13 @@ Changed in the combined app:
   YouTube's results or a web search), so nothing is claimed that was never looked up
   (`VOBrainRouter.lookup`). A lookup about someone on screen ("find his LinkedIn") still goes
   to the model and the screen. The local prompt also says it cannot browse and must search.
+- **People land on their profile.** "Find Keshav Arun on LinkedIn" (GitHub, Instagram and X
+  too) asks Bing's plain results page for the name and the site, and opens the first profile
+  there whose title or address carries every word of the name, with up to three others listed
+  as links and LinkedIn's own search beside them (`VOWebLookup`). With no such profile, or no
+  answer within 5 s, it opens the site's people search as before. Only the name and the site's
+  name go to Bing, as a typed search would. `VOICEOS_NO_MODELS=1` runs the dry-run self-test on
+  lookups without starting a local model.
 - **Spoken as it's written.** Each sentence of an answer goes to the voice as soon as it is
   complete, while the model still writes the rest and its actions
   (`VOAssistantVoice.stream`/`finishStream`); the words still light up as they're said.

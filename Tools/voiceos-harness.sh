@@ -10,7 +10,8 @@
 #       executed) and logs which brain answered
 #
 # Extra environment for selftest: VOICEOS_PROVIDER, VOICEOS_QUERY,
-# VOICEOS_ESCALATION_LIMIT, VOICEOS_TEST_IMAGE (see VOSelfTest.swift).
+# VOICEOS_ESCALATION_LIMIT, VOICEOS_TEST_IMAGE, VOICEOS_NO_MODELS=1 (no local
+# model started; see VOSelfTest.swift).
 #
 # The tools run in a copy of build/stage's app with a throwaway bundle id, so
 # they never read or write the real app's preferences, and in harness mode
@@ -53,7 +54,7 @@ else
     mkdir -p "${OUT:h}"
     ENV_ARGS+=(--env "VOICEOS_SELFTEST=$OUT")
 fi
-for name in VOICEOS_PROVIDER VOICEOS_QUERY VOICEOS_ESCALATION_LIMIT VOICEOS_TEST_IMAGE VOICEOS_DEBUG_LOG; do
+for name in VOICEOS_PROVIDER VOICEOS_QUERY VOICEOS_ESCALATION_LIMIT VOICEOS_TEST_IMAGE VOICEOS_DEBUG_LOG VOICEOS_NO_MODELS; do
     [[ -n "${(P)name:-}" ]] && ENV_ARGS+=(--env "$name=${(P)name}")
 done
 

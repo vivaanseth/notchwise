@@ -52,9 +52,10 @@ final class VORuntime: NSObject {
             .store(in: &bag)
 
         VOProviderManager.shared.refreshAll()
-        // The snapshot tool only draws, so it leaves the models alone: no
+        // The snapshot tool only draws, and a self-test without models only
+        // runs lookups, so they leave the models alone: no
         // Ollama model loaded into memory and no Claude session started.
-        guard !(harness && VOSnapshotter.isRequested) else { return }
+        guard !(harness && (VOSnapshotter.isRequested || VOSelfTest.skipsModels)) else { return }
         // Plan-usage checks (CodexBar) start heavy CLI sessions, so they only run when you open Apps/Insights.
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
             guard self?.running == true else { return }

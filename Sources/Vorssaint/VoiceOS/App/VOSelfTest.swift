@@ -14,6 +14,11 @@ enum VOSelfTest {
         return true
     }
 
+    /// `VOICEOS_NO_MODELS=1`: only the assistant's lookups, which need no
+    /// model, run as they do for real; nothing starts Ollama or loads a
+    /// model, and any other request is skipped.
+    nonisolated static var skipsModels: Bool { ProcessInfo.processInfo.environment["VOICEOS_NO_MODELS"] == "1" }
+
     private static func run(_ out: URL, provider override: VOProviderID?) async {
         let settings = VOSettings.shared
         let voiceWas = settings.agentVoiceEnabled
@@ -29,47 +34,55 @@ enum VOSelfTest {
                   " · escalation: \(settings.escalationEnabled ? "\(settings.escalationProvider.displayName) \(settings.escalationModel)" : "off")\n\n"
         // Let launch-time warm-up finish, like real use (the first local load can take ~30s).
         var waited = 0
-        while !VOLocalModels.shared.warming && waited < 15 { try? await Task.sleep(nanoseconds: 1_000_000_000); waited += 1 }
-        while VOLocalModels.shared.warming && waited < 150 { try? await Task.sleep(nanoseconds: 1_000_000_000); waited += 1 }
-        log += "(waited \(waited)s for local warm-up)\n\n"
+        while !skipsModels && !VOLocalModels.shared.warming && waited < 15 { try? await Task.sleep(nanoseconds: 1_000_000_000); waited += 1 }
+        while !skipsModels && VOLocalModels.shared.warming && waited < 150 { try? await Task.sleep(nanoseconds: 1_000_000_000); waited += 1 }
+        log += skipsModels ? "(no models)\n\n" : "(waited \(waited)s for local warm-up)\n\n"
 
         // 1. Dictation polish (as if typing into Slack)
-        let raw = "um so can you uh take a look at the onboarding bug there's like three things going wrong preya's fix from last night didn't take the the magic link still lands in spam and the postgress logs are full of timeouts so let's move standup to ten"
-        let dict = settings.dictionary + [VODictionaryEntry(spoken: "preya", written: "Priya"), VODictionaryEntry(spoken: "postgress", written: "Postgres")]
-        let cleaned = VOTextCleaner.clean(raw, dictionary: dict, removeFillers: true)
-        log += "== Dictation\nlocal rules: \(cleaned)\n"
-        let ctx = VOFrontContext(appName: "Slack", bundleID: "com.tinyspeck.slackmacgap")
-        let start = Date()
-        do {
-            let polished: String
-            if settings.polishEngine == .ollama {
-                let r = try await VOProviderManager.shared.complete(
-                    .ollama, system: VOLocalPrompts.dictationSystem,
-                    prompt: VOLocalPrompts.dictationUser(style: .chat, speech: cleaned, terms: dict.map(\.written)),
-                    model: settings.localDictationModel, jsonSchema: VOLocalPrompts.textSchema, maxTokens: 160, timeout: 60)
-                polished = VOLocalPrompts.text(from: r)
-            } else if let p = settings.polishEngine.provider {
-                polished = VODictationController.stripWrapping(try await VOProviderManager.shared.complete(
-                    p, system: VODictationController.shared.polishSystemPrompt(style: .chat, ctx: ctx), prompt: "Transcript:\n<<<\n\(cleaned)\n>>>"))
-            } else {
-                polished = cleaned
+        if !skipsModels {
+            let raw = "um so can you uh take a look at the onboarding bug there's like three things going wrong preya's fix from last night didn't take the the magic link still lands in spam and the postgress logs are full of timeouts so let's move standup to ten"
+            let dict = settings.dictionary + [VODictionaryEntry(spoken: "preya", written: "Priya"), VODictionaryEntry(spoken: "postgress", written: "Postgres")]
+            let cleaned = VOTextCleaner.clean(raw, dictionary: dict, removeFillers: true)
+            log += "== Dictation\nlocal rules: \(cleaned)\n"
+            let ctx = VOFrontContext(appName: "Slack", bundleID: "com.tinyspeck.slackmacgap")
+            let start = Date()
+            do {
+                let polished: String
+                if settings.polishEngine == .ollama {
+                    let r = try await VOProviderManager.shared.complete(
+                        .ollama, system: VOLocalPrompts.dictationSystem,
+                        prompt: VOLocalPrompts.dictationUser(style: .chat, speech: cleaned, terms: dict.map(\.written)),
+                        model: settings.localDictationModel, jsonSchema: VOLocalPrompts.textSchema, maxTokens: 160, timeout: 60)
+                    polished = VOLocalPrompts.text(from: r)
+                } else if let p = settings.polishEngine.provider {
+                    polished = VODictationController.stripWrapping(try await VOProviderManager.shared.complete(
+                        p, system: VODictationController.shared.polishSystemPrompt(style: .chat, ctx: ctx), prompt: "Transcript:\n<<<\n\(cleaned)\n>>>"))
+                } else {
+                    polished = cleaned
+                }
+                log += String(format: "polished:    %@\n(%.1fs)\n\n", locale: Locale(identifier: "en_US_POSIX"), polished, Date().timeIntervalSince(start))
+            } catch {
+                log += "polish FAILED: \(error.localizedDescription)\n\n"
             }
-            log += String(format: "polished:    %@\n(%.1fs)\n\n", locale: Locale(identifier: "en_US_POSIX"), polished, Date().timeIntervalSince(start))
-        } catch {
-            log += "polish FAILED: \(error.localizedDescription)\n\n"
         }
 
         // 2. Agent requests through the real router
         let agent = VOAssistantController.shared
         agent.dryRun = true
         defer { agent.dryRun = false }
-        let queries = ProcessInfo.processInfo.environment["VOICEOS_QUERY"].map { [$0] } ?? [
+        // Several queries in VOICEOS_QUERY are separated by " | ".
+        let queries = ProcessInfo.processInfo.environment["VOICEOS_QUERY"].map { $0.components(separatedBy: " | ") } ?? [
             "Remind me to call mom tomorrow at 5pm, and what's 15% of 240?",
             "Open Spotify",
             "Text Maya that I'll be ten minutes late",
             "Write a detailed two-page proposal email to my boss about migrating our database to Postgres, with risks and a timeline",
         ]
         for q in queries {
+            // Anything but a lookup goes to a model, and asking the local one starts Ollama.
+            if skipsModels, VOBrainRouter.lookup(q) == nil {
+                log += "== Skipped (needs a model)\nquery:  \(q)\n\n"
+                continue
+            }
             agent.turns.removeAll()
             let t0 = Date()
             agent.submit(q)
