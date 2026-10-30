@@ -11,6 +11,7 @@ MergedSettingsImport.applyHoverHomeOnce()
 MergedSettingsImport.hideInFullscreenOnce()
 Defaults.register()
 MergedSettingsImport.showAllControlsOnce()
+MergedSettingsImport.removeCompanionOnce()
 NotchControlItem.keyboardLightIsSupported = { BrightnessService.keyboardLightIsSupported }
 MouseAccelerationGuard.runIfRequestedAndExit()
 MouseAccelerationService.recoverPendingAtLaunch()

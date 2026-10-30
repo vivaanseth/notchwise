@@ -615,29 +615,6 @@ if (( ! DEV )); then
 fi
 APP_OBJECT_DIR="build/objects/$EXECUTABLE"
 mkdir -p build "$APP_OBJECT_DIR"
-
-# Lil Guy, the island's character: the C++ face engine from the LilGuyFaces
-# package, in a static library the app links. A source compiles again when it
-# or any header of the engine is newer than its object.
-echo "▸ Compiling Lil Guy's face engine…"
-LILGUY_DIR="build/objects/LilGuyFace"
-LILGUY_LIBRARY="$LILGUY_DIR/libLilGuyFace.a"
-LILGUY_FLAGS=(-I Sources/LilGuyFace/include)
-mkdir -p "$LILGUY_DIR"
-lilguy_objects=()
-for source in Sources/LilGuyFace/engine/**/*.cpp; do
-    object="$LILGUY_DIR/${${source#Sources/LilGuyFace/engine/}//\//_}.o"
-    if [[ ! -f "$object" || "$source" -nt "$object" \
-          || -n "$(find Sources/LilGuyFace -name '*.h' -newer "$object" -print -quit)" ]]; then
-        clang++ -std=c++17 -O2 -target "$TARGET" -isysroot "$SDK" \
-            -I Sources/LilGuyFace/engine -I Sources/LilGuyFace/engine/host -I Sources/LilGuyFace/include \
-            -c "$source" -o "$object"
-    fi
-    lilguy_objects+=("$object")
-done
-rm -f "$LILGUY_LIBRARY"
-ar rcs "$LILGUY_LIBRARY" "${lilguy_objects[@]}"
-
 APP_OUTPUT_FILE_MAP="$APP_OBJECT_DIR/output-file-map.json"
 write_swift_output_file_map "$APP_OUTPUT_FILE_MAP" "$APP_OBJECT_DIR" "${APP_SOURCES[@]}"
 # Without -j the driver compiles one file at a time, and without batch mode
@@ -647,8 +624,8 @@ write_swift_output_file_map "$APP_OUTPUT_FILE_MAP" "$APP_OBJECT_DIR" "${APP_SOUR
 swiftc "${APP_OPTIMIZATION_FLAGS[@]}" -incremental -enable-batch-mode -j "$(sysctl -n hw.logicalcpu)" \
     -output-file-map "$APP_OUTPUT_FILE_MAP" \
     -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" "${VM_STATISTICS_COMPAT_FLAGS[@]}" "${HID_EVENT_SYSTEM_FLAGS[@]}" \
-    "${LILGUY_FLAGS[@]}" "${BUILD_VARIANT_FLAGS[@]}" \
-    "${APP_SOURCES[@]}" "$LILGUY_LIBRARY" -lc++ -o "build/$EXECUTABLE"
+    "${BUILD_VARIANT_FLAGS[@]}" \
+    "${APP_SOURCES[@]}" -o "build/$EXECUTABLE"
 
 echo "▸ Compiling protected fan helper…"
 swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" "${BUILD_VARIANT_FLAGS[@]}" \

@@ -7,7 +7,6 @@ import SwiftUI
 struct NotchView: View {
     @ObservedObject var service: NotchService
     @ObservedObject private var l10n = L10n.shared
-    @ObservedObject private var room = LilGuyRoom.shared
     @ObservedObject private var music = NotchMusicService.shared
     @ObservedObject private var launcher = QuickLauncherService.shared
     @ObservedObject private var updates = UpdateService.shared
@@ -326,12 +325,6 @@ struct NotchView: View {
             // the first control. Show the ring once keyboard input begins.
             .focusEffectDisabled(!service.showsKeyboardFocus)
             .onAppear { UpdateService.shared.checkIfStale() }
-            // Lil Guy goes back to his corner when the island leaves his page.
-            .onChange(of: service.expanded) { _, open in if !open { room.close() } }
-            .onChange(of: service.selected) { _, _ in room.close() }
-            .onChange(of: service.showingSections) { _, _ in room.close() }
-            .onChange(of: showsDetail) { _, _ in room.close() }
-            .animation(reduceMotion ? nil : .spring(duration: 0.38, bounce: 0.28), value: room.isOpen)
     }
 
     private var pageName: String {
@@ -376,14 +369,6 @@ struct NotchView: View {
         // controls there stay mounted, so a search keeps its focus.
         return NotchBandRow(band: band, covered: feedback == nil ? nil : side) {
             if !wraps {
-                // Lil Guy keeps every page company, and makes something of
-                // each one he sees; the assistant's page has its own. A
-                // click brings him out big, to his room.
-                if service.selected != .voice, !service.showingSections, !room.isOpen {
-                    LilGuyView(state: .idle, page: showsDetail ? nil : service.selected, size: 22, tap: .openRoom)
-                        .frame(width: 22, height: 22)
-                        .accessibilityHidden(true)
-                }
                 bandLeading(band)
                 items.leading
                 // Every page reaches every other from its row, in what room
@@ -532,7 +517,7 @@ struct NotchView: View {
     private var contentOverflows: Bool { pageSize.height > service.contentSize.height }
 
     private var scrollsVertically: Bool {
-        guard !service.showingAppPanel, !room.isOpen else { return false }
+        guard !service.showingAppPanel else { return false }
         return contentOverflows || service.selectedMetric != nil
             || (service.selected == .captures && service.captureContent != nil)
             || (service.selected == .tools && launcher.isEditing && launcher.activeUtility == nil)
@@ -556,9 +541,7 @@ struct NotchView: View {
     }
 
     @ViewBuilder private var content: some View {
-        if room.isOpen {
-            LilGuyRoomView(service: service, size: pageSize)
-        } else if service.showingAppPanel {
+        if service.showingAppPanel {
             MenuPanelView(notchSize: pageSize)
         } else if let metric = service.selectedMetric {
             if metric == .fan {

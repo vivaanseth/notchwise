@@ -99,6 +99,17 @@ enum MergedSettingsImport {
         defaults.set(true, forKey: allControlsKey)
     }
 
+    /// No character lives in the island: the companion is switched off once,
+    /// and Settings → Companion brings it back.
+    static let noCompanionKey = "mergedIslandCompanionRemoved"
+
+    static func removeCompanionOnce(_ defaults: UserDefaults = .standard,
+                                    bundleID: String? = Bundle.main.bundleIdentifier) {
+        guard bundleID == mergedBundleID, !defaults.bool(forKey: noCompanionKey) else { return }
+        defaults.set(false, forKey: DefaultsKey.notchMascotEnabled)
+        defaults.set(true, forKey: noCompanionKey)
+    }
+
     /// Runs before `Defaults.register()`, so the migrations there see the
     /// copied values the way the standalone app saved them.
     static func runOnce(_ defaults: UserDefaults = .standard,

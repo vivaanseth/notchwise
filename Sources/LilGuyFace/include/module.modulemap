@@ -1,4 +1,0 @@
-module LilGuyFace {
-    header "LilGuyFace.h"
-    export *
-}

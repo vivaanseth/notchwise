@@ -84,12 +84,6 @@ enum VOSnapshotter {
         island.open(.controls)
         await pause(1.0)
         shot("16-island-controls.png")
-        // A click on Lil Guy in the row brings him out to his room.
-        LilGuyRoom.shared.open()
-        await pause(1.2)
-        shot("16b-island-lilguy-room.png")
-        LilGuyRoom.shared.close()
-        await pause(0.6)
         island.open(sections: true)
         await pause(1.0)
         shot("17-island-sections.png")

@@ -17,6 +17,7 @@ private struct VOTurnsHeightKey: PreferenceKey {
 struct VOVoicePage: View {
     @ObservedObject var service: NotchService
     @ObservedObject private var agent = VOAssistantController.shared
+    @ObservedObject private var voice = VOAssistantVoice.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Before anything is asked, the page is the island's home too: the
@@ -28,39 +29,8 @@ struct VOVoicePage: View {
             && !service.hubModules.isEmpty
     }
 
-    private var lilGuyState: LilGuyState {
-        switch agent.phase {
-        case .listening, .transcribing: return .listening
-        case .thinking: return .thinking
-        default: return agent.turns.last?.actions.contains { $0.state == .running } == true ? .working : .idle
-        }
-    }
-
-    /// The first thing asked, while it is heard: Lil Guy comes out big to
-    /// listen, nodding along with the voice, and goes back to the corner
-    /// once there is an answer to show.
-    private var showsStage: Bool {
-        agent.turns.isEmpty && (agent.phase == .listening || agent.phase == .transcribing)
-    }
-
-    /// Once per answer: success, or an error when it failed.
-    private var lilGuyReaction: (state: LilGuyState, id: Int)? {
-        guard agent.phase == .answered, let turn = agent.turns.last, !turn.thinking else { return nil }
-        return (turn.error == nil ? .success : .error, turn.id.hashValue)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if showsStage {
-                LilGuyView(state: lilGuyState, size: 96,
-                           swell: reduceMotion ? 1 : 1 + min(0.12, CGFloat(agent.level) * 0.18))
-                    .frame(width: 96, height: 96)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 10)
-                    .padding(.bottom, 12)
-                    .transition(.opacity)
-                    .accessibilityHidden(true)
-            }
             VOExpandedNotch()
             if showsHub {
                 NotchHubView(service: service, selection: agent.frontSelection) { agent.submit($0) }
@@ -70,7 +40,6 @@ struct VOVoicePage: View {
             }
         }
         .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: showsHub)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: showsStage)
         .fixedSize(horizontal: false, vertical: true)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { service.updateVoiceHeight($0) }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -84,13 +53,8 @@ struct VOVoicePage: View {
                 .accessibilityHidden(true)
         }
         .notchBand(leading: {
-            // Lil Guy is the assistant's face: listening, thinking, working,
-            // then glad or cross at how it went.
-            // While he is out listening, his corner keeps its place, empty.
-            LilGuyView(state: lilGuyState, reaction: lilGuyReaction, size: 24, tap: .openRoom)
-                .frame(width: 24, height: 24)
-                .padding(.leading, 4)
-                .opacity(showsStage ? 0 : 1)
+            VOJarvisGlyph(size: 17, active: agent.phase == .listening || agent.phase == .thinking || voice.speaking)
+                .padding(.leading, 6)
                 .accessibilityHidden(true)
             // The island's pages, at the top of its home.
             NotchHubPageBar(service: service)
