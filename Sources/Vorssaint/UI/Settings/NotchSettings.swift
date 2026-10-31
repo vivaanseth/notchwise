@@ -532,6 +532,9 @@ struct NotchSettings: View {
         case .watch:
             NotchWatchSettingsControls()
                 .toggleStyle(TrailingSwitchToggleStyle())
+        // Battery Care keeps its options on its own page.
+        case .battery:
+            EmptyView()
         // The assistant keeps its options on VoiceOS's own pages.
         case .voice:
             Button(FeatureStrings.voiceAssistant(l10n.language).settingsSection + " → "
@@ -887,6 +890,7 @@ struct NotchSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
+        case .battery: return .monitorPower
         }
     }
 

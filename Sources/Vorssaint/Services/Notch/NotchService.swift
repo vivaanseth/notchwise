@@ -2033,7 +2033,10 @@ final class NotchService: ObservableObject {
             case .commandBar: perform { CommandBarService.shared.show() }
             case .scratchpad: openScratchpad()
             case .fans: if metricIsAvailable(.fan) { showMetric(.fan) } else { openAppPanel(section: .fanControl) }
-            case .battery: if metricIsAvailable(.battery) { showMetric(.battery) } else { openAppPanel(section: .power) }
+            case .battery:
+                if modules.contains(.battery) { select(.battery) }
+                else if metricIsAvailable(.battery) { showMetric(.battery) }
+                else { openAppPanel(section: .power) }
             case .toggles: openAppPanel(section: .toggles)
             case .features: openAppPanel(section: .controls)
             case .wallpaper: openAppPanel(section: .wallpaper)
@@ -2090,6 +2093,12 @@ final class NotchService: ObservableObject {
     }
 
     func showMetric(_ metric: MetricDetailKind, toggle: Bool = false) {
+        // The battery has a page of its own: the menu bar's battery opens it.
+        if metric == .battery, modules.contains(.battery) {
+            if toggle, expanded, selected == .battery, !showingSections, !showingCommandBar,
+               !showingAppPanel, selectedMetric == nil { collapse() } else { open(.battery) }
+            return
+        }
         guard metricIsAvailable(metric) else { return }
         if toggle, expanded, selectedMetric == metric, !showingSections, !showingCommandBar { collapse(); return }
         open(.system, metric: metric)

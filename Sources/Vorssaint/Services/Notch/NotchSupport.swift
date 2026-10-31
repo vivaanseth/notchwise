@@ -7,7 +7,12 @@ import Foundation
 import CoreGraphics
 
 enum NotchModule: String, CaseIterable, Identifiable {
-    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch
+    case controls
+    /// Battery Care, beside Controls wherever a saved order does not place
+    /// it; the combined app also places it there in one saved before it
+    /// existed (`MergedSettingsImport.showBatteryCareOnce`).
+    case battery
+    case mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch
     /// The VoiceOS assistant. Added last, so every saved order and fallback
     /// keeps its meaning; the combined app's first launch puts it first.
     case voice
@@ -16,6 +21,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .voice: return AppFeature.voiceAssistant.symbolName
+        case .battery: return "battery.75"
         case .controls: return "slider.horizontal.3"
         // A speaker reads as sound at a glance; faders beside the settings
         // gear looked like a second settings button.
@@ -42,6 +48,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
     var shortcutKey: String {
         switch self {
         case .voice: return "j"
+        case .battery: return "e"
         case .controls: return "c"
         case .mixer: return "v"
         case .music: return "m"
@@ -64,6 +71,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
     func isAvailable(in defaults: UserDefaults = .standard) -> Bool {
         switch self {
         case .voice: return AppFeature.voiceAssistant.isAvailable(in: defaults)
+        case .battery: return AppFeature.monitorPower.isAvailable(in: defaults) && NotchControlItem.hasBattery()
         case .controls, .music: return true
         case .timer: return AppFeature.notchTimer.isAvailable(in: defaults)
         case .camera: return AppFeature.cameraPreview.isAvailable(in: defaults)
@@ -2855,7 +2863,9 @@ struct NotchGeometry: Equatable {
                 // the input row.
                 contentHeight = max(0, voiceHeight ?? NotchLayout.voiceInputHeight)
             // Lists and previews fill the chosen content budget.
-            case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch:
+            // Battery Care is a long page that scrolls inside it.
+            case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
+                 .battery:
                 contentHeight = budget
             }
         }

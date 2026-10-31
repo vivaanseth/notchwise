@@ -127,8 +127,10 @@ assistant's mark in the island is VoiceOS's own glyph again.
 
 ## Battery Care
 
-AlDente's features, free and Pro, rebuilt as Battery Care. It opens from the island's Battery
-tile, the battery detail, and the top row of the panel's Power card.
+AlDente's features, free and Pro, rebuilt as Battery Care. It is a page of its own in the
+island (beside Controls, shortcut E), and the menu bar's battery item, the Battery tile on
+Controls and the top row of the panel's Power card all open it. The combined app turns the
+menu bar battery on and places the page once (`MergedSettingsImport.showBatteryCareOnce`).
 
 - **The helper.** Pausing charging writes the SMC, which needs root. `Sources/BatteryHelper`
   is a launchd daemon an administrator installs once (`BatteryCareInstaller`, through the

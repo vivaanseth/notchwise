@@ -14,6 +14,7 @@ MergedSettingsImport.hideInFullscreenOnce()
 Defaults.register()
 MergedSettingsImport.showAllControlsOnce()
 MergedSettingsImport.removeCompanionOnce()
+MergedSettingsImport.showBatteryCareOnce()
 NotchControlItem.keyboardLightIsSupported = { BrightnessService.keyboardLightIsSupported }
 NotchControlItem.hasBattery = { PowerSampler.hasInternalBattery }
 MouseAccelerationGuard.runIfRequestedAndExit()

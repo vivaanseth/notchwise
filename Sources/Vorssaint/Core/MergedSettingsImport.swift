@@ -110,6 +110,28 @@ enum MergedSettingsImport {
         defaults.set(true, forKey: noCompanionKey)
     }
 
+    /// Battery Care replaces AlDente, whose menu bar icon was the way in, so
+    /// the combined app shows the battery in the menu bar once and puts the
+    /// Battery page beside Controls. Both stay the person's to change.
+    static let batteryAccessKey = "mergedBatteryCareAccessShown"
+
+    static func showBatteryCareOnce(_ defaults: UserDefaults = .standard,
+                                    bundleID: String? = Bundle.main.bundleIdentifier) {
+        guard bundleID == mergedBundleID, !defaults.bool(forKey: batteryAccessKey) else { return }
+        defaults.set(true, forKey: DefaultsKey.menuBarBattery)
+        var order = (defaults.string(forKey: DefaultsKey.notchModuleOrder) ?? "")
+            .split(separator: ",").map(String.init).filter { $0 != NotchModule.battery.rawValue }
+        if !order.contains(NotchModule.controls.rawValue) {
+            // Unlisted pages follow in their built-in order, Controls first.
+            order.append(NotchModule.controls.rawValue)
+        }
+        if let controls = order.firstIndex(of: NotchModule.controls.rawValue) {
+            order.insert(NotchModule.battery.rawValue, at: controls + 1)
+        }
+        defaults.set(order.joined(separator: ","), forKey: DefaultsKey.notchModuleOrder)
+        defaults.set(true, forKey: batteryAccessKey)
+    }
+
     /// Runs before `Defaults.register()`, so the migrations there see the
     /// copied values the way the standalone app saved them.
     static func runOnce(_ defaults: UserDefaults = .standard,

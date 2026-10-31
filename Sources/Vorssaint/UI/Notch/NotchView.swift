@@ -518,7 +518,7 @@ struct NotchView: View {
 
     private var scrollsVertically: Bool {
         guard !service.showingAppPanel else { return false }
-        return contentOverflows || service.selectedMetric != nil
+        return contentOverflows || service.selectedMetric != nil || service.selected == .battery
             || (service.selected == .captures && service.captureContent != nil)
             || (service.selected == .tools && launcher.isEditing && launcher.activeUtility == nil)
     }
@@ -557,6 +557,7 @@ struct NotchView: View {
         } else {
             switch service.selected {
             case .voice: VOVoicePage(service: service)
+            case .battery: BatteryCareView()
             case .timer: NotchTimerView(size: pageSize)
             case .camera:
                 NotchCameraView(size: pageSize)
@@ -824,6 +825,7 @@ extension NotchModule: PanelOrderItem {
         case .scratchpad: return FeatureStrings.scratchpad(language).pageTitle
         case .agents: return FeatureStrings.notchAgents(language).title
         case .watch: return FeatureStrings.notchWatch(language).title
+        case .battery: return FeatureStrings.batteryCare(language).battery
         }
     }
 }

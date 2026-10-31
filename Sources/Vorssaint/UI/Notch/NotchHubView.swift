@@ -47,6 +47,7 @@ extension NotchModule {
         case .mixer: return .indigo
         case .notifications: return Color(red: 1, green: 0.42, blue: 0.42)
         case .watch: return .cyan
+        case .battery: return .green
         case .controls: return .white.opacity(0.85)
         }
     }

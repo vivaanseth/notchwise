@@ -8,6 +8,7 @@ import Foundation
 struct BatteryCareFeatureStrings {
     let title = "Battery Care"
     let battery = "Battery"
+    let pageSummary = "The charge limit, what the battery is doing and its health."
     let hardwareFormat = "Hardware %d%%"
 
     // What it is doing
