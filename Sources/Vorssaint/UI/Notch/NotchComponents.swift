@@ -54,6 +54,33 @@ struct NotchLiveEqualizerBars: View {
     }
 }
 
+/// Shown beside the bars only while they cannot hear the player: one click
+/// opens System Audio Recording, and the bars come to life once it is allowed.
+struct NotchAudioAccessButton: View {
+    var playing = true
+    @ObservedObject private var audio = NotchAudioLevelService.shared
+    @ObservedObject private var l10n = L10n.shared
+
+    var body: some View {
+        if audio.cannotHear, playing {
+            let hub = FeatureStrings.hub(l10n.language)
+            Button {
+                Permissions.shared.openAudioCaptureSettings()
+                audio.retryWhileAccessIsGranted()
+            } label: {
+                Image(systemName: "waveform.slash")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.orange)
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(hub.explainAudioCapture)
+            .accessibilityLabel(hub.permAudioCapture)
+        }
+    }
+}
+
 /// A level readout in the same language as the notch's sliders, instead of the
 /// thin system bar, so every meter in the panel matches.
 struct NotchMeter: View {

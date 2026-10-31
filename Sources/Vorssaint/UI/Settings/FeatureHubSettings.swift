@@ -803,6 +803,8 @@ struct PermissionsPortalSections: View {
             if AppFeature.mixer.isAvailable, AppVolumeMixer.shared.needsPermission {
                 return .missing
             }
+            // The island's bars hearing only silence while music plays is the other.
+            if NotchAudioLevelService.shared.cannotHear { return .missing }
             return .unknown
         case .microphone:
             switch permissions.microphone {

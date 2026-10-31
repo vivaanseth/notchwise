@@ -285,6 +285,7 @@ struct NotchMusicView: View {
                 // bars rest flat while paused, so the title keeps its width.
                 NotchLiveEqualizerBars(isPlaying: playback.isPlaying, bars: 4, barWidth: 2.5, height: 15,
                                        tint: .white.opacity(0.5))
+                NotchAudioAccessButton(playing: playback.isPlaying)
                 if band.besideCamera { sectionsButton }
             } corner: {
                 extraButtons

@@ -17,6 +17,12 @@ final class NotchAudioLevelService: ObservableObject {
 
     /// Band levels from 0 to 1 while a player is being read, nil otherwise.
     @Published private(set) var levels: [Double]?
+    /// The player went on playing but the tap heard nothing at all: macOS
+    /// gives a tap only silence until System Audio Recording is allowed, and
+    /// a build signed on this Mac can lose that with every rebuild. The bars
+    /// fall back to their usual motion; the player offers the setting.
+    @Published private(set) var cannotHear = false
+    private var retryTimer: Timer?
 
     private var enabled = false
     private var subscription: AnyCancellable?
@@ -42,7 +48,31 @@ final class NotchAudioLevelService: ObservableObject {
         } else {
             subscription = nil
             stop()
+            endRetries()
+            if cannotHear { cannotHear = false }
         }
+    }
+
+    /// Once the person has the setting open, the playing song is read again
+    /// every fifteen seconds for three minutes, so allowing it brings the
+    /// bars to life without waiting for the next song.
+    func retryWhileAccessIsGranted() {
+        endRetries()
+        var attempts = 0
+        let timer = Timer(timeInterval: 15, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            attempts += 1
+            guard self.cannotHear, attempts <= 12 else { self.endRetries(); return }
+            self.silence.rearm()
+            self.playbackChanged(NotchMusicService.shared.playback)
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        retryTimer = timer
+    }
+
+    private func endRetries() {
+        retryTimer?.invalidate()
+        retryTimer = nil
     }
 
     func stop() {
@@ -127,7 +157,10 @@ final class NotchAudioLevelService: ObservableObject {
         // Paused, the tap hears the player letting go of its audio, and the
         // pause already armed the next play; only a play that stayed silent
         // is written off.
-        if stopWork == nil { silence.giveUp(on: identity) }
+        if stopWork == nil {
+            silence.giveUp(on: identity)
+            if !cannotHear { cannotHear = true }
+        }
         stop()
     }
 
@@ -152,6 +185,10 @@ final class NotchAudioLevelService: ObservableObject {
 
     private func receive(_ next: [Double], from pid: pid_t) {
         guard reader != nil, readerPID == pid, levels != next else { return }
+        if cannotHear {
+            cannotHear = false
+            endRetries()
+        }
         levels = next
     }
 }

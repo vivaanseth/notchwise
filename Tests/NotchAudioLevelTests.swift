@@ -277,6 +277,7 @@ enum NotchAudioLevelLifecycleContract {
         drain()
         expect(current.stopped && service.levels == nil && Reader.instances.count == afterSilence,
                "a silent current reader falls back for this play without immediately retrying")
+        expect(service.cannotHear, "a play the tap never hears tells the player the bars cannot hear it")
         music.playback = playback(playing: false)
         drain()
         music.playback = playback()
@@ -332,6 +333,7 @@ enum NotchAudioLevelLifecycleContract {
         guard let audible = Reader.instances.last else { return }
         audible.onLevels([0.8])
         drain()
+        expect(!service.cannotHear, "the first sound heard clears the request for access")
         let beforeAudiblePause = Reader.instances.count
         music.playback = playback(playing: false)
         drain()
