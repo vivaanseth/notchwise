@@ -123,6 +123,8 @@ struct NotchLeftoverTitle {
     static let restartsToTell = 2
     private var song: String?
     private var last: NotchPlayback?
+    /// The furthest the recording got since it last started.
+    private var reached: TimeInterval = 0
     private var restarts: [Date] = []
     private(set) var isLeftover = false
 
@@ -138,22 +140,35 @@ struct NotchLeftoverTitle {
             self = NotchLeftoverTitle()
             song = name
             last = playback
+            reached = playback.hasPosition ? playback.elapsed : 0
             return false
         }
-        if let last, Self.restarted(from: last, to: playback) { restarts.append(playback.sampledAt) }
+        // Where the last report puts the recording now: moving on while it
+        // played, held where it paused. A reel changing pauses one video and
+        // plays the next, so the step back comes after a pause as often as not.
+        if let last, last.hasPosition {
+            let moved = last.isPlaying ? max(0, playback.sampledAt.timeIntervalSince(last.sampledAt)) * last.rate : 0
+            reached = max(reached, last.elapsed + moved)
+        }
+        if playback.isPlaying, playback.hasPosition, playback.elapsed < 1.5 {
+            let end = max(playback.duration, last?.duration ?? 0)
+            if Self.restarted(reached: reached, at: playback.elapsed, end: end) {
+                restarts.append(playback.sampledAt)
+            }
+            reached = playback.elapsed
+        } else if playback.hasPosition {
+            reached = max(reached, playback.elapsed)
+        }
         last = playback
         restarts.removeAll { playback.sampledAt.timeIntervalSince($0) > Self.window }
         if restarts.count >= Self.restartsToTell { isLeftover = true }
         return isLeftover
     }
 
-    /// Back at the start from well inside the recording. A loop at its end,
-    /// a short step back or a pause is not a restart.
-    static func restarted(from last: NotchPlayback, to next: NotchPlayback) -> Bool {
-        guard last.isPlaying, next.isPlaying, last.hasPosition, next.hasPosition else { return false }
-        let expected = last.elapsed + max(0, next.sampledAt.timeIntervalSince(last.sampledAt)) * last.rate
-        let end = max(last.duration, next.duration)
-        return next.elapsed < 1.5 && expected - next.elapsed > 2 && (end <= 0 || expected < end - 1.5)
+    /// Back at the start from well inside the recording. A loop at its end
+    /// or a short step back is not a restart.
+    static func restarted(reached: TimeInterval, at position: TimeInterval, end: TimeInterval) -> Bool {
+        position < 1.5 && reached - position > 2 && (end <= 0 || reached < end - 1.5)
     }
 }
 

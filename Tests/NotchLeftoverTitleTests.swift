@@ -26,6 +26,16 @@ enum NotchLeftoverTitleTests {
         suite.expect(reels.observe(reading(at: 18, elapsed: 0.95)), "and it stays left over")
         suite.expect(!reels.observe(reading("Beat It", at: 20, elapsed: 0.1)), "a new name is trusted again")
 
+        // Reels as the island hears them: each change pauses one video where
+        // it got to and plays the next from the start, under the note's name.
+        var paused = NotchLeftoverTitle()
+        _ = paused.observe(reading(at: 0, elapsed: 0.1))
+        _ = paused.observe(reading(at: 9, elapsed: 9.2, playing: false))
+        suite.expect(!paused.observe(reading(at: 9.3, elapsed: 0.05)), "one reel change after a pause")
+        _ = paused.observe(reading(at: 16, elapsed: 6.8, playing: false))
+        suite.expect(paused.observe(reading(at: 16.2, elapsed: 0.02)),
+                     "a second reel change after a pause marks the note's name as left over")
+
         var song = NotchLeftoverTitle()
         var leftover = false
         for second in stride(from: 0.0, through: 60, by: 5) {
@@ -41,12 +51,11 @@ enum NotchLeftoverTitleTests {
         }
         suite.expect(!loop.isLeftover, "a clip looping at its end is not restarting")
 
-        var paused = NotchLeftoverTitle()
-        _ = paused.observe(reading(at: 0, elapsed: 10))
-        _ = paused.observe(reading(at: 30, elapsed: 0.1, playing: false))
-        _ = paused.observe(reading(at: 40, elapsed: 0.2))
-        _ = paused.observe(reading(at: 50, elapsed: 0.1, playing: false))
-        suite.expect(!paused.isLeftover, "a paused player moving to the start is not restarting")
+        var resting = NotchLeftoverTitle()
+        _ = resting.observe(reading(at: 0, elapsed: 10, playing: false))
+        _ = resting.observe(reading(at: 30, elapsed: 10, playing: false))
+        _ = resting.observe(reading(at: 40, elapsed: 10.5))
+        suite.expect(!resting.isLeftover, "a song paused and played again where it was is not restarting")
 
         let named = reading(at: 0, elapsed: 4)
         let unnamed = named.withoutSong(appName: "Microsoft Edge")
