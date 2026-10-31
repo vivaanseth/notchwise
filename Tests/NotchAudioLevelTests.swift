@@ -141,6 +141,11 @@ enum NotchAudioLevelLifecycleContract {
         var isAvailable: Bool { true }
     }
     enum NotchSupport { static func isEnabled() -> Bool { true } }
+    /// What macOS answers about System Audio Recording; nil is "not decided".
+    enum AudioCaptureAccess {
+        static var granted: Bool?
+        static func isGranted() -> Bool? { granted }
+    }
     enum NotchAudioLevelSupport {
         typealias SilenceMemory = NotchAudioTestSilenceMemory
         static let isSupported = true
@@ -275,9 +280,19 @@ enum NotchAudioLevelLifecycleContract {
         let afterSilence = Reader.instances.count
         music.playback = playback()
         drain()
-        expect(current.stopped && service.levels == nil && Reader.instances.count == afterSilence,
-               "a silent current reader falls back for this play without immediately retrying")
-        expect(service.cannotHear, "a play the tap never hears tells the player the bars cannot hear it")
+        expect(!current.stopped && service.levels == nil && Reader.instances.count == afterSilence,
+               "a silent reader keeps listening through the play, so sound arriving later still moves the bars")
+        expect(service.cannotHear, "silence where macOS has not granted access asks the player for it")
+        current.onLevels([0.4])
+        drain()
+        expect(!service.cannotHear && service.levels == [0.4],
+               "sound arriving after a silent stretch brings the bars to life on the same reader")
+        AudioCaptureAccess.granted = true
+        current.onSilence()
+        drain()
+        expect(!service.cannotHear && !current.stopped,
+               "with access granted, silence is a muted player, not a missing permission")
+        AudioCaptureAccess.granted = nil
         music.playback = playback(playing: false)
         drain()
         music.playback = playback()
@@ -323,8 +338,8 @@ enum NotchAudioLevelLifecycleContract {
         drain()
         music.playback = playback()
         drain()
-        expect(fresh.stopped && Reader.instances.count == afterResume,
-               "the resumed play can still give up once if its fresh reader also stays silent")
+        expect(!fresh.stopped && Reader.instances.count == afterResume,
+               "a silent resumed play keeps its one reader listening")
 
         music.playback = playback(playing: false)
         drain()

@@ -17,12 +17,13 @@ final class NotchAudioLevelService: ObservableObject {
 
     /// Band levels from 0 to 1 while a player is being read, nil otherwise.
     @Published private(set) var levels: [Double]?
-    /// The player went on playing but the tap heard nothing at all: macOS
-    /// gives a tap only silence until System Audio Recording is allowed, and
-    /// a build signed on this Mac can lose that with every rebuild. The bars
-    /// fall back to their usual motion; the player offers the setting.
+    /// The player went on playing, the tap heard nothing at all, and macOS
+    /// does not say the app may hear other apps: a tap gets only silence
+    /// until System Audio Recording is allowed. The bars keep their usual
+    /// motion and the player offers the setting. A muted video is silent
+    /// too, so with access granted silence is only silence.
     @Published private(set) var cannotHear = false
-    private var retryTimer: Timer?
+    private var accessWatch: Timer?
 
     private var enabled = false
     private var subscription: AnyCancellable?
@@ -48,31 +49,53 @@ final class NotchAudioLevelService: ObservableObject {
         } else {
             subscription = nil
             stop()
-            endRetries()
+            endAccessWatch()
             if cannotHear { cannotHear = false }
         }
     }
 
-    /// Once the person has the setting open, the playing song is read again
-    /// every fifteen seconds for three minutes, so allowing it brings the
-    /// bars to life without waiting for the next song.
-    func retryWhileAccessIsGranted() {
-        endRetries()
-        var attempts = 0
-        let timer = Timer(timeInterval: 15, repeats: true) { [weak self] _ in
+    /// While the bars cannot hear, macOS is asked every ten seconds whether
+    /// that changed, so allowing it in Settings, from the player's button or
+    /// not, brings the bars to life without waiting for the next song: a tap
+    /// built before the grant stays deaf, so the song is read anew. Where
+    /// macOS cannot be asked, the song is read again every thirty seconds
+    /// for five minutes.
+    private func watchAccess() {
+        guard accessWatch == nil else { return }
+        var ticks = 0
+        let timer = Timer(timeInterval: 10, repeats: true) { [weak self] _ in
             guard let self else { return }
-            attempts += 1
-            guard self.cannotHear, attempts <= 12 else { self.endRetries(); return }
-            self.silence.rearm()
-            self.playbackChanged(NotchMusicService.shared.playback)
+            ticks += 1
+            guard self.cannotHear else { self.endAccessWatch(); return }
+            switch AudioCaptureAccess.isGranted() {
+            case true?:
+                self.cannotHear = false
+                self.endAccessWatch()
+                self.readAgain()
+            case false?:
+                break
+            case nil:
+                if ticks > 30 { self.endAccessWatch() } else if ticks % 3 == 0 { self.readAgain() }
+            }
         }
         RunLoop.main.add(timer, forMode: .common)
-        retryTimer = timer
+        accessWatch = timer
     }
 
-    private func endRetries() {
-        retryTimer?.invalidate()
-        retryTimer = nil
+    /// The player's button: the watch above is already waiting for the grant.
+    func retryWhileAccessIsGranted() {
+        watchAccess()
+    }
+
+    private func endAccessWatch() {
+        accessWatch?.invalidate()
+        accessWatch = nil
+    }
+
+    private func readAgain() {
+        stop()
+        silence.rearm()
+        playbackChanged(NotchMusicService.shared.playback)
     }
 
     func stop() {
@@ -152,16 +175,17 @@ final class NotchAudioLevelService: ObservableObject {
         read(pid, on: identity)
     }
 
+    /// The reader heard nothing for its whole grace. It goes on listening:
+    /// a muted video, or a page that has not started its sound, plays
+    /// silence, and the bars come to life the moment sound arrives. Until
+    /// then they keep their usual motion. Paused, the tap only heard the
+    /// player letting go of its audio.
     private func giveUp(_ pid: pid_t, on identity: NotchMusicIdentity) {
-        guard readerPID == pid else { return }
-        // Paused, the tap hears the player letting go of its audio, and the
-        // pause already armed the next play; only a play that stayed silent
-        // is written off.
-        if stopWork == nil {
-            silence.giveUp(on: identity)
-            if !cannotHear { cannotHear = true }
-        }
-        stop()
+        guard readerPID == pid, stopWork == nil else { return }
+        if levels != nil { levels = nil }
+        guard AudioCaptureAccess.isGranted() != true else { return }
+        if !cannotHear { cannotHear = true }
+        watchAccess()
     }
 
     /// No tap could be created, or the one there lost its device for good.
@@ -187,7 +211,7 @@ final class NotchAudioLevelService: ObservableObject {
         guard reader != nil, readerPID == pid, levels != next else { return }
         if cannotHear {
             cannotHear = false
-            endRetries()
+            endAccessWatch()
         }
         levels = next
     }
@@ -281,6 +305,7 @@ private final class NotchAudioLevelReader {
     private var rateListenerDevice = AudioObjectID(0)
     private var processCheck: DispatchWorkItem?
     private var stopped = false
+    private var silenceReported = false
 
     init(pid: pid_t, onLevels: @escaping ([Double]) -> Void,
          onSilence: @escaping () -> Void, onUnavailable: @escaping () -> Void,
@@ -585,8 +610,11 @@ private final class NotchAudioLevelReader {
         // their usual motion while the tap warms up, and give this play up
         // when the tap only ever delivers silence.
         guard ring.hasHeard(gain: levelCompensation) else {
-            if NotchAudioLevelSupport.fallsBack(heard: false, elapsed: ProcessInfo.processInfo.systemUptime - startedAt) {
-                release(reporting: onSilence)
+            // Told once, and the tap stays: sound may still come.
+            if !silenceReported,
+               NotchAudioLevelSupport.fallsBack(heard: false, elapsed: ProcessInfo.processInfo.systemUptime - startedAt) {
+                silenceReported = true
+                onSilence()
             }
             return
         }
@@ -694,30 +722,59 @@ enum NotchAudioLevelProbe {
         let start = Date()
         var lines = ["pid \(pid)"]
         if #available(macOS 14.4, *) { lines.append("objects \(NotchAudioLevelReader.probeObjects(pid))") }
+        lines.append("access \(AudioCaptureAccess.isGranted().map(String.init) ?? "unknown")")
         var finished = false
         var heard = 0
-        func note(_ line: String) { lines.append(String(format: "%.1fs ", Date().timeIntervalSince(start)) + line) }
+        // A log for whoever runs the probe, in one fixed notation.
+        let posix = Locale(identifier: "en_US_POSIX")
+        func note(_ line: String) {
+            lines.append(String(format: "%.1fs ", locale: posix, Date().timeIntervalSince(start)) + line)
+        }
         let reader = NotchAudioLevelReader(pid: pid, onLevels: { levels in
             DispatchQueue.main.async {
                 heard += 1
-                if heard <= 6 { note("levels " + levels.map { String(format: "%.2f", $0) }.joined(separator: " ")) }
+                if heard <= 6 {
+                    note("levels " + levels.map { String(format: "%.2f", locale: posix, $0) }.joined(separator: " "))
+                }
                 if heard >= 30 { finished = true }
             }
         }, onSilence: {
-            DispatchQueue.main.async { note("silence"); finished = true }
+            DispatchQueue.main.async { note("silence so far") }
         }, onUnavailable: {
             DispatchQueue.main.async { note("unavailable"); finished = true }
         }, onProcessesLeft: {
             DispatchQueue.main.async { note("processes left") }
         })
         reader.start()
-        while !finished, Date().timeIntervalSince(start) < 10 {
+        while !finished, Date().timeIntervalSince(start) < 15 {
             RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         }
         reader.stop()
         lines.append("updates heard \(heard)")
         try? lines.joined(separator: "\n").appending("\n").write(to: out, atomically: true, encoding: .utf8)
         exit(0)
+    }
+}
+
+/// System Audio Recording as macOS answers for this app. There is no public
+/// way to ask; TCC's own preflight answers 0 for allowed and 1 for denied,
+/// and is read through dlsym so a missing symbol only means "unknown".
+enum AudioCaptureAccess {
+    private typealias Preflight = @convention(c) (CFString, CFDictionary?) -> Int32
+    private static let preflight: Preflight? = {
+        guard let tcc = dlopen("/System/Library/PrivateFrameworks/TCC.framework/TCC", RTLD_LAZY),
+              let symbol = dlsym(tcc, "TCCAccessPreflight") else { return nil }
+        return unsafeBitCast(symbol, to: Preflight.self)
+    }()
+
+    /// True or false when macOS says; nil when it has not decided or cannot be asked.
+    static func isGranted() -> Bool? {
+        guard let preflight else { return nil }
+        switch preflight("kTCCServiceAudioCapture" as CFString, nil) {
+        case 0: return true
+        case 1: return false
+        default: return nil
+        }
     }
 }
 
