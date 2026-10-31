@@ -302,6 +302,8 @@ private final class NotchAudioLevelReader {
     private let listenerClient = NotchAudioLevelListeners.reserve()
     private var deviceListening = false
     private var processListening = false
+    /// The player's processes whose starting and stopping sound is watched.
+    private var soundWatched: Set<AudioObjectID> = []
     private var rateListenerDevice = AudioObjectID(0)
     private var processCheck: DispatchWorkItem?
     private var stopped = false
@@ -333,6 +335,7 @@ private final class NotchAudioLevelReader {
             }
             watchDefaultOutputDevice()
             watchProcessList()
+            watchSound()
             startAnalysis()
         }
     }
@@ -348,7 +351,7 @@ private final class NotchAudioLevelReader {
 
     private func buildTap() -> Bool {
         guard #available(macOS 14.4, *), tapID == 0 else { return false }
-        let objects = Self.processObjects(for: pid)
+        let objects = Self.tapObjects(for: pid)
         guard !objects.isEmpty else { return false }
         tapped = objects
         let description = CATapDescription(stereoMixdownOfProcesses: objects)
@@ -476,6 +479,7 @@ private final class NotchAudioLevelReader {
                                               Self.processCallback, listenerClient)
             processListening = false
         }
+        stopWatchingSound()
         stopFollowingLevel()
         tapped = []
         teardownPipeline()
@@ -516,6 +520,26 @@ private final class NotchAudioLevelReader {
                                                           Self.processCallback, listenerClient) == noErr
     }
 
+    /// A process starting or stopping its sound changes what the tap must
+    /// hold, without the process list changing at all.
+    private func watchSound() {
+        guard #available(macOS 14.4, *) else { return }
+        var address = Self.address(kAudioProcessPropertyIsRunningOutput)
+        for object in Self.processObjects(for: pid) where !soundWatched.contains(object) {
+            if AudioObjectAddPropertyListener(object, &address, Self.processCallback, listenerClient) == noErr {
+                soundWatched.insert(object)
+            }
+        }
+    }
+
+    private func stopWatchingSound() {
+        var address = Self.address(kAudioProcessPropertyIsRunningOutput)
+        for object in soundWatched {
+            AudioObjectRemovePropertyListener(object, &address, Self.processCallback, listenerClient)
+        }
+        soundWatched = []
+    }
+
     private func watchSampleRate(of aggregateID: AudioObjectID) {
         var address = Self.address(kAudioDevicePropertyNominalSampleRate)
         if AudioObjectAddPropertyListener(aggregateID, &address,
@@ -534,8 +558,9 @@ private final class NotchAudioLevelReader {
         processCheck = nil
         guard !stopped, !tapped.isEmpty else { return }
         guard #available(macOS 14.4, *) else { return }
+        watchSound()
         switch NotchAudioLevelSupport.tapChange(tapped: Set(tapped),
-                                                current: Set(Self.processObjects(for: pid))) {
+                                                current: Set(Self.tapObjects(for: pid))) {
         case .none: return
         case .restart: release(reporting: onProcessesLeft)
         case .rebuild: rebuildTap()
@@ -677,6 +702,18 @@ private final class NotchAudioLevelReader {
         return objects
     }
 
+    /// The player's processes sending sound now, or all of them before any
+    /// does. See `NotchAudioLevelSupport.tapProcesses`.
+    @available(macOS 14.4, *)
+    private static func tapObjects(for pid: pid_t) -> [AudioObjectID] {
+        let player = processObjects(for: pid)
+        let sounding = Set(player.filter { object in
+            var running: UInt32 = 0
+            return read(object, kAudioProcessPropertyIsRunningOutput, &running) && running != 0
+        })
+        return NotchAudioLevelSupport.tapProcesses(player: player, sounding: sounding)
+    }
+
     private static func processObject(for pid: pid_t) -> AudioObjectID? {
         var pid = pid
         var object = AudioObjectID(0)
@@ -781,7 +818,7 @@ enum AudioCaptureAccess {
 extension NotchAudioLevelReader {
     @available(macOS 14.4, *)
     fileprivate static func probeObjects(_ pid: pid_t) -> String {
-        processObjects(for: pid).map(String.init).joined(separator: ",")
+        "\(tapObjects(for: pid).map(String.init).joined(separator: ",")) of \(processObjects(for: pid).count)"
     }
 }
 

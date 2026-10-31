@@ -45,6 +45,16 @@ enum NotchAudioLevelTests {
                 "the live equalizer stays off until chosen")
         expect(NotchAudioLevelSupport.silenceGrace >= 5,
                "a tap outlasts a permission prompt being read and a player that buffers before it sounds")
+        // Edge on macOS 14.7: its main process and a spare helper hold no sound,
+        // and a mixdown that includes them stays silent while the helper plays.
+        expect(NotchAudioLevelSupport.tapProcesses(player: [167, 168, 169], sounding: [168]) == [168],
+               "the tap holds only the player's processes that are sending sound")
+        expect(NotchAudioLevelSupport.tapProcesses(player: [167, 168, 169], sounding: [169, 167]) == [167, 169],
+               "several sounding processes are all tapped, in the player's order")
+        expect(NotchAudioLevelSupport.tapProcesses(player: [167, 168], sounding: []) == [167, 168],
+               "before any process sounds, the tap holds them all so it can be rebuilt around the first")
+        expect(NotchAudioLevelSupport.tapChange(tapped: [167, 168, 169], current: [168]) == .restart,
+               "a tap built before the player sounded is made again around the process that plays")
         silenceMemoryContracts(expect: expect)
         tapChangeContracts(expect: expect)
         NotchAudioLevelLifecycleContract.run(expect: expect)

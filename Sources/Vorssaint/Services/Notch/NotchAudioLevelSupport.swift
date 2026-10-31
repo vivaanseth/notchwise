@@ -48,6 +48,17 @@ enum NotchAudioLevelSupport {
         case restart
     }
 
+    /// The player's processes a tap is built from: those sending sound now.
+    /// A mixdown that also holds one of the player's idle processes stays
+    /// silent while the others play (Edge's main process and a spare helper
+    /// beside the helper that plays, on macOS 14.7), so the idle ones are
+    /// left out. With none sending sound yet, all of them, so the tap exists
+    /// and is rebuilt around the first one that starts.
+    static func tapProcesses<Process: Hashable>(player: [Process], sounding: Set<Process>) -> [Process] {
+        let playing = player.filter(sounding.contains)
+        return playing.isEmpty ? player : playing
+    }
+
     static func tapChange<Process: Hashable>(tapped: Set<Process>, current: Set<Process>) -> TapChange {
         if current == tapped { return .none }
         if !tapped.isSubset(of: current) { return .restart }
