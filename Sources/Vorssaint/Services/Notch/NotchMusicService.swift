@@ -269,7 +269,9 @@ final class NotchMusicService: ObservableObject {
     /// A song the page left behind is not named: see `NotchLeftoverTitle`.
     /// The player, its state and its controls stay.
     private func withoutLeftoverSong(_ reading: Reading) -> Reading {
-        guard leftoverTitle.observe(reading.playback), let playback = reading.playback else { return reading }
+        let leftover = leftoverTitle.observe(reading.playback)
+        NotchMusicTrace.record(reading.playback, leftover: leftover)
+        guard leftover, let playback = reading.playback else { return reading }
         let app = playback.track.appPID.flatMap { NSRunningApplication(processIdentifier: $0)?.localizedName }
         return Reading(playback: playback.withoutSong(appName: app), artwork: nil, tint: nil,
                        sources: reading.sources, automatic: reading.automatic, selectedPID: reading.selectedPID)

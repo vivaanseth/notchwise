@@ -172,6 +172,47 @@ struct NotchLeftoverTitle {
     }
 }
 
+/// A developer trace of what the island hears from the player, written only
+/// while `defaults write com.vorssaint.voiceos notchMusicTrace -bool true`
+/// is set, to ~/Library/Logs/Vorssaint + VoiceOS/now-playing.log. It holds
+/// the song's name and position, never audio, and starts over past 1 MB.
+enum NotchMusicTrace {
+    static let preferenceKey = "notchMusicTrace"
+    private static let posix = Locale(identifier: "en_US_POSIX")
+
+    static func record(_ playback: NotchPlayback?, leftover: Bool, defaults: UserDefaults = .standard) {
+        guard defaults.bool(forKey: preferenceKey) else { return }
+        let fields: [String]
+        if let playback {
+            fields = [playback.track.title ?? "-", playback.track.artist ?? "-",
+                      playback.isPlaying ? "playing" : "paused",
+                      String(format: "%.2f", locale: posix, playback.elapsed),
+                      String(format: "%.2f", locale: posix, playback.rate),
+                      String(format: "%.2f", locale: posix, playback.duration),
+                      playback.hasPosition ? "position" : "no-position",
+                      leftover ? "LEFTOVER" : "named"]
+        } else {
+            fields = ["nothing"]
+        }
+        let line = String(format: "%.2f", locale: posix, Date().timeIntervalSince1970) + "\t"
+            + fields.joined(separator: "\t") + "\n"
+        let folder = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/Vorssaint + VoiceOS", isDirectory: true)
+        let file = folder.appendingPathComponent("now-playing.log")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        if let size = (try? FileManager.default.attributesOfItem(atPath: file.path))?[.size] as? Int, size > 1_000_000 {
+            try? FileManager.default.removeItem(at: file)
+        }
+        guard let handle = FileHandle(forWritingAtPath: file.path) else {
+            try? Data(line.utf8).write(to: file)
+            return
+        }
+        handle.seekToEndOfFile()
+        handle.write(Data(line.utf8))
+        try? handle.close()
+    }
+}
+
 /// Keeps one decoded cover in memory. Metadata-only updates of the same song
 /// retain it; a new song gets a short grace period while its artwork arrives.
 /// The deadline never moves with repeated missing-artwork replies.
