@@ -1317,7 +1317,7 @@ enum NotchControlSetupRequirement: Equatable {
 enum NotchControlItem: String, CaseIterable, Identifiable {
     case volume, brightness, keyboardLight, music, mixer, keepAwake, timer, calendar
     /// The menu panel's controls, each opening its own section in the island.
-    case fans, toggles, features, wallpaper
+    case fans, battery, toggles, features, wallpaper
     case microphone, screenshot, recording, speedTest, panel, commandBar, scratchpad
     static let defaultHidden = "keyboardLight,microphone,screenshot,recording,speedTest,panel,commandBar,scratchpad"
     var id: String { rawValue }
@@ -1330,6 +1330,10 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
     /// the controls. Without it, a level restored from a Mac that has one
     /// would sit in the island as a dead card that Settings cannot hide.
     static var keyboardLightIsSupported: () -> Bool = { true }
+
+    /// Whether this Mac has a battery, for the Battery tile. Launch points
+    /// this at the power sampler, as it does the keyboard light above.
+    static var hasBattery: () -> Bool = { false }
 
     var symbol: String {
         switch self {
@@ -1350,6 +1354,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .timer: return NotchModule.timer.symbol
         case .calendar: return NotchModule.calendar.symbol
         case .fans: return AppFeature.fanControl.symbolName
+        case .battery: return "battery.75"
         case .toggles: return AppFeature.quickToggles.symbolName
         case .features: return "switch.2"
         case .wallpaper: return AppFeature.wallpaper.symbolName
@@ -1368,6 +1373,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .scratchpad: return .feature(.scratchpad)
         case .panel, .features: return .none
         case .fans: return .feature(.fanControl)
+        case .battery: return .feature(.monitorPower)
         case .toggles: return .feature(.quickToggles)
         case .wallpaper: return .feature(.wallpaper)
         case .mixer: return .page(.mixer, feature: .mixer)
@@ -1393,6 +1399,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .scratchpad: return AppFeature.scratchpad.isAvailable(in: defaults)
         case .panel, .features: return true
         case .fans: return AppFeature.fanControl.isAvailable(in: defaults)
+        case .battery: return AppFeature.monitorPower.isAvailable(in: defaults) && Self.hasBattery()
         case .toggles: return AppFeature.quickToggles.isAvailable(in: defaults)
         case .wallpaper: return AppFeature.wallpaper.isAvailable(in: defaults)
         case .music: return NotchSupport.modules(in: defaults).contains(.music)

@@ -1887,8 +1887,10 @@ enum NotchTests {
                      "a saved island choice stays configured even if the master switch was never used")
 
         suite.expect(!NotchSupport.isEnabled(in: defaults), "notch is opt-in")
-        suite.expect(NotchSupport.controls(in: defaults) == [.volume, .brightness, .music, .mixer, .keepAwake, .timer, .calendar,
-                                                         .toggles, .features],
+        // The battery tile shows only on a Mac with a battery.
+        let batteryTile: [NotchControlItem] = NotchControlItem.battery.isAvailable(in: defaults) ? [.battery] : []
+        suite.expect(NotchSupport.controls(in: defaults) == [.volume, .brightness, .music, .mixer, .keepAwake, .timer, .calendar]
+                                                         + batteryTile + [.toggles, .features],
                "home defaults prioritize playback and everyday system controls")
         defaults.set(false, forKey: DefaultsKey.notchTimerEnabled)
         defaults.set(false, forKey: DefaultsKey.notchCalendarEnabled)

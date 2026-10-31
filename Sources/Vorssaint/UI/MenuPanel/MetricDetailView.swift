@@ -161,6 +161,16 @@ struct MetricDetailView: View {
     private let processLimit = 15
 
     var body: some View {
+        // A Mac with a battery opens Battery Care, AlDente's charge limiter
+        // and battery health, wherever its battery detail shows.
+        if kind == .battery, PowerSampler.hasInternalBattery {
+            BatteryCareView()
+        } else {
+            metricBody
+        }
+    }
+
+    private var metricBody: some View {
         VStack(alignment: .leading, spacing: 10) {
             summaryCard
             detailCard

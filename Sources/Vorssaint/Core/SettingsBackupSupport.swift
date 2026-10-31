@@ -180,6 +180,10 @@ enum SettingsBackupSupport {
         DefaultsKey.fanControlHelperVersion,
         // Control left running on one Mac must not start fans on another.
         DefaultsKey.fanControlResumeConfiguration,
+        // Which helper events this Mac already told, and its one-time import.
+        DefaultsKey.batteryCareLastEventSerial,
+        DefaultsKey.batteryCareImportedAlDente,
+        DefaultsKey.batteryCareScheduleHistory,
         DefaultsKey.switcherNativeHotkeysSuppressed,
         DefaultsKey.systemShortcutsSuppressed,
         // DDC capability belongs to one physical monitor on one Mac port.

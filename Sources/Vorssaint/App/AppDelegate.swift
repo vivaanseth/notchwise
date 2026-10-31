@@ -160,6 +160,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             KeepAwakeManager.shared.activateOnLaunchIfNeeded()
         }
         FanControlService.recoverIfNeeded()
+        // Battery Care's schedule, notifications and helper status run while
+        // the app does; the limit itself is the helper's and needs no app.
+        BatteryCareService.shared.start()
         SpacesOrderHold.recoverIfNeeded()
         // One binding per feature: only available features are touched, so a
         // feature switched off in the hub never even instantiates here.

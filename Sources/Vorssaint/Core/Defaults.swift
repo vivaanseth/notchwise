@@ -436,6 +436,18 @@ enum DefaultsKey {
     // automatic fan control before this marker can be cleared.
     static let fanControlRecoveryNeeded = "fanControlRecoveryNeeded"
     static let fanControlHelperVersion = "fanControlHelperVersion"
+    // Battery Care: the choices the root helper holds (a copy, so they can be
+    // set before the helper is installed), the schedule and its history.
+    static let batteryCareSettings = "batteryCareSettings"
+    static let batteryCareSchedule = "batteryCareSchedule"
+    static let batteryCareScheduleHistory = "batteryCareScheduleHistory"
+    static let batteryCareCatchUp = "batteryCareCatchUp"
+    static let batteryCareNotifications = "batteryCareNotifications"
+    // Machine-only: the last helper event already told, and the one-time AlDente import.
+    static let batteryCareLastEventSerial = "batteryCareLastEventSerial"
+    static let batteryCareImportedAlDente = "batteryCareImportedAlDente"
+    // Sleep Control ends on unplugging; Keep Awake's own battery limit ends it on battery.
+    static let batteryCareSleepStopUnplugged = "batteryCareSleepStopUnplugged"
     // System monitor — per-metric history graphs (each independently toggleable).
     static let monitorGraphCPU = "monitorGraphCPU"
     static let monitorGraphGPU = "monitorGraphGPU"
@@ -1677,6 +1689,14 @@ enum Defaults {
         DefaultsKey.fanControlResumeConfiguration: "",
         DefaultsKey.fanControlRecoveryNeeded: false,
         DefaultsKey.fanControlHelperVersion: "",
+        DefaultsKey.batteryCareSettings: "",
+        DefaultsKey.batteryCareSchedule: "",
+        DefaultsKey.batteryCareScheduleHistory: "",
+        DefaultsKey.batteryCareCatchUp: false,
+        DefaultsKey.batteryCareNotifications: true,
+        DefaultsKey.batteryCareLastEventSerial: 0,
+        DefaultsKey.batteryCareImportedAlDente: false,
+        DefaultsKey.batteryCareSleepStopUnplugged: false,
         DefaultsKey.panelNavigationEnabled: true,
         DefaultsKey.monitorGraphCPU: true,
         DefaultsKey.monitorGraphGPU: true,

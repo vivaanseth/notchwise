@@ -30,6 +30,10 @@ struct PowerSection: View {
                      supportsEditing: true,
                      resetAction: resetPanelDefaults) { editing in
             VStack(alignment: .leading, spacing: 10) {
+                if PowerSampler.hasInternalBattery, !editing {
+                    BatteryCareSummaryRow()
+                    Divider()
+                }
                 if blocks(editing: editing).isEmpty {
                     Text(l10n.s.powerUnavailable)
                         .font(.system(size: 10.5))
@@ -446,5 +450,34 @@ private struct EnergyAppsBreakdown: View {
                 if !result.isEmpty || rows.isEmpty { rows = result }
             }
         }
+    }
+}
+
+/// Battery Care's state in the Power card; it opens the full page.
+private struct BatteryCareSummaryRow: View {
+    @ObservedObject private var battery = BatteryCareService.shared
+    @ObservedObject private var l10n = L10n.shared
+
+    var body: some View {
+        let strings = FeatureStrings.batteryCare(l10n.language)
+        Button {
+            MenuPanelFocus.shared.focus(.battery)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "battery.75").foregroundStyle(.green).frame(width: 16)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(strings.title).font(.system(size: 11, weight: .medium))
+                    Text(battery.helperState == .running
+                         ? "\(strings.limitTitle) \(battery.settings.limit)%"
+                         : strings.installHelper)
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

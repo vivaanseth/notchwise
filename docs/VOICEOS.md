@@ -125,6 +125,35 @@ the combined app switches Vorssaint's robot companion off once
 (`MergedSettingsImport.removeCompanionOnce`); Settings → Companion turns it back on. The
 assistant's mark in the island is VoiceOS's own glyph again.
 
+## Battery Care
+
+AlDente's features, free and Pro, rebuilt as Battery Care. It opens from the island's Battery
+tile, the battery detail, and the top row of the panel's Power card.
+
+- **The helper.** Pausing charging writes the SMC, which needs root. `Sources/BatteryHelper`
+  is a launchd daemon an administrator installs once (`BatteryCareInstaller`, through the
+  macOS password prompt). It is copied to `/Library/PrivilegedHelperTools`, so rebuilding or
+  moving the app keeps it working. It runs the whole policy itself, so the limit holds with
+  the app closed, and stopping it (removing, updating, shutting down) hands charging back
+  to macOS. The app's uninstaller and `Tools/uninstall.sh` remove it.
+- **The policy** is one pure function, `BatteryCarePolicy.decide`, tested in
+  `Tests/BatteryCareTests.swift` (`./build.sh --test-suite=battery-care`) and checked by
+  the helper's own `--selftest` at build time. Nothing in either touches the hardware.
+- **Features:** charge limit, Sailing, Heat Protection (five-minute hold), Discharge and
+  Automatic Discharge, Top Up, Calibration (full, 10%, full, back to the limit), Stop
+  Charging when Sleeping, Stay Awake until the Limit, Low Power Mode by power source,
+  MagSafe light, hardware percentage, Power Flow, battery health, apps using significant
+  energy, Sleep Control (through Keep Awake), Schedule with catch-up and history,
+  notifications, and Shortcuts through `VorssaintVoiceOS battery <command>` in a Run Shell
+  Script action. AlDente's choices are imported once.
+- **Fix Wrong Readings** (on by default) is new. When the battery reports far more charge
+  than its resting cell voltage allows, a limit would keep an empty battery from charging,
+  so the helper charges to full once to let the gauge learn again. This Mac had exactly
+  that: 89% reported, cells at 3.3 V, and AlDente's 50% limit holding it there.
+- **Discharging is guarded** by the lowest cell's voltage (3.4 V), so a weak battery ends
+  the discharge before the Mac shuts down. A MacBook Pro 15,4 has no key to run on battery
+  while plugged in, so Discharge hides there.
+
 ## Conflicts and how they were resolved
 
 - **Super Key** (right ⌘, ⌥, ⌃ or ⇧ when not Caps Lock): Super Key keeps its key. VoiceOS stands

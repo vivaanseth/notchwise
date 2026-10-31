@@ -113,6 +113,7 @@ struct NotchControlsView: View {
         case .timer: NotchTimerTile(service: service)
         case .calendar: NotchCalendarTile(service: service)
         case .fans: NotchFanTile(service: service)
+        case .battery: NotchBatteryTile(service: service)
         case .toggles, .features, .wallpaper:
             NotchActionTile(symbol: item.symbol, title: item.title(l10n)) { service.activateQuickAction(.control(item)) }
         case .volume, .brightness, .keyboardLight, .music: EmptyView()
@@ -139,6 +140,7 @@ extension NotchControlItem {
         case .timer: return NotchModule.timer.title(l10n.language)
         case .calendar: return NotchModule.calendar.title(l10n.language)
         case .fans: return FeatureStrings.fanControl(l10n.language).title
+        case .battery: return FeatureStrings.batteryCare(l10n.language).battery
         case .toggles: return FeatureStrings.quickToggles(l10n.language).pageTitle
         case .features: return FeatureStrings.notchHub(l10n.language).features
         case .wallpaper: return FeatureStrings.wallpaper(l10n.language).pageTitle
@@ -569,6 +571,27 @@ private struct NotchFanTile: View {
                         active: fans.snapshot.isCooling) {
             service.activateQuickAction(.control(.fans))
         }
+    }
+}
+
+/// The charge and the limit on the tile, lit while Battery Care is charging,
+/// running on battery or calibrating; the tile opens Battery Care.
+private struct NotchBatteryTile: View {
+    let service: NotchService
+    @ObservedObject private var battery = BatteryCareService.shared
+    @ObservedObject private var l10n = L10n.shared
+
+    var body: some View {
+        let strings = FeatureStrings.batteryCare(l10n.language)
+        let percent = battery.reading?.percent
+        let limit = battery.helperState == .running ? " · \(battery.settings.limit)%" : ""
+        NotchActionTile(symbol: NotchControlItem.battery.symbol, title: strings.battery,
+                        reading: percent.map { "\($0)%\(limit)" },
+                        active: [.charging, .discharging, .toppingUp, .calibrating, .fixingReading]
+                            .contains(battery.state)) {
+            service.activateQuickAction(.control(.battery))
+        }
+        .onAppear { BatteryCareService.shared.start() }
     }
 }
 

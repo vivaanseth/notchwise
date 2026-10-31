@@ -81,6 +81,7 @@ struct MetricsTests {
                 ReleaseDigestTests.run(suite)
             }),
             ("repository", { RepositoryFeatureTests.run(suite) }),
+            ("battery-care", { BatteryCareTests.run(suite) }),
             ("screenshots", {
                 ScreenshotCanvasSupportTests.run(suite)
                 ScreenshotImageLayerTests.run(suite)

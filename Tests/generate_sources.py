@@ -2018,6 +2018,7 @@ def main():
           + "static func restoreSleepBeforeRemoval() -> Bool { events.append(\"sleep\"); return sleepRestoreAllowed }\n"
           + "static func detachFanControl() -> Bool { events.append(\"fan\"); return detachAllowed }\n"
           + "static func detachLoginItem() { events.append(\"login\") }\n"
+          + "static func removeBatteryHelperIfPresent(then: @escaping (Bool) -> Void) { then(true) }\n"
           + "static func removePreferences() { events.append(\"preferences\") }\n"
           + "static func trashOwnBundleAndQuit() { events.append(\"trash\") }\n"
           + declaration(self_uninstall, "    private static func detachFromSystem()")

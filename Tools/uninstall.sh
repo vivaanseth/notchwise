@@ -212,6 +212,15 @@ if (( ${#found_rules} )); then
     osascript -e "do shell script \"rm -f $found_rules\" with administrator privileges with prompt \"Vorssaint uninstaller\"" || true
 fi
 
+# Battery Care's helper runs outside the app, so it goes with it. Stopping it
+# first hands charging back to macOS.
+for battery in com.vorssaint.voiceos.battery com.vorssaint.voiceos.dev.battery; do
+    if [[ -e "/Library/LaunchDaemons/$battery.plist" || -e "/Library/PrivilegedHelperTools/$battery" ]]; then
+        echo "▸ Removing Battery Care's helper (asks for your admin password)…"
+        osascript -e "do shell script \"launchctl bootout system/$battery 2>/dev/null; rm -f /Library/LaunchDaemons/$battery.plist /Library/PrivilegedHelperTools/$battery; rm -rf '/Library/Application Support/$battery'\" with administrator privileges with prompt \"Vorssaint uninstaller\"" || true
+    fi
+done
+
 # `--uninstall` restores sleep, but it runs before the app has an
 # NSApplication and so cannot raise the password dialog the in-app uninstall
 # falls back to. A restore that needed one therefore reaches here as a setting

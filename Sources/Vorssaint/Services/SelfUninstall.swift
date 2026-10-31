@@ -237,8 +237,24 @@ enum SelfUninstall {
     }
 
     private static func removeSudoersRuleIfPresent(then: @escaping (Bool) -> Void) {
-        guard Sudoers.ruleFilesPresent || Sudoers.isConfigured() else { then(true); return }
-        Sudoers.remove(completion: then)            // shows the admin password prompt
+        // Battery Care's helper lives outside the app and would hold the
+        // charge limit with nothing left to change it, so it goes first.
+        removeBatteryHelperIfPresent { removed in
+            guard removed else { then(false); return }
+            guard Sudoers.ruleFilesPresent || Sudoers.isConfigured() else { then(true); return }
+            Sudoers.remove(completion: then)            // shows the admin password prompt
+        }
+    }
+
+    /// Stopping the helper hands charging back to macOS before its files go.
+    private static func removeBatteryHelperIfPresent(then: @escaping (Bool) -> Void) {
+        let files = [BatteryCareIdentifiers.launchDaemon, BatteryCareIdentifiers.installedHelper]
+        guard files.contains(where: FileManager.default.fileExists(atPath:)) else { then(true); return }
+        let strings = FeatureStrings.batteryCare(L10n.shared.language)
+        AdminShell.run(BatteryCareInstaller.removeCommand(),
+                       prompt: "\(strings.title): \(strings.removeHelper)") { removed in
+            DispatchQueue.main.async { then(removed) }
+        }
     }
 
     /// `tccutil reset All <bundle id>` clears Accessibility, Screen Recording,

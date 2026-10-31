@@ -3,6 +3,7 @@
 
 import AppKit
 import CoreGraphics
+import SwiftUI
 
 /// Developer aid: `VOICEOS_SNAPSHOT=/some/dir open VoiceOS.app` renders every screen to PNGs and quits.
 /// Apps may always capture their own windows, so this works without Screen Recording permission.
@@ -84,6 +85,11 @@ enum VOSnapshotter {
         island.open(.controls)
         await pause(1.0)
         shot("16-island-controls.png")
+        // Battery Care from its tile. It only reads the battery here.
+        BatteryCareService.shared.refresh()
+        island.activateQuickAction(.control(.battery))
+        await pause(1.4)
+        shot("19-island-battery.png")
         island.open(sections: true)
         await pause(1.0)
         shot("17-island-sections.png")
@@ -127,6 +133,22 @@ enum VOSnapshotter {
         await pause(0.6)
         if let pill { capture(pill, out.appendingPathComponent("22-pill-message.png"), backdrop: true) }
         dictation.state = .hidden
+
+        // The whole Battery Care page at panel width, drawn off screen.
+        let page = NSHostingView(rootView: BatteryCareView()
+            .frame(width: 380)
+            .padding(12)
+            .background(Color(white: 0.12))
+            .environment(\.colorScheme, .dark))
+        page.frame.size = page.fittingSize
+        let sheet = NSWindow(contentRect: CGRect(origin: .zero, size: page.fittingSize), styleMask: .borderless,
+                             backing: .buffered, defer: false)
+        sheet.contentView = page
+        await pause(1.0)
+        page.frame.size = page.fittingSize
+        sheet.setContentSize(page.fittingSize)
+        await pause(0.4)
+        capture(sheet, out.appendingPathComponent("40-battery-care.png"))
 
         settings.onboardingDone = wasOnboarded
         settings.saveHistory = wasHistory
