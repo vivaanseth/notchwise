@@ -97,6 +97,66 @@ struct NotchPlayback: Equatable {
     }
 }
 
+extension NotchPlayback {
+    /// The same player, state and controls without the song: the island
+    /// says something plays there, named by its app, and shows no title,
+    /// cover or timeline that would belong to another recording.
+    func withoutSong(appName: String?) -> NotchPlayback {
+        NotchPlayback(track: RadialNowPlayingSnapshot(title: nil, artist: appName, album: nil, artworkData: nil,
+                                                      appBundleIdentifier: track.appBundleIdentifier,
+                                                      appPID: track.appPID),
+                      isPlaying: isPlaying, elapsed: 0, duration: 0, rate: rate, sampledAt: sampledAt,
+                      canSeek: false, hasPosition: false, itemIdentifier: nil, commandContext: commandContext,
+                      canSendCommandsDirectly: canSendCommandsDirectly, canSkipNext: canSkipNext,
+                      canSkipPrevious: canSkipPrevious)
+    }
+}
+
+/// A page can leave a song's name behind for whatever it plays next.
+/// Instagram keeps a note's song while the reels beneath it play, so the
+/// island named a song no longer playing. A reel starts over every few
+/// seconds, which a song never does partway through: two such restarts
+/// under one name within a minute mark the name as left over, and it stays
+/// so until the name changes.
+struct NotchLeftoverTitle {
+    static let window: TimeInterval = 60
+    static let restartsToTell = 2
+    private var song: String?
+    private var last: NotchPlayback?
+    private var restarts: [Date] = []
+    private(set) var isLeftover = false
+
+    /// Reads the player's next report; true while its song is left over.
+    mutating func observe(_ playback: NotchPlayback?) -> Bool {
+        guard let playback, let title = playback.track.title, !title.isEmpty else {
+            self = NotchLeftoverTitle()
+            return false
+        }
+        let player = playback.track.appBundleIdentifier ?? playback.track.appPID.map(String.init) ?? ""
+        let name = [title, playback.track.artist ?? "", player].joined(separator: "\u{1F}")
+        guard name == song else {
+            self = NotchLeftoverTitle()
+            song = name
+            last = playback
+            return false
+        }
+        if let last, Self.restarted(from: last, to: playback) { restarts.append(playback.sampledAt) }
+        last = playback
+        restarts.removeAll { playback.sampledAt.timeIntervalSince($0) > Self.window }
+        if restarts.count >= Self.restartsToTell { isLeftover = true }
+        return isLeftover
+    }
+
+    /// Back at the start from well inside the recording. A loop at its end,
+    /// a short step back or a pause is not a restart.
+    static func restarted(from last: NotchPlayback, to next: NotchPlayback) -> Bool {
+        guard last.isPlaying, next.isPlaying, last.hasPosition, next.hasPosition else { return false }
+        let expected = last.elapsed + max(0, next.sampledAt.timeIntervalSince(last.sampledAt)) * last.rate
+        let end = max(last.duration, next.duration)
+        return next.elapsed < 1.5 && expected - next.elapsed > 2 && (end <= 0 || expected < end - 1.5)
+    }
+}
+
 /// Keeps one decoded cover in memory. Metadata-only updates of the same song
 /// retain it; a new song gets a short grace period while its artwork arrives.
 /// The deadline never moves with repeated missing-artwork replies.

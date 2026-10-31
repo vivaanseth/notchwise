@@ -1807,6 +1807,8 @@ def main():
           + declaration(music, "    private func acceptsSourceReply(").replace("private func", "func", 1)
           + declaration(music, "    private struct Reading {").replace("private struct", "struct", 1)
           + declaration(music, "    private func receive(").replace("private func", "func", 1)
+          + "var leftoverTitle = NotchLeftoverTitle()\n"
+          + declaration(music, "    private func withoutLeftoverSong(").replace("private func", "func", 1)
           + declaration(music, "    private func endPlaybackGap()").replace("private func", "func", 1)
           + declaration(music, "    private func apply(").replace("private func", "func", 1)
           + declaration(music, "    func seek(")

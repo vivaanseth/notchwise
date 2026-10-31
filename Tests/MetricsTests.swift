@@ -110,7 +110,10 @@ struct MetricsTests {
                 CommandBarSelectionTests.run(suite)
             }),
             ("transient-paste", { TransientPasteTests.run(suite) }),
-            ("notch-music", { NotchMusicExtrasTests.run(suite) }),
+            ("notch-music", {
+                NotchMusicExtrasTests.run(suite)
+                NotchLeftoverTitleTests.run(suite)
+            }),
             ("notch", {
                 NotchTests.run(suite)
                 NotchCompactTests.run(suite)

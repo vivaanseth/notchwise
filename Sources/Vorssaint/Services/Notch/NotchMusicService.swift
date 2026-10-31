@@ -53,6 +53,7 @@ final class NotchMusicService: ObservableObject {
     }
     /// An empty reading waiting out a gap between songs; see receive(_:).
     private var gapReading: Reading?
+    private var leftoverTitle = NotchLeftoverTitle()
     private var gapWork: DispatchWorkItem?
     private var queueVisible = false
     private var queueRequest: UUID?
@@ -242,6 +243,7 @@ final class NotchMusicService: ObservableObject {
     /// the next reading replaces it at once. Later readings of the gap never
     /// extend the grace period.
     private func receive(_ reading: Reading) {
+        let reading = withoutLeftoverSong(reading)
         // A player that still lists a song when another player's paused song
         // takes its place was paused. During a gap it had left, the song it
         // lists again can be its next one, still loading.
@@ -262,6 +264,15 @@ final class NotchMusicService: ObservableObject {
         }
         endPlaybackGap()
         apply(reading)
+    }
+
+    /// A song the page left behind is not named: see `NotchLeftoverTitle`.
+    /// The player, its state and its controls stay.
+    private func withoutLeftoverSong(_ reading: Reading) -> Reading {
+        guard leftoverTitle.observe(reading.playback), let playback = reading.playback else { return reading }
+        let app = playback.track.appPID.flatMap { NSRunningApplication(processIdentifier: $0)?.localizedName }
+        return Reading(playback: playback.withoutSong(appName: app), artwork: nil, tint: nil,
+                       sources: reading.sources, automatic: reading.automatic, selectedPID: reading.selectedPID)
     }
 
     private func endPlaybackGap() {
