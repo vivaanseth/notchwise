@@ -680,6 +680,54 @@ private final class NotchAudioLevelReader {
 
 /// Mono samples from the audio thread, most recent last. The audio thread
 /// skips a buffer rather than wait when the analysis thread is reading.
+/// Developer probe: `--island-audio-probe <pid> <out>` reads that player
+/// with the island's own reader for up to ten seconds and writes what it
+/// heard: levels, silence (macOS gives a tap only silence until System Audio
+/// Recording is allowed) or unavailable (Core Audio would not build the tap).
+/// Launched through `open`, it asks with the app's own permissions.
+enum NotchAudioLevelProbe {
+    static func runIfRequestedAndExit() {
+        let arguments = CommandLine.arguments
+        guard let index = arguments.firstIndex(of: "--island-audio-probe"), arguments.count > index + 2,
+              let pid = pid_t(arguments[index + 1]) else { return }
+        let out = URL(fileURLWithPath: arguments[index + 2])
+        let start = Date()
+        var lines = ["pid \(pid)"]
+        if #available(macOS 14.4, *) { lines.append("objects \(NotchAudioLevelReader.probeObjects(pid))") }
+        var finished = false
+        var heard = 0
+        func note(_ line: String) { lines.append(String(format: "%.1fs ", Date().timeIntervalSince(start)) + line) }
+        let reader = NotchAudioLevelReader(pid: pid, onLevels: { levels in
+            DispatchQueue.main.async {
+                heard += 1
+                if heard <= 6 { note("levels " + levels.map { String(format: "%.2f", $0) }.joined(separator: " ")) }
+                if heard >= 30 { finished = true }
+            }
+        }, onSilence: {
+            DispatchQueue.main.async { note("silence"); finished = true }
+        }, onUnavailable: {
+            DispatchQueue.main.async { note("unavailable"); finished = true }
+        }, onProcessesLeft: {
+            DispatchQueue.main.async { note("processes left") }
+        })
+        reader.start()
+        while !finished, Date().timeIntervalSince(start) < 10 {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+        reader.stop()
+        lines.append("updates heard \(heard)")
+        try? lines.joined(separator: "\n").appending("\n").write(to: out, atomically: true, encoding: .utf8)
+        exit(0)
+    }
+}
+
+extension NotchAudioLevelReader {
+    @available(macOS 14.4, *)
+    fileprivate static func probeObjects(_ pid: pid_t) -> String {
+        processObjects(for: pid).map(String.init).joined(separator: ",")
+    }
+}
+
 private final class NotchAudioRing {
     private let lock = NSLock()
     private var samples: [Float]

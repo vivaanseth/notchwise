@@ -5,6 +5,7 @@ import AppKit
 
 // Shortcuts' Run Shell Script calls the app as `battery <command>`.
 BatteryCareCLI.runIfRequestedAndExit()
+NotchAudioLevelProbe.runIfRequestedAndExit()
 SuperKeyMappingGuard.runIfRequestedAndExit()
 // The combined app starts from the standalone apps' choices, copied once
 // before registration so its migrations see them as those apps saved them.
