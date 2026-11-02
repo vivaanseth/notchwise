@@ -97,12 +97,14 @@ struct NotchMusicStrip: View {
                 }
                 .frame(width: geometry.compactActivityCameraGap, height: geometry.compactActivityContentHeight)
                 .clipped()
+                // Named, this side grows as far as the words' side, so the
+                // island stays centred and the bars keep to its end.
                 HStack {
                     if wing > 0 { bars }
                 }
                 .padding(.leading, innerInset)
                 .padding(.trailing, barsInset)
-                .frame(width: wing, height: geometry.compactActivityContentHeight, alignment: .trailing)
+                .frame(width: named ?? wing, height: geometry.compactActivityContentHeight, alignment: .trailing)
                 .contentShape(Rectangle())
                 .onHover { if live { service.hoverMusicStrip(.bars, entered: $0) } }
             }
@@ -117,9 +119,8 @@ struct NotchMusicStrip: View {
             if !service.toggleMusicStripSong() { service.openActivity(.music) }
         }
         .help(title)
-        // Named, the strip reaches further left. Laid out as wide on both
-        // sides, it keeps the camera's gap over the camera, while the button
-        // keeps to the strip, which takes clicks only in its own frame.
+        // Named, the strip reaches as far on both sides, so the camera's gap
+        // stays over the camera and the island stays centred.
         .frame(width: (named ?? wing) * 2 + geometry.compactActivityCameraGap, alignment: .leading)
     }
 

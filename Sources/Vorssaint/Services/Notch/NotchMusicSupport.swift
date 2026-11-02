@@ -241,14 +241,38 @@ struct NotchArtworkCache<Artwork> {
 
     private var identity: Identity?
     private var artworkData: Data?
+    /// A cover the player went on sending for a recording it did not
+    /// belong to, ignored until the player sends another.
+    private var rejectedData: Data?
     private var inheritedUntil: Date?
     private(set) var artwork: Artwork?
     private(set) var expiresAt: Date?
+
+    /// A page that changes what it plays changes its title, artist and cover
+    /// one at a time, so its last song's cover can arrive with the next
+    /// video's name: a song by an artist followed by a page's own name, with
+    /// no artist (Instagram after a note's song), or by no name at all. Such
+    /// a cover is not the new reading's, and no cover of its own is coming.
+    private static func leftBehind(by first: Identity, for second: Identity) -> Bool {
+        func named(_ text: String?) -> Bool { !(text?.trimmingCharacters(in: .whitespaces).isEmpty ?? true) }
+        return (named(first.artist) && !named(second.artist)) || !named(second.title)
+    }
 
     mutating func update(_ incoming: Artwork?, for playback: NotchPlayback?, now: Date = Date()) {
         guard let playback else { self = Self(); return }
         let next = Identity(playback)
         if identity?.pid != next.pid || identity?.bundle != next.bundle { self = Self() }
+        var incoming = incoming
+        if incoming != nil, let bytes = playback.track.artworkData {
+            if bytes == rejectedData {
+                incoming = nil
+            } else if let identity, identity != next, bytes == artworkData, Self.leftBehind(by: identity, for: next) {
+                rejectedData = bytes
+                incoming = nil
+            } else {
+                rejectedData = nil
+            }
+        }
         if identity != next || inheritedUntil.map({ now >= $0 }) == true { inheritedUntil = nil }
         if let incoming {
             if artworkData == nil || playback.track.artworkData != artworkData {
@@ -260,9 +284,20 @@ struct NotchArtworkCache<Artwork> {
             identity = next
             artworkData = playback.track.artworkData
             expiresAt = nil
-        } else if identity == next, inheritedUntil == nil {
+        } else if identity == next, inheritedUntil == nil, rejectedData == nil {
             expiresAt = nil
         } else if artwork != nil {
+            // A song's cover can follow its name a moment later, so the last
+            // one stays a moment. A video under a page's name has no song of
+            // its own and no cover on the way: it goes at once.
+            let waits = !(identity.map { Self.leftBehind(by: $0, for: next) } ?? false)
+            guard waits, rejectedData == nil else {
+                let rejected = rejectedData
+                self = Self()
+                rejectedData = rejected
+                identity = next
+                return
+            }
             if expiresAt == nil { expiresAt = inheritedUntil ?? now.addingTimeInterval(Self.transitionDuration) }
             expire(at: now)
         }

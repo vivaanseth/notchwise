@@ -800,8 +800,10 @@ enum NotchMusicStripLayout {
     static let endInset = NotchNotificationBannerLayout.inset
     /// Between the words and the cover.
     static let spacing: CGFloat = 8
-    /// The widest a named side grows, as a notice's. A longer title ends in an ellipsis.
-    static let maximumWing: CGFloat = 240
+    /// The widest a named side grows. Both sides grow, so the island stays
+    /// centred, and a longer title, such as a post's caption a browser
+    /// sends as its name, ends in an ellipsis.
+    static let maximumWing: CGFloat = 180
     /// How long the pointer rests on the cover before the strip names the song,
     /// so a pass on the way to the menus leaves it alone.
     static let namingDelay: TimeInterval = 0.3
@@ -853,6 +855,8 @@ enum NotchMusicStripLayout {
 
     /// The strip's sides while it names its song, short of the display's edge
     /// and of the menus, which leave the island `room` beside the camera.
+    /// The words take the cover's side and the bars move out as far on the
+    /// other, so the island grows evenly and stays centred on the camera.
     /// Nil when the strip has no wings, already shows the song between them,
     /// or the song has no title to name.
     static func namedWings(title: String?, artist: String?, geometry: NotchGeometry,
@@ -862,7 +866,7 @@ enum NotchMusicStripLayout {
         let artist = artist?.trimmingCharacters(in: .whitespaces)
         let named = namedWing(title: title, artist: artist?.isEmpty == false ? artist : nil, geometry: geometry)
         let leading = min(named, geometry.noticeWingWidth(preferred: named), max(0, room).rounded(.down))
-        return leading > wing ? NotchNoticeWings(leading: leading, trailing: wing) : nil
+        return leading > wing ? NotchNoticeWings(leading: leading, trailing: leading) : nil
     }
 }
 

@@ -57,6 +57,33 @@ enum NotchLeftoverTitleTests {
         _ = resting.observe(reading(at: 40, elapsed: 10.5))
         suite.expect(!resting.isLeftover, "a song paused and played again where it was is not restarting")
 
+        // Covers, as Edge sent them on 2026-11-01: a note's song by Ken
+        // Carson, then the reels under Instagram's own name with no artist.
+        func edgeReport(_ title: String?, _ artist: String?, _ cover: [UInt8]?) -> NotchPlayback {
+            NotchPlayback(track: RadialNowPlayingSnapshot(title: title, artist: artist, album: nil,
+                                                          artworkData: cover.map { Data($0) },
+                                                          appBundleIdentifier: "com.microsoft.edgemac", appPID: 785),
+                          isPlaying: true, elapsed: 0, duration: 20, rate: 1, sampledAt: start, canSeek: false)
+        }
+        let ghoul = edgeReport("Ghoul", "Ken Carson", [1, 2, 3])
+        var covers = NotchArtworkCache<String>()
+        covers.update("ghoul", for: ghoul, now: start)
+        covers.update("ghoul", for: edgeReport("Netflix", "Ken Carson", [1, 2, 3]), now: start.addingTimeInterval(0.4))
+        covers.update("ghoul", for: edgeReport("Instagram", nil, [1, 2, 3]), now: start.addingTimeInterval(0.8))
+        suite.expect(covers.artwork == nil, "a song's cover sent on with the page's own name is not the page's")
+        covers.update("ghoul", for: edgeReport("Instagram", nil, [1, 2, 3]), now: start.addingTimeInterval(5))
+        suite.expect(covers.artwork == nil, "and stays ignored while the page keeps sending it")
+        covers.update("reel", for: edgeReport("Instagram", nil, [7, 8, 9]), now: start.addingTimeInterval(6))
+        suite.expect(covers.artwork == "reel", "a cover of the page's own is shown")
+        covers = NotchArtworkCache<String>()
+        covers.update("ghoul", for: ghoul, now: start)
+        covers.update(nil, for: edgeReport("Instagram", nil, nil), now: start.addingTimeInterval(0.2))
+        suite.expect(covers.artwork == nil, "a page's name without a cover drops the song's cover at once")
+        covers = NotchArtworkCache<String>()
+        covers.update("ghoul", for: ghoul, now: start)
+        covers.update(nil, for: ghoul.withoutSong(appName: "Microsoft Edge"), now: start.addingTimeInterval(0.2))
+        suite.expect(covers.artwork == nil, "a song judged left over takes its cover with it at once")
+
         let named = reading(at: 0, elapsed: 4)
         let unnamed = named.withoutSong(appName: "Microsoft Edge")
         suite.expect(unnamed.track.title == nil && unnamed.track.artist == "Microsoft Edge"

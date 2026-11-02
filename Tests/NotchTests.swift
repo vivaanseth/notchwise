@@ -1438,8 +1438,8 @@ enum NotchTests {
                "the words take the wider of the title and the artist, measured once per song")
         let named = Layout.namedWings(title: "Midnight City", artist: " M83 ", geometry: compactMusic, room: .infinity)
         let expected = (Layout.endInset + words + Layout.spacing + wing - inset).rounded(.up)
-        suite.expect(named == NotchNoticeWings(leading: expected, trailing: wing),
-               "the named side holds the words and the cover as it rests, and the bars keep their side")
+        suite.expect(named == NotchNoticeWings(leading: expected, trailing: expected),
+               "the named side holds the words and the cover as it rests, and the other grows as far to stay centred")
         if let named {
             // The view keeps the cover's gap to the camera, wing - inset - side, and gives the words the rest.
             let room = named.leading - Layout.endInset - Layout.spacing - (wing - inset)
@@ -1448,10 +1448,10 @@ enum NotchTests {
         }
         let long = Layout.namedWings(title: String(repeating: "A very long song title ", count: 12), artist: nil,
                                      geometry: compactMusic, room: .infinity)
-        suite.expect(long == NotchNoticeWings(leading: Layout.maximumWing, trailing: wing),
+        suite.expect(long == NotchNoticeWings(leading: Layout.maximumWing, trailing: Layout.maximumWing),
                "a long title stops at a notice's widest side and ends in an ellipsis")
         suite.expect(Layout.namedWings(title: String(repeating: "A very long song title ", count: 12), artist: nil,
-                                       geometry: compactMusic, room: 120.6) == NotchNoticeWings(leading: 120, trailing: wing)
+                                       geometry: compactMusic, room: 120.6) == NotchNoticeWings(leading: 120, trailing: 120)
                && Layout.namedWings(title: "Midnight City", artist: "M83", geometry: compactMusic, room: wing) == nil
                && Layout.namedWings(title: "Midnight City", artist: "M83", geometry: compactMusic, room: -1) == nil,
                "the named side stops at the menus beside the island, and with no room past the cover the song stays unnamed")
