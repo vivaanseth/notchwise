@@ -26,7 +26,13 @@ final class VORuntime: NSObject {
     }
 
     func syncWithPreferences() {
-        if AppFeature.voiceAssistant.isAvailable { start() } else { stop() }
+        let on = AppFeature.voiceAssistant.isAvailable
+        if on { start() } else { stop() }
+        // Off, the assistant leaves Ollama from opening at login; on, it lets it again.
+        // The snapshot and self-test tools never touch the person's login items.
+        if !VOHarness.isRequested {
+            DispatchQueue.global(qos: .utility).async { VOOllamaLogin.sync(assistantOn: on) }
+        }
     }
 
     /// `harness` starts what the snapshot and self-test tools exercise: no
