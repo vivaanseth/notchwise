@@ -64,31 +64,61 @@ struct NotchHubView: View {
     @ObservedObject private var intent = NotchIntentService.shared
     @ObservedObject private var music = NotchMusicService.shared
     @ObservedObject private var l10n = L10n.shared
+    @AppStorage(DefaultsKey.notchHubHiddenWidgets) private var hiddenWidgets = ""
+    @AppStorage(DefaultsKey.notchHubHiddenActions) private var hiddenActions = ""
+    @State private var width: CGFloat = 0
     private var text: NotchHubStrings { FeatureStrings.notchHub(l10n.language) }
     private static let side: CGFloat = 196
     private static let widgetHeight: CGFloat = 206
 
     var body: some View {
+        // Read here, so removing or adding a part redraws the home at once.
+        let _ = (hiddenWidgets, hiddenActions)
+        let layout = NotchCustomization.homeLayout(cameraEnabled: NotchCameraSupport.isEnabled())
+        let custom = FeatureStrings.notchCustomization(l10n.language)
+        let playing = music.playback != nil && service.modules.contains(.music)
+            && !NotchCustomization.isRemoved(.widget(.nowPlaying))
         VStack(alignment: .leading, spacing: 10) {
             if selection != nil { selectionRow }
-            HStack(alignment: .top, spacing: 10) {
-                NotchHubCalendarWidget(service: service)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: Self.widgetHeight)
-                VStack(spacing: 8) {
-                    if NotchCameraSupport.isEnabled() {
-                        NotchHubCameraTile(service: service, size: CGSize(width: Self.side, height: 110))
+            if !layout.isEmpty {
+                // What stays takes the room of what went: without the
+                // calendar the shortcuts spread across its side.
+                HStack(alignment: .top, spacing: 10) {
+                    if layout.calendar {
+                        NotchHubCalendarWidget(service: service)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: Self.widgetHeight)
+                            .contextMenu { NotchRemoveButton(item: .widget(.calendar), title: custom.removeFromHome) }
                     }
-                    NotchHubActions(service: service, rows: NotchCameraSupport.isEnabled() ? 2 : 4)
+                    if layout.calendar, layout.camera || layout.actions {
+                        VStack(spacing: 8) {
+                            if layout.camera { camera(CGSize(width: Self.side, height: layout.actions ? 110 : Self.widgetHeight)) }
+                            if layout.actions { actions(layout) }
+                        }
+                        .frame(width: Self.side, height: Self.widgetHeight, alignment: .top)
+                    } else if !layout.calendar {
+                        if layout.camera {
+                            camera(CGSize(width: layout.actions ? Self.side : max(Self.side, width), height: Self.widgetHeight))
+                        }
+                        if layout.actions { actions(layout).frame(maxWidth: .infinity) }
+                    }
                 }
-                .frame(width: Self.side, height: Self.widgetHeight, alignment: .top)
+                .frame(height: Self.widgetHeight, alignment: .top)
+            } else if !playing {
+                Text(custom.homeEmpty)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(maxWidth: .infinity, minHeight: 80)
+                    .multilineTextAlignment(.center)
             }
-            if music.playback != nil, service.modules.contains(.music) {
+            if playing {
                 NotchHubNowPlaying(service: service)
                     .transition(.opacity)
+                    .contextMenu { NotchRemoveButton(item: .widget(.nowPlaying), title: custom.removeFromHome) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         // Ranked again while the home shows, so the switcher's marks follow
         // a song starting or a meeting coming up.
         .task(id: service.hubModules) {
@@ -97,6 +127,18 @@ struct NotchHubView: View {
                 try? await Task.sleep(nanoseconds: 5_000_000_000)
             }
         }
+    }
+
+    private func camera(_ size: CGSize) -> some View {
+        NotchHubCameraTile(service: service, size: size)
+            .contextMenu {
+                NotchRemoveButton(item: .widget(.camera),
+                                  title: FeatureStrings.notchCustomization(l10n.language).removeFromHome)
+            }
+    }
+
+    private func actions(_ layout: NotchCustomization.HomeLayout) -> some View {
+        NotchHubActions(service: service, rows: layout.actionRows, columns: layout.actionColumns)
     }
 
     private var selectionRow: some View {
@@ -408,19 +450,22 @@ private struct NotchHubCameraTile: View {
 private struct NotchHubActions: View {
     @ObservedObject var service: NotchService
     let rows: Int
+    var columns = 3
     @ObservedObject private var awake = KeepAwakeManager.shared
     @ObservedObject private var microphone = MicMuteService.shared
     @ObservedObject private var recorder = ScreenRecorderService.shared
     @ObservedObject private var l10n = L10n.shared
-    private static let order: [NotchControlItem] = [
-        .screenshot, .recording, .keepAwake, .battery, .fans, .microphone, .scratchpad, .commandBar, .timer, .toggles,
-        .speedTest, .mixer, .panel, .calendar, .music,
-    ]
-
     var body: some View {
-        let items = Array(Self.order.filter { $0.isAvailable() }.prefix(rows * 3))
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
-            ForEach(items) { item in tile(item) }
+        // A removed shortcut's place goes to the next one.
+        let items = Array(NotchCustomization.homeActions().prefix(rows * columns))
+        let custom = FeatureStrings.notchCustomization(l10n.language)
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: columns), spacing: 6) {
+            ForEach(items) { item in
+                tile(item).contextMenu {
+                    NotchRemoveButton(item: .homeAction(item), title: custom.removeFromHome)
+                    NotchRemoveButton(item: .widget(.actions), title: custom.removeShortcuts)
+                }
+            }
         }
     }
 
@@ -620,6 +665,12 @@ struct NotchHubPageBar: View {
         .help(title + "  ⌥⌘" + module.shortcutKey.uppercased())
         .accessibilityLabel(title)
         .accessibilityIdentifier("notch.pagebar.\(module.rawValue)")
+        .contextMenu {
+            if module != .voice {
+                NotchRemoveButton(item: .page(module),
+                                  title: FeatureStrings.notchCustomization(l10n.language).removeFromIsland)
+            }
+        }
     }
 }
 
@@ -724,5 +775,79 @@ struct NotchHubPeek: View {
         .help(title + "  ⌥⌘" + module.shortcutKey.uppercased())
         .accessibilityLabel(title)
         .accessibilityIdentifier("notch.peek.\(module.rawValue)")
+    }
+}
+
+/// One right-click entry that takes a part off the island.
+struct NotchRemoveButton: View {
+    let item: NotchRemovable
+    let title: String
+
+    var body: some View {
+        Button(role: .destructive) { NotchCustomization.remove(item) } label: {
+            Label(title, systemImage: "minus.circle")
+        }
+    }
+}
+
+/// The island's right-click way back: everything taken off it, each a
+/// click from its place again. Absent while nothing is.
+struct NotchAddBackMenu: View {
+    @ObservedObject private var l10n = L10n.shared
+    @AppStorage(DefaultsKey.notchHubHiddenWidgets) private var hiddenWidgets = ""
+    @AppStorage(DefaultsKey.notchHubHiddenActions) private var hiddenActions = ""
+    @AppStorage(DefaultsKey.notchHiddenModules) private var hiddenModules = ""
+    @AppStorage(DefaultsKey.notchHiddenControls) private var hiddenControls = NotchControlItem.defaultHidden
+
+    var body: some View {
+        let _ = (hiddenWidgets, hiddenActions, hiddenModules, hiddenControls)
+        let custom = FeatureStrings.notchCustomization(l10n.language)
+        let items = NotchCustomization.addable(cameraEnabled: NotchCameraSupport.isEnabled())
+        if !items.isEmpty {
+            Menu {
+                section(custom.home, items.filter {
+                    if case .widget = $0 { return true }
+                    if case .homeAction = $0 { return true }
+                    return false
+                })
+                section(custom.pages, items.filter { if case .page = $0 { return true }; return false })
+                section(custom.controls, items.filter { if case .control = $0 { return true }; return false })
+            } label: {
+                Label(custom.addToIsland, systemImage: "plus.circle")
+            }
+        }
+    }
+
+    @ViewBuilder private func section(_ title: String, _ items: [NotchRemovable]) -> some View {
+        if !items.isEmpty {
+            Section(title) {
+                ForEach(items) { item in
+                    Button { NotchCustomization.restore(item) } label: { Label(name(item), systemImage: symbol(item)) }
+                }
+            }
+        }
+    }
+
+    private func name(_ item: NotchRemovable) -> String {
+        let custom = FeatureStrings.notchCustomization(l10n.language)
+        switch item {
+        case .widget(.calendar): return custom.calendar
+        case .widget(.camera): return custom.camera
+        case .widget(.actions): return custom.shortcuts
+        case .widget(.nowPlaying): return custom.nowPlaying
+        case .homeAction(let control), .control(let control): return control.title(l10n)
+        case .page(let module): return module.title(l10n.language)
+        }
+    }
+
+    private func symbol(_ item: NotchRemovable) -> String {
+        switch item {
+        case .widget(.calendar): return "calendar"
+        case .widget(.camera): return "web.camera"
+        case .widget(.actions): return "square.grid.3x2"
+        case .widget(.nowPlaying): return "music.note"
+        case .homeAction(let control), .control(let control): return control.symbol
+        case .page(let module): return module.symbol
+        }
     }
 }

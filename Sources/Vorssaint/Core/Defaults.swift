@@ -823,6 +823,9 @@ enum DefaultsKey {
     static let notchAgentsOptInMigrated = "notchAgentsOptInMigrated" // local migration marker; never backed up
     static let notchIdleContent = "notchIdleContent"
     static let notchHiddenControls = "notchHiddenControls"
+    // The island home's parts and shortcuts the person removed; see NotchCustomization.
+    static let notchHubHiddenWidgets = "notchHubHiddenWidgets"
+    static let notchHubHiddenActions = "notchHubHiddenActions"
     // Travels with the controls so old backups migrate and later choices survive.
     static let notchScratchpadControlHidden = "notchScratchpadControlHidden"
     static let notchKeyboardLightControlHidden = "notchKeyboardLightControlHidden"
@@ -1434,6 +1437,8 @@ enum Defaults {
         DefaultsKey.notchPreferredPlayer: "",
         DefaultsKey.notchIdleContent: NotchIdleContent.music.rawValue,
         DefaultsKey.notchHiddenControls: NotchControlItem.defaultHidden,
+        DefaultsKey.notchHubHiddenWidgets: "",
+        DefaultsKey.notchHubHiddenActions: "",
         DefaultsKey.notchScratchpadControlHidden: false,
         DefaultsKey.notchKeyboardLightControlHidden: false,
         DefaultsKey.notchControlOrder: "",

@@ -28,24 +28,29 @@ struct NotchControlsView: View {
         } else {
             VStack(spacing: NotchLayout.rowSpacing) {
                 if layout.levelRow > 0 {
-                    NotchLevelRow(levels: belowLevels) { level($0) }
+                    NotchLevelRow(levels: belowLevels) { item in level(item).contextMenu { removeMenu(item) } }
                 }
                 if layout.cardRow > 0 {
                     NotchMusicControlsView(notch: service, height: layout.cardRow).frame(height: layout.cardRow)
+                        .contextMenu { removeMenu(.music) }
                 }
                 if layout.shortcutRows > 0 {
                     NotchRail(items: shortcuts, rows: layout.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
                               width: size.width, spacing: NotchLayout.shortcutSpacing,
                               leastSpacing: NotchLayout.shortcutLeastSpacing, rowSpacing: layout.shortcutRowSpacing) { item in
-                        shortcut(item)
+                        shortcut(item).contextMenu { removeMenu(item) }
                     }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .notchBand(leading: {
-                NotchBandLevels(band: band, levels: bandLevels, side: .leading) { level($0) }
+                NotchBandLevels(band: band, levels: bandLevels, side: .leading) { item in
+                    level(item).contextMenu { removeMenu(item) }
+                }
             }, trailing: {
-                NotchBandLevels(band: band, levels: bandLevels, side: .trailing) { level($0) }
+                NotchBandLevels(band: band, levels: bandLevels, side: .trailing) { item in
+                    level(item).contextMenu { removeMenu(item) }
+                }
             })
         }
     }
@@ -89,6 +94,11 @@ struct NotchControlsView: View {
             .accessibilityLabel(FeatureStrings.notch(l10n.language).brightness)
         }
         .frame(height: 28)
+    }
+
+    /// A control taken off the page leaves its place to the rest.
+    private func removeMenu(_ item: NotchControlItem) -> some View {
+        NotchRemoveButton(item: .control(item), title: FeatureStrings.notchCustomization(l10n.language).removeFromControls)
     }
 
     @ViewBuilder private func shortcut(_ item: NotchControlItem) -> some View {

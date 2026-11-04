@@ -458,6 +458,7 @@ struct NotchView: View {
         } label: {
             Label(service.pinned ? text.unpin : text.pin, systemImage: service.pinned ? "pin.slash" : "pin")
         }
+        NotchAddBackMenu()
         Button(action: service.openSettings) {
             Label(l10n.s.menuSettings, systemImage: "gearshape")
         }

@@ -60,6 +60,12 @@ enum VOSnapshotter {
         agent.open(focus: false)
         await pause(1.0)
         shot("11-assistant-empty.png")
+        // The home with its calendar removed: the shortcuts take its room.
+        NotchCustomization.remove(.widget(.calendar))
+        await pause(0.8)
+        shot("11b-home-without-calendar.png")
+        NotchCustomization.restore(.widget(.calendar))
+        await pause(0.4)
         agent.phase = .listening
         agent.live = "Can you find his LinkedIn"
         agent.level = 0.6
