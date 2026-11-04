@@ -544,7 +544,8 @@ enum NotchDestinationContract {
             defaults.set(page.rawValue, forKey: DefaultsKey.notchHiddenModules)
             service.expanded = false
             service.open()
-            suite.expect(service.selected == NotchSupport.modules(in: defaults).first,
+            // Removing the assistant hides only the assistant: its home, with the dashboard, stays.
+            suite.expect(service.selected == (page == .voice ? .voice : NotchSupport.modules(in: defaults).first),
                    "hiding the saved opening page falls back to an available page")
             defaults.set("", forKey: DefaultsKey.notchHiddenModules)
         }
