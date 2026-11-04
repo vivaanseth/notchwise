@@ -30,7 +30,7 @@ struct PowerSection: View {
                      supportsEditing: true,
                      resetAction: resetPanelDefaults) { editing in
             VStack(alignment: .leading, spacing: 10) {
-                if PowerSampler.hasInternalBattery, !editing {
+                if BatteryCareService.isOffered, !editing {
                     BatteryCareSummaryRow()
                     Divider()
                 }

@@ -18,24 +18,40 @@ struct VOVoicePage: View {
     @ObservedObject var service: NotchService
     @ObservedObject private var agent = VOAssistantController.shared
     @ObservedObject private var voice = VOAssistantVoice.shared
+    @ObservedObject private var l10n = L10n.shared
+    @AppStorage(DefaultsKey.notchHiddenModules) private var hiddenModules = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The assistant on the home, unless it is off or was removed from the
+    /// island. Without it the home keeps its dashboard, looking the same.
+    private var assistant: Bool {
+        let _ = hiddenModules
+        return NotchSupport.showsAssistant()
+    }
 
     /// Before anything is asked, the page is the island's home too: the
     /// day's events, a small mirror, quick controls and the song playing
     /// below the field. Listening or answering, it steps aside for the
     /// conversation.
     private var showsHub: Bool {
-        agent.turns.isEmpty && agent.hint == nil && (agent.phase == .idle || agent.phase == .collapsed)
+        guard assistant else { return true }
+        return agent.turns.isEmpty && agent.hint == nil && (agent.phase == .idle || agent.phase == .collapsed)
             && !service.hubModules.isEmpty
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VOExpandedNotch()
+            if assistant {
+                VOExpandedNotch()
+                    .contextMenu {
+                        NotchRemoveButton(item: .page(.voice),
+                                          title: FeatureStrings.notchCustomization(l10n.language).removeAssistant)
+                    }
+            }
             if showsHub {
-                NotchHubView(service: service, selection: agent.frontSelection) { agent.submit($0) }
+                NotchHubView(service: service, selection: assistant ? agent.frontSelection : nil) { agent.submit($0) }
                     .padding(.horizontal, 8)
-                    .padding(.top, 14)
+                    .padding(.top, assistant ? 14 : 6)
                     .transition(.opacity)
             }
         }
@@ -53,13 +69,21 @@ struct VOVoicePage: View {
                 .accessibilityHidden(true)
         }
         .notchBand(leading: {
-            VOJarvisGlyph(size: 17, active: agent.phase == .listening || agent.phase == .thinking || voice.speaking)
-                .padding(.leading, 6)
-                .accessibilityHidden(true)
+            if assistant {
+                VOJarvisGlyph(size: 17, active: agent.phase == .listening || agent.phase == .thinking || voice.speaking)
+                    .padding(.leading, 6)
+                    .accessibilityHidden(true)
+            } else {
+                Image(systemName: "house")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .padding(.leading, 6)
+                    .accessibilityHidden(true)
+            }
             // The island's pages, at the top of its home.
             NotchHubPageBar(service: service)
         }, trailing: {
-            if !agent.turns.isEmpty {
+            if assistant, !agent.turns.isEmpty {
                 NotchIconButton(symbol: "square.and.pencil", title: "New conversation") {
                     agent.turns.removeAll()
                     agent.phase = .idle

@@ -163,7 +163,7 @@ struct MetricDetailView: View {
     var body: some View {
         // A Mac with a battery opens Battery Care, AlDente's charge limiter
         // and battery health, wherever its battery detail shows.
-        if kind == .battery, PowerSampler.hasInternalBattery {
+        if kind == .battery, BatteryCareService.isOffered {
             BatteryCareView()
         } else {
             metricBody

@@ -47,6 +47,10 @@ final class BatteryCareService: ObservableObject {
 
     static var isSupported: Bool { PowerSampler.hasInternalBattery }
 
+    /// Battery Care is offered while Battery stays on the island; removed
+    /// there, the battery detail shows the plain readings instead.
+    static var isOffered: Bool { isSupported && !NotchCustomization.isRemoved(.page(.battery)) }
+
     var helperInstalled: Bool {
         FileManager.default.fileExists(atPath: BatteryCareIdentifiers.launchDaemon)
     }

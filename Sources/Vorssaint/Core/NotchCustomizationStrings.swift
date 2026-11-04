@@ -10,6 +10,8 @@ struct NotchCustomizationFeatureStrings {
     let removeShortcuts = "Remove All Shortcuts from Home"
     let removeFromIsland = "Remove from Island"
     let removeFromControls = "Remove from Controls"
+    let removeAssistant = "Remove Assistant from Island"
+    let assistant = "Assistant"
     let addToIsland = "Add to Island"
     let home = "Home"
     let pages = "Pages"

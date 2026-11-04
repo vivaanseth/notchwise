@@ -70,7 +70,9 @@ enum NotchModule: String, CaseIterable, Identifiable {
 
     func isAvailable(in defaults: UserDefaults = .standard) -> Bool {
         switch self {
-        case .voice: return AppFeature.voiceAssistant.isAvailable(in: defaults)
+        // The home, which holds the dashboard, is always there; the
+        // assistant on it can be off or removed (`showsAssistant`).
+        case .voice: return true
         case .battery: return AppFeature.monitorPower.isAvailable(in: defaults) && NotchControlItem.hasBattery()
         case .controls, .music: return true
         case .timer: return AppFeature.notchTimer.isAvailable(in: defaults)
@@ -1385,7 +1387,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .scratchpad: return .feature(.scratchpad)
         case .panel, .features: return .none
         case .fans: return .feature(.fanControl)
-        case .battery: return .feature(.monitorPower)
+        case .battery: return .page(.battery, feature: .monitorPower)
         case .toggles: return .feature(.quickToggles)
         case .wallpaper: return .feature(.wallpaper)
         case .mixer: return .page(.mixer, feature: .mixer)
@@ -1411,7 +1413,7 @@ enum NotchControlItem: String, CaseIterable, Identifiable {
         case .scratchpad: return AppFeature.scratchpad.isAvailable(in: defaults)
         case .panel, .features: return true
         case .fans: return AppFeature.fanControl.isAvailable(in: defaults)
-        case .battery: return AppFeature.monitorPower.isAvailable(in: defaults) && Self.hasBattery()
+        case .battery: return NotchSupport.modules(in: defaults).contains(.battery)
         case .toggles: return AppFeature.quickToggles.isAvailable(in: defaults)
         case .wallpaper: return AppFeature.wallpaper.isAvailable(in: defaults)
         case .music: return NotchSupport.modules(in: defaults).contains(.music)
@@ -1927,6 +1929,14 @@ enum NotchSupport {
         isEnabled(in: defaults) && defaults.bool(forKey: DefaultsKey.notchShortcutEnabled)
     }
 
+    /// The assistant on the island's home: on as a feature and not removed
+    /// from the island. Removed, the home keeps its dashboard without it.
+    static func showsAssistant(in defaults: UserDefaults = .standard) -> Bool {
+        AppFeature.voiceAssistant.isAvailable(in: defaults)
+            && !(defaults.string(forKey: DefaultsKey.notchHiddenModules) ?? "").split(separator: ",")
+                .contains(Substring(NotchModule.voice.rawValue))
+    }
+
     static func modules(in defaults: UserDefaults = .standard) -> [NotchModule] {
         let hidden = Set((defaults.string(forKey: DefaultsKey.notchHiddenModules) ?? "")
             .split(separator: ",").map(String.init))
@@ -1934,7 +1944,7 @@ enum NotchSupport {
             .split(separator: ",").compactMap { NotchModule(rawValue: String($0)) }
         var seen = Set<NotchModule>()
         return (stored + NotchModule.allCases).filter {
-            seen.insert($0).inserted && !hidden.contains($0.rawValue) && $0.isAvailable(in: defaults)
+            seen.insert($0).inserted && ($0 == .voice || !hidden.contains($0.rawValue)) && $0.isAvailable(in: defaults)
                 && ($0 != .timer || defaults.bool(forKey: DefaultsKey.notchTimerEnabled))
                 && ($0 != .camera || defaults.bool(forKey: DefaultsKey.notchCameraEnabled))
                 && ($0 != .calendar || defaults.bool(forKey: DefaultsKey.notchCalendarEnabled))

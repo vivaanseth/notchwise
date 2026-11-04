@@ -547,13 +547,13 @@ final class NotchService: ObservableObject {
     /// assistant a click away, as VoiceOS's idle notch did.
     var voiceAskShows: Bool {
         hoverEmphasized && !expanded && !peeking && notice == nil && compactActivity == nil
-            && captureControls == nil && !dragPlaceholder && modules.contains(.voice)
+            && captureControls == nil && !dragPlaceholder && NotchSupport.showsAssistant()
     }
 
     /// The assistant listening, thinking, speaking or waiting on a
     /// confirmation while its page is not on screen.
     var hasVoiceActivity: Bool {
-        modules.contains(.voice) && !voicePageShown && VOIslandBridge.activity != nil
+        NotchSupport.showsAssistant() && !voicePageShown && VOIslandBridge.activity != nil
     }
 
     /// The pages the hub and the hover dock offer: every page but the
@@ -2033,11 +2033,12 @@ final class NotchService: ObservableObject {
             case .calendar: select(.calendar)
             case .commandBar: perform { CommandBarService.shared.show() }
             case .scratchpad: openScratchpad()
-            case .fans: if metricIsAvailable(.fan) { showMetric(.fan) } else { openAppPanel(section: .fanControl) }
-            case .battery:
-                if modules.contains(.battery) { select(.battery) }
-                else if metricIsAvailable(.battery) { showMetric(.battery) }
-                else { openAppPanel(section: .power) }
+            // The fans' detail belongs to the System page; without it, the panel's section.
+            case .fans:
+                if metricIsAvailable(.fan), modules.contains(.system) { showMetric(.fan) }
+                else { openAppPanel(section: .fanControl) }
+            // Its tile shows only with its page, so it never opens Battery Care past a removal.
+            case .battery: select(.battery)
             case .toggles: openAppPanel(section: .toggles)
             case .features: openAppPanel(section: .controls)
             case .wallpaper: openAppPanel(section: .wallpaper)
@@ -4073,7 +4074,7 @@ final class NotchService: ObservableObject {
 
     private func bindEvents() {
         subscriptions.removeAll()
-        voiceSubscription = modules.contains(.voice)
+        voiceSubscription = NotchSupport.showsAssistant()
             ? VOIslandBridge.observe { [weak self] in
                 self?.objectWillChange.send()
                 self?.refreshPresentation()

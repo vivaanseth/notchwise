@@ -836,6 +836,7 @@ struct NotchAddBackMenu: View {
         case .widget(.actions): return custom.shortcuts
         case .widget(.nowPlaying): return custom.nowPlaying
         case .homeAction(let control), .control(let control): return control.title(l10n)
+        case .page(.voice): return custom.assistant
         case .page(let module): return module.title(l10n.language)
         }
     }

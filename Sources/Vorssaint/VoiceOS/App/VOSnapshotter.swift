@@ -66,6 +66,12 @@ enum VOSnapshotter {
         shot("11b-home-without-calendar.png")
         NotchCustomization.restore(.widget(.calendar))
         await pause(0.4)
+        // The home with the assistant removed: the same dashboard, without the field.
+        NotchCustomization.remove(.page(.voice))
+        await pause(0.8)
+        shot("11c-home-without-assistant.png")
+        NotchCustomization.restore(.page(.voice))
+        await pause(0.4)
         agent.phase = .listening
         agent.live = "Can you find his LinkedIn"
         agent.level = 0.6

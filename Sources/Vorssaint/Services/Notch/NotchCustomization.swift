@@ -55,7 +55,9 @@ enum NotchCustomization {
     static func addable(in defaults: UserDefaults = .standard, cameraEnabled: Bool = true) -> [NotchRemovable] {
         let widgets = NotchHubWidget.allCases.filter { $0 != .camera || cameraEnabled }.map(NotchRemovable.widget)
         let actions = homeActionOrder.filter { $0.isAvailable(in: defaults) }.map(NotchRemovable.homeAction)
-        let pages = NotchModule.allCases.filter { $0 != .voice && $0.isAvailable(in: defaults) }.map(NotchRemovable.page)
+        let pages = NotchModule.allCases.filter {
+            $0 == .voice ? AppFeature.voiceAssistant.isAvailable(in: defaults) : $0.isAvailable(in: defaults)
+        }.map(NotchRemovable.page)
         let controls = NotchControlItem.allCases.filter { $0.isAvailable(in: defaults) }.map(NotchRemovable.control)
         return (widgets + actions + pages + controls).filter { isRemoved($0, in: defaults) }
     }

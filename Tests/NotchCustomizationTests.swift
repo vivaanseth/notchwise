@@ -43,6 +43,19 @@ enum NotchCustomizationTests {
                         .split(separator: ",").contains("microphone"),
                      "removing a control keeps the controls hidden from the start")
 
+        // The assistant removed: the home stays, without the assistant on it.
+        NotchCustomization.remove(.page(.voice), in: defaults)
+        suite.expect(NotchSupport.modules(in: defaults).contains(.voice) && !NotchSupport.showsAssistant(in: defaults),
+                     "removing the assistant keeps the home and its dashboard")
+        NotchCustomization.restore(.page(.voice), in: defaults)
+
+        // A removed page takes every way into it along: Battery's tile and shortcut go with its page.
+        NotchCustomization.remove(.page(.battery), in: defaults)
+        suite.expect(!NotchControlItem.battery.isAvailable(in: defaults)
+                     && !NotchCustomization.homeActions(in: defaults).contains(.battery)
+                     && !NotchQuickAction.module(.battery).isAvailable(in: defaults),
+                     "a removed page leaves no tile, shortcut or round button that opens it")
+
         let addable = NotchCustomization.addable(in: defaults, cameraEnabled: false)
         suite.expect(addable.contains(.widget(.calendar)) && addable.contains(.widget(.actions))
                      && !addable.contains(.widget(.camera)) && !addable.contains(.widget(.nowPlaying)),
