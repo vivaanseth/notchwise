@@ -5,10 +5,11 @@ import SwiftUI
 
 /// The island's one visual language, after Apple's own island and the
 /// dark system: white type in three strengths on pure black, grey platters
-/// with no outline, controls a step lighter, and colour only where it means
-/// something (on, live, needs notice, or a song's own cover). Every page
-/// draws from here, so no two parts of the island disagree.
-/// docs/ISLAND_DESIGN.md explains each choice.
+/// with no outline, controls a step lighter. Colour belongs to things, not
+/// surfaces: each page and control has one system colour, worn by its glyph
+/// or its icon, and filling a control while it is on, as Settings and
+/// Control Center do. Every page draws from here, so no two parts of the
+/// island disagree. docs/ISLAND_DESIGN.md explains each choice.
 enum NotchStyle {
     // MARK: Colour
 
@@ -31,16 +32,22 @@ enum NotchStyle {
     /// The outline Increase Contrast asks for, where there is none otherwise.
     static let contrastOutline = Color.white.opacity(0.45)
 
-    /// The system's dark colours, kept for meaning: what is on, live, or
-    /// needs notice. A page never paints with them for decoration.
+    /// The system's own colours, which the island's dark appearance draws
+    /// in their dark variants. One belongs to each page and control; the
+    /// rest mark what is live or needs notice. None ever fills a surface.
     enum Tint {
-        static let blue = Color(red: 10 / 255, green: 132 / 255, blue: 1)
-        static let green = Color(red: 48 / 255, green: 209 / 255, blue: 88 / 255)
-        static let orange = Color(red: 1, green: 159 / 255, blue: 10 / 255)
-        static let red = Color(red: 1, green: 69 / 255, blue: 58 / 255)
-        static let yellow = Color(red: 1, green: 214 / 255, blue: 10 / 255)
-        static let pink = Color(red: 1, green: 55 / 255, blue: 95 / 255)
-        static let teal = Color(red: 100 / 255, green: 210 / 255, blue: 1)
+        static let blue = Color.blue
+        static let green = Color.green
+        static let orange = Color.orange
+        static let red = Color.red
+        static let yellow = Color.yellow
+        static let pink = Color.pink
+        static let teal = Color.teal
+        static let cyan = Color.cyan
+        static let mint = Color.mint
+        static let indigo = Color.indigo
+        static let purple = Color.purple
+        static let gray = Color.gray
     }
 
     // MARK: Shape
@@ -186,5 +193,43 @@ struct NotchCapsuleButtonStyle: ButtonStyle {
             .animation(reduceMotion ? nil : NotchStyle.Motion.press, value: configuration.isPressed)
             .animation(reduceMotion ? nil : NotchStyle.Motion.hover, value: hovered)
             .onHover { hovered = $0 }
+    }
+}
+
+/// A white glyph on a rounded square of its colour, as Settings draws each
+/// of its panes and the Dock its apps: the one place a page's colour fills
+/// a shape. A light falls from the top, as on the system's own icons.
+struct NotchIconChip: View {
+    let symbol: String
+    let tint: Color
+    /// White, or dark on a light colour such as yellow, as Settings draws it.
+    var glyph: Color = .white
+    var size: CGFloat = 30
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous)
+        Image(systemName: symbol)
+            .font(.system(size: size * 0.5, weight: .semibold))
+            .foregroundStyle(glyph)
+            .frame(width: size, height: size)
+            .background {
+                shape.fill(tint)
+                    .overlay(shape.fill(LinearGradient(colors: [.white.opacity(0.22), .clear],
+                                                       startPoint: .top, endPoint: .bottom)))
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+private struct NotchTileTintKey: EnvironmentKey {
+    static let defaultValue: Color? = nil
+}
+
+extension EnvironmentValues {
+    /// The colour a shortcut tile's glyph wears at rest, set by the rail
+    /// that knows which control the tile is.
+    var notchTileTint: Color? {
+        get { self[NotchTileTintKey.self] }
+        set { self[NotchTileTintKey.self] = newValue }
     }
 }

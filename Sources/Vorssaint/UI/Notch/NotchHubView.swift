@@ -28,6 +28,40 @@ enum NotchHubLayout {
     }
 }
 
+extension NotchModule {
+    /// Each page's colour: the one its icon has in Settings, so a page reads
+    /// the same in both places. It fills the page's icon in the page grid
+    /// and marks the page shown and the pages suggested; elsewhere the
+    /// page's glyph stays white.
+    var tint: Color { settingsTint }
+}
+
+extension NotchControlItem {
+    /// A control's colour: its glyph wears it at rest, as Control Center
+    /// tints a control, and one that opens a page wears that page's colour.
+    /// Levels and the microphone stay white.
+    var tint: Color? {
+        switch self {
+        case .music: return NotchModule.music.tint
+        case .mixer: return NotchModule.mixer.tint
+        case .timer: return NotchModule.timer.tint
+        case .calendar: return NotchModule.calendar.tint
+        case .battery: return NotchModule.battery.tint
+        case .scratchpad: return NotchModule.scratchpad.tint
+        case .screenshot: return NotchModule.captures.tint
+        case .keepAwake: return NotchStyle.Tint.yellow
+        case .recording: return NotchStyle.Tint.red
+        case .fans: return NotchStyle.Tint.teal
+        case .speedTest: return NotchStyle.Tint.green
+        case .toggles, .panel: return NotchStyle.Tint.blue
+        case .commandBar: return NotchStyle.Tint.purple
+        case .features: return NotchStyle.Tint.mint
+        case .wallpaper: return NotchStyle.Tint.cyan
+        case .volume, .brightness, .keyboardLight, .microphone: return nil
+        }
+    }
+}
+
 /// The assistant's page with nothing asked yet is the island's home: the
 /// days's events, a small mirror, the controls reached for most and the song
 /// playing, with quick asks about text selected in the app in front.
@@ -373,7 +407,7 @@ private struct NotchHubCameraTile: View {
                         VStack(spacing: 8) {
                             Image(systemName: "web.camera")
                                 .font(NotchStyle.Typeface.tileGlyph)
-                                .foregroundStyle(NotchStyle.primary)
+                                .foregroundStyle(NotchModule.camera.tint)
                                 .frame(width: 38, height: 38)
                                 .background(NotchStyle.control, in: Circle())
                             Text(text.startCamera)
@@ -409,8 +443,9 @@ private struct NotchHubCameraTile: View {
     }
 }
 
-/// The controls reached for most, as Control Center draws them: white
-/// glyphs on the control fill, and lit in their own colour only while on.
+/// The controls reached for most, as Control Center draws them: each glyph
+/// in its control's colour on the control fill, the tile filling with the
+/// colour the Controls page lights it in while it is on.
 private struct NotchHubActions: View {
     @ObservedObject var service: NotchService
     let rows: Int
@@ -443,7 +478,7 @@ private struct NotchHubActions: View {
         return Button { service.activateQuickAction(.control(item)) } label: {
             Image(systemName: symbol(item, on: on))
                 .font(NotchStyle.Typeface.tileGlyph)
-                .foregroundStyle(on ? accent.glyph : NotchStyle.primary)
+                .foregroundStyle(on ? accent.glyph : item.tint ?? NotchStyle.primary)
                 .contentTransition(.symbolEffect(.replace))
                 .symbolEffect(.bounce, value: on)
                 .frame(maxWidth: .infinity)
@@ -506,7 +541,7 @@ private struct NotchHubNowPlaying: View {
                         } else {
                             Image(systemName: NotchModule.music.symbol)
                                 .font(NotchStyle.Typeface.tileGlyph)
-                                .foregroundStyle(NotchStyle.secondary)
+                                .foregroundStyle(NotchModule.music.tint)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .background(NotchStyle.control)
                         }
@@ -553,14 +588,15 @@ private struct NotchHubNowPlaying: View {
     }
 }
 
-/// The home's top row: every page a click away, in white glyphs that
-/// brighten for the page shown, with a dot under the ones the moment
-/// suggests. Where the row has no room for them all, the last place opens
-/// the sections.
+/// The home's top row: every page a click away, in white glyphs, the page
+/// shown in its own colour on a wash of it, as a selected tab is, with a dot
+/// in its colour under each page the moment suggests. Where the row has no
+/// room for them all, the last place opens the sections.
 struct NotchHubPageBar: View {
     @ObservedObject var service: NotchService
     @ObservedObject private var intent = NotchIntentService.shared
     @ObservedObject private var l10n = L10n.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The room the row leaves the bar, which it fills with as many pages
     /// as fit; the page's own controls in the row take theirs first.
     @State private var room: CGFloat = 0
@@ -608,14 +644,15 @@ struct NotchHubPageBar: View {
         return Button { service.select(module) } label: {
             Image(systemName: module == .voice ? "house" : module.symbol)
                 .font(NotchStyle.Typeface.rowGlyph)
-                .foregroundStyle(current ? NotchStyle.primary : NotchStyle.secondary)
+                .foregroundStyle(current ? module.tint : NotchStyle.secondary)
                 .frame(width: 28, height: 26)
-                .background(current ? NotchStyle.selected : .clear, in: Capsule())
+                .background(current ? module.tint.opacity(0.22) : .clear, in: Capsule())
                 .overlay(alignment: .bottom) {
-                    if suggested {
-                        Circle().fill(NotchStyle.secondary).frame(width: 3, height: 3).offset(y: 1)
+                    if suggested, !current {
+                        Circle().fill(module.tint).frame(width: 3, height: 3).offset(y: 1)
                     }
                 }
+                .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: current)
                 .contentShape(Rectangle())
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 13))
@@ -673,10 +710,8 @@ struct NotchHubPeek: View {
                             .frame(width: 22, height: 22)
                             .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                     } else {
-                        Image(systemName: first.module.symbol)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(NotchStyle.primary)
-                            .frame(width: 22, height: 22)
+                        NotchIconChip(symbol: first.module.symbol, tint: first.module.tint,
+                                      glyph: first.module.settingsGlyph, size: 22)
                     }
                     VStack(alignment: .leading, spacing: 0) {
                         Text(first.module == .music ? music.playback?.track.title ?? first.module.title(l10n.language)
@@ -718,9 +753,9 @@ struct NotchHubPeek: View {
         return Button { service.select(module) } label: {
             Image(systemName: module.symbol)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(suggested ? NotchStyle.primary : NotchStyle.secondary)
+                .foregroundStyle(suggested ? module.tint : NotchStyle.secondary)
                 .frame(width: NotchHubLayout.peekIcon, height: NotchHubLayout.peekIcon)
-                .background(suggested ? NotchStyle.selected : NotchStyle.platter, in: shape)
+                .background(suggested ? module.tint.opacity(0.2) : NotchStyle.platter, in: shape)
                 .contentShape(shape)
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: NotchStyle.Radius.button))

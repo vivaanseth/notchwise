@@ -38,7 +38,7 @@ struct NotchControlsView: View {
                     NotchRail(items: shortcuts, rows: layout.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
                               width: size.width, spacing: NotchLayout.shortcutSpacing,
                               leastSpacing: NotchLayout.shortcutLeastSpacing, rowSpacing: layout.shortcutRowSpacing) { item in
-                        shortcut(item).contextMenu { removeMenu(item) }
+                        shortcut(item).environment(\.notchTileTint, item.tint).contextMenu { removeMenu(item) }
                     }
                 }
             }
@@ -441,11 +441,13 @@ struct NotchActionTile: View {
     var accent: NotchTileAccent = .selection
     let action: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The control's colour, which its glyph wears at rest.
+    @Environment(\.notchTileTint) private var tint
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: symbol).font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(active ? accent.glyph : NotchStyle.primary)
+                    .foregroundStyle(active ? accent.glyph : tint ?? NotchStyle.primary)
                     .contentTransition(.symbolEffect(.replace))
                     .symbolEffect(.bounce, value: active)
                     .frame(width: 40, height: 40)

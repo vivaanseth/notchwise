@@ -35,11 +35,24 @@ disagree. This note explains the choices so later pages keep to them.
 | `selected` | white 18% | The page shown, the choice in force |
 | `separator`, `track` | white 12–14% | Lines, a meter's empty part |
 
-The system's dark colours (`NotchStyle.Tint`) are for meaning only: a tile
-that is on, something live, something that needs the person. The page bar,
-the dock, the page grid and the side buttons are white. Only the calendar's
-weekday (as Apple's own Calendar draws it), a song's live bars (in its cover's
-colour, as the phone's island tints them), and lit tiles carry colour.
+Colour belongs to things, never to surfaces, as in Settings and Control
+Center. Each page has one colour from the system palette (`NotchModule.tint`,
+the same colour its icon has in Settings) and each control one
+(`NotchControlItem.tint`, its page's colour when it opens one):
+
+- **Page grid**: each page's icon is a white glyph on a rounded square of its
+  colour (`NotchIconChip`), as Settings draws its panes.
+- **Top row and dock**: glyphs are white; the page shown is in its colour on a
+  wash of it, as a selected tab is, and suggested pages carry a dot or icon in
+  theirs. The side button that changes by itself wears its page's colour.
+- **Shortcut tiles** (home and Controls): the glyph wears its control's colour
+  on the grey control fill; a control that is on fills with its colour, as
+  iOS 18's Control Center draws tinted controls.
+- **Meaning**: red, orange and yellow also mark what is live or needs notice;
+  the calendar's weekday is red as in Apple's Calendar; a song's live bars take
+  its cover's colour, as the phone's island tints them.
+
+Platters, cards, the island and its buttons stay black and grey.
 
 Cards have no outline. Increase Contrast adds one.
 
@@ -85,13 +98,13 @@ section's name. Nothing smaller where a page has the room.
 ## Pages
 
 - **Home**: platter cards for the calendar, the camera and Now Playing; the
-  shortcuts as Control Center tiles, lit in the colour the Controls page
-  lights the same control. The page bar is white, the shown page on a
-  `selected` capsule, a dot under suggested ones.
+  shortcuts as Control Center tiles with coloured glyphs, lit in the colour
+  the Controls page lights the same control. The page bar is white, the page
+  shown in its colour, a dot in its colour under suggested ones.
 - **Assistant**: the home's plain black at rest. VoiceOS's blue rises from the
   island's foot only while it listens, thinks or speaks. Its buttons are the
   island's capsules; the step a card asks for is the system's blue.
-- **Controls**: glyphs in circles on the control fill; on is white with a
-  black glyph, or red, yellow or orange where the state needs notice.
+- **Controls**: coloured glyphs in circles on the control fill; on is white
+  with a black glyph, or red, yellow or orange where the state needs notice.
 - **Battery**: the island's platters, capsule buttons, green switches and the
   reading sizes above. In the menu's panel it keeps the system's controls.

@@ -417,8 +417,8 @@ extension NotchModule {
         case .system: return .green
         case .tools: return .gray
         case .calendar: return .red
-        case .notifications: return .orange
-        case .timer: return .mint
+        case .notifications: return .red
+        case .timer: return .orange
         case .camera: return .teal
         case .downloads: return .blue
         case .scratchpad: return .yellow

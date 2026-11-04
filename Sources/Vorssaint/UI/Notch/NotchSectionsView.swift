@@ -103,11 +103,9 @@ struct NotchSectionsView: View {
         let current = service.selected == module
         let shape = RoundedRectangle(cornerRadius: NotchStyle.Radius.card, style: .continuous)
         return Button { service.select(module) } label: {
-            VStack(spacing: 6) {
-                Image(systemName: module.symbol)
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(NotchStyle.primary)
-                    .frame(width: 25, height: 25)
+            VStack(spacing: 5) {
+                // Each page's icon in its colour, as Settings draws its panes.
+                NotchIconChip(symbol: module.symbol, tint: module.tint, glyph: module.settingsGlyph, size: 30)
                 Text(module.title(l10n.language))
                     .font(.system(size: 11, weight: .semibold))
                     .lineLimit(2)
