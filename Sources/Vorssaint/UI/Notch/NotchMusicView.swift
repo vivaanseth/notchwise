@@ -259,7 +259,7 @@ struct NotchMusicView: View {
                 Button { RadialNowPlayingApplication.open(playback.track) } label: {
                     NotchArtwork(image: service.artwork, size: NotchLayout.musicArtworkSize, source: playback.track)
                         .scaleEffect(playback.isPlaying || reduceMotion ? 1 : 0.94)
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: playback.isPlaying)
+                        .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: playback.isPlaying)
                 }
                 .buttonStyle(NotchButtonStyle(cornerRadius: NotchLayout.musicArtworkSize * 0.19))
                 .help(text.mediaNowPlaying)
@@ -284,7 +284,7 @@ struct NotchMusicView: View {
                 // Quiet beside the song, as the timeline's times are. The
                 // bars rest flat while paused, so the title keeps its width.
                 NotchLiveEqualizerBars(isPlaying: playback.isPlaying, bars: 4, barWidth: 2.5, height: 15,
-                                       tint: .white.opacity(0.5))
+                                       tint: NotchStyle.secondary)
                 NotchAudioAccessButton(playing: playback.isPlaying)
                 if band.besideCamera { sectionsButton }
             } corner: {
@@ -396,7 +396,7 @@ private struct NotchMusicSideButton: View {
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: plate, height: plate)
                 .background(.white.opacity(active ? 0.12 : 0), in: Circle())
-                .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: active)
+                .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: active)
                 .frame(width: height, height: height)
                 .contentShape(Circle())
         }
@@ -449,7 +449,7 @@ private struct NotchMusicOutputButton: View {
         NotchMenuButton(title: l10n.s.mixerSystemOutputTitle, items: items, cornerRadius: 22) {
             Image(systemName: symbol)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(NotchStyle.secondary)
                 .frame(width: 44, height: 44)
                 .contentShape(Circle())
         }
@@ -570,7 +570,7 @@ private struct NotchMusicTransport: View {
                 .font(.system(size: compact ? 22 : slot == nil ? 26 : 28, weight: .semibold))
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: showsPlaying)
+                .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: showsPlaying)
                 .frame(width: height, height: height)
                 .contentShape(Circle())
         }

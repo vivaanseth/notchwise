@@ -121,7 +121,7 @@ struct NotchView: View {
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .overlay {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(.white.opacity(0.24),
+                        .strokeBorder(NotchStyle.tertiary,
                                       style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
                         .allowsHitTesting(false)
                 }
@@ -290,6 +290,9 @@ struct NotchView: View {
         let band = NotchBand(geometry: geometry, contentWidth: service.contentSize.width)
         let wraps = geometry.pageTop == .wrapsCamera
         return page
+            // A new page settles in from a soft blur while the shape springs
+            // to its size; the top row stays crisp, its controls already there.
+            .notchArrival(on: arrivalKey)
             .frame(width: service.contentSize.width, height: service.contentSize.height, alignment: .top)
             .clipShape(NotchPageClip(top: geometry.pageTopInset))
             // With no title on screen, VoiceOver still names the page.
@@ -325,6 +328,14 @@ struct NotchView: View {
             // the first control. Show the ring once keyboard input begins.
             .focusEffectDisabled(!service.showsKeyboardFocus)
             .onAppear { UpdateService.shared.checkIfStale() }
+    }
+
+    /// What the open island shows, so new content can settle in when it changes.
+    private var arrivalKey: String {
+        if service.showingSections { return "sections" }
+        if service.showingAppPanel { return "panel" }
+        if let metric = service.selectedMetric { return "metric.\(metric)" }
+        return service.modules.isEmpty ? "empty" : service.selected.rawValue
     }
 
     private var pageName: String {
@@ -396,7 +407,7 @@ struct NotchView: View {
             }
         }
         // The levels ease aside for the reading and back.
-        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: makesRoom)
+        .animation(reduceMotion ? nil : NotchStyle.Motion.layout, value: makesRoom)
         .overlay(alignment: side == .leading ? .leading : .trailing) {
             if let feedback {
                 NotchExpandedLevelView(notice: feedback, showsDetail: readingWidth >= NotchLayout.levelReadingDetailWidth)
@@ -627,7 +638,7 @@ enum NotchRestingBattery {
                                            early: early, earlyThreshold: earlyThreshold) {
         case .low: return .red
         case .early: return .orange
-        case .none: return .white.opacity(0.9)
+        case .none: return NotchStyle.primary
         }
     }
 
@@ -690,7 +701,7 @@ struct NotchRestingStrip: View {
                             if let artwork = music.artwork {
                                 Image(nsImage: artwork).resizable().scaledToFill()
                                     .frame(width: min(22, geometry.stripHeight - 6), height: min(22, geometry.stripHeight - 6))
-                                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                             }
                         case .battery:
                             Image(systemName: batterySymbol).font(.system(size: 12))
@@ -704,7 +715,7 @@ struct NotchRestingStrip: View {
                     }
                     .frame(width: geometry.restingWingWidth)
                     .opacity(wingStepsAside(.left) ? 0 : 1)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: wingStepsAside(.left))
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.2), value: wingStepsAside(.left))
                     Color.clear.frame(width: geometry.cameraWidth)
                     ZStack(alignment: .leading) {
                         Color.clear
@@ -729,7 +740,7 @@ struct NotchRestingStrip: View {
                     }
                     .frame(width: geometry.restingWingWidth)
                     .opacity(wingStepsAside(.right) ? 0 : 1)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: wingStepsAside(.right))
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.2), value: wingStepsAside(.right))
                 } else { Color.clear }
             }
             if service.mascotShows(on: geometry) {
@@ -750,7 +761,7 @@ struct NotchRestingStrip: View {
                     .allowsHitTesting(false)
             }
         }
-        .foregroundStyle(.white.opacity(0.9))
+        .foregroundStyle(NotchStyle.primary)
         // The strip stays in its band at the top: hover grows the island
         // around it, and centring it in the taller shape dropped it half
         // the growth in one frame.
@@ -905,14 +916,14 @@ struct NotchActivityPicker: View {
                     .foregroundStyle(chosen ? Color.black : Color.white)
                     .background {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.12))
+                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(NotchStyle.control)
                             if chosen {
-                                RoundedRectangle(cornerRadius: 8).fill(Color.white)
+                                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white)
                                     .matchedGeometryEffect(id: "choice", in: choice)
                             }
                         }
                     }
-                    .contentShape(RoundedRectangle(cornerRadius: 8))
+                    .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(activity.title(language))

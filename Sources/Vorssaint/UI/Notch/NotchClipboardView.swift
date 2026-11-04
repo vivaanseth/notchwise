@@ -99,7 +99,7 @@ struct NotchClipboardView: View {
                     // follows it and the tick stays in view.
                     .onChange(of: copiedID) { _, id in
                         guard let id else { return }
-                        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { proxy.scrollTo(id) }
+                        withAnimation(reduceMotion ? nil : NotchStyle.Motion.scroll) { proxy.scrollTo(id) }
                     }
                 }
             }
@@ -197,7 +197,7 @@ struct NotchClipboardView: View {
             target = entries[rows].id
             anchor = .top
         }
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { proxy.scrollTo(target, anchor: anchor) }
+        withAnimation(reduceMotion ? nil : NotchStyle.Motion.scroll) { proxy.scrollTo(target, anchor: anchor) }
     }
 
     /// A new search starts from its top result instead of a row it hid. Text
@@ -293,7 +293,7 @@ struct NotchClipboardView: View {
     }
 
     private func setOpen(keyID: UUID?) {
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { keyExpandedID = keyID }
+        withAnimation(reduceMotion ? nil : NotchStyle.Motion.layout) { keyExpandedID = keyID }
     }
 
     /// A compact entry opens once the pointer has rested on it and closes a
@@ -313,7 +313,7 @@ struct NotchClipboardView: View {
             dwell = (entry.id, Task { @MainActor in
                 try? await Task.sleep(for: .seconds(NotchClipboardCardSize.dwell))
                 guard !Task.isCancelled, hoveredID == entry.id else { return }
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { expandedID = entry.id }
+                withAnimation(reduceMotion ? nil : NotchStyle.Motion.layout) { expandedID = entry.id }
             })
         } else {
             if dwell?.id == entry.id {
@@ -326,7 +326,7 @@ struct NotchClipboardView: View {
             closing = (entry.id, Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(150))
                 guard !Task.isCancelled, expandedID == entry.id else { return }
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { expandedID = nil }
+                withAnimation(reduceMotion ? nil : NotchStyle.Motion.layout) { expandedID = nil }
             })
         }
     }
@@ -366,7 +366,7 @@ struct NotchClipboardView: View {
             }
             .overlay {
                 ZStack {
-                    if lifted { shape.strokeBorder(.white.opacity(0.14), lineWidth: 0.5) }
+                    if lifted { shape.strokeBorder(NotchStyle.control, lineWidth: 0.5) }
                     shape.strokeBorder(.white.opacity(highlightedID == entry.id ? 0.34 : 0), lineWidth: 1)
                 }
                 .allowsHitTesting(false)
@@ -514,7 +514,7 @@ struct NotchClipboardView: View {
                 .strokeBorder(.white.opacity(searching ? 0.34 : 0), lineWidth: 1)
                 .allowsHitTesting(false)
         }
-        .animation(.easeOut(duration: 0.15), value: searching)
+        .animation(NotchStyle.Motion.hover, value: searching)
         .frame(height: searchOpen ? NotchLayout.clipboardSearchHeight : 0, alignment: .top)
         .opacity(searchOpen ? 1 : 0)
         .clipped()
@@ -599,7 +599,7 @@ struct NotchClipboardView: View {
     /// the picture is narrower than it.
     private func thumbnail<Picture: View>(_ picture: Picture, compact: Bool) -> some View {
         picture
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .frame(maxWidth: compact ? 72 : .infinity, maxHeight: .infinity, alignment: compact ? .leading : .topLeading)
     }
 

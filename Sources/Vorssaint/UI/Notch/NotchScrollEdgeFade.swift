@@ -43,8 +43,8 @@ struct NotchScrollEdgeFade: ViewModifier {
                 fade(toStart: false).opacity(beyondEnd ? 1 : 0)
             }
             .compositingGroup()
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: beyondStart)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: beyondEnd)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.hover, value: beyondStart)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.hover, value: beyondEnd)
     }
 
     /// Erases the mask toward the edge it sits on.

@@ -21,7 +21,7 @@ struct NotchCameraView: View {
                     Image(systemName: "web.camera").font(.system(size: 30, weight: .light))
                         .foregroundStyle(.secondary).accessibilityHidden(true)
                         .frame(width: 56, height: 56)
-                        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .background(NotchStyle.platter, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     VStack(alignment: .leading, spacing: 8) {
                         Text(text.cameraHint).font(.callout).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

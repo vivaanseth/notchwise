@@ -192,9 +192,9 @@ struct NotchAudioControls: View {
         } label: {
             Image(systemName: mixer.systemOutputMuted == true ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(mixer.systemOutputMuted == true ? Color.red : Color.white)
+                .foregroundStyle(mixer.systemOutputMuted == true ? NotchStyle.Tint.red : NotchStyle.primary)
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: mixer.systemOutputMuted)
+                .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: mixer.systemOutputMuted)
                 .frame(width: 18, height: 18)
                 .contentShape(Rectangle())
         }
@@ -378,7 +378,7 @@ private struct NotchKeyboardLightControls: View {
             Image(systemName: service.keyboardLightEnabled == false ? "light.min" : "light.max")
                 .font(.system(size: 12, weight: .medium))
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: service.keyboardLightEnabled)
+                .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: service.keyboardLightEnabled)
                 .frame(width: 18, height: 18)
                 .contentShape(Rectangle())
         }
@@ -411,9 +411,9 @@ enum NotchTileAccent {
     var fill: Color {
         switch self {
         case .selection: return .white
-        case .alert: return .red
-        case .awake: return .yellow
-        case .timer: return .orange
+        case .alert: return NotchStyle.Tint.red
+        case .awake: return NotchStyle.Tint.yellow
+        case .timer: return NotchStyle.Tint.orange
         }
     }
 
@@ -445,11 +445,12 @@ struct NotchActionTile: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: symbol).font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(active ? accent.glyph : .white.opacity(0.85))
+                    .foregroundStyle(active ? accent.glyph : NotchStyle.primary)
                     .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(.bounce, value: active)
                     .frame(width: 40, height: 40)
-                    .background(active ? accent.fill : Color.white.opacity(0.075), in: Circle())
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
+                    .background(active ? accent.fill : NotchStyle.control, in: Circle())
+                    .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: symbol)
                 label
                     .frame(maxWidth: .infinity)
                     .frame(height: 28, alignment: .top)
@@ -457,10 +458,10 @@ struct NotchActionTile: View {
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity)
             .frame(height: NotchLayout.shortcutHeight)
-            .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: active)
-            .contentShape(RoundedRectangle(cornerRadius: 14))
+            .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: active)
+            .contentShape(RoundedRectangle(cornerRadius: NotchStyle.Radius.card - 4, style: .continuous))
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 14))
+        .buttonStyle(NotchButtonStyle(cornerRadius: NotchStyle.Radius.card - 4))
         .accessibilityLabel(title)
         .accessibilityValue(reading ?? "")
         .accessibilityAddTraits(active ? .isSelected : [])
@@ -496,8 +497,8 @@ struct NotchActionTile: View {
     }
 
     private func readingTitle(_ text: String) -> some View {
-        Text(text).font(.system(size: 11, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
+        Text(text).font(NotchStyle.Typeface.caption)
+            .foregroundStyle(NotchStyle.secondary)
     }
 }
 

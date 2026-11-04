@@ -128,7 +128,7 @@ struct NotchLyricsView: View {
                             Text(line.text.isEmpty ? "♪" : line.text)
                                 .font(.system(size: 17, weight: .bold))
                                 .foregroundStyle(.white.opacity(index == active ? 1 : 0.35))
-                                .animation(reduceMotion ? nil : .smooth(duration: 0.28), value: index == active)
+                                .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: index == active)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .id(index)
@@ -137,7 +137,7 @@ struct NotchLyricsView: View {
                 }
                 .notchScrollEdgeFade(length: 24)
                 .onChange(of: active, initial: true) { _, index in
-                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.28)) {
+                    withAnimation(reduceMotion ? nil : NotchStyle.Motion.scroll) {
                         if let index { proxy.scrollTo(index, anchor: .center) }
                         else { proxy.scrollTo("start", anchor: .top) }
                     }

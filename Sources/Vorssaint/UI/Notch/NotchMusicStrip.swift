@@ -140,7 +140,7 @@ struct NotchMusicStrip: View {
                     .transition(.opacity)
             }
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: showsControl)
+        .animation(reduceMotion ? nil : NotchStyle.Motion.hover, value: showsControl)
     }
 
     /// The song as the pointer asked for it: the title over the artist,
@@ -154,7 +154,7 @@ struct NotchMusicStrip: View {
             if showsArtist, let artist {
                 Text(artist)
                     .font(Font(Layout.artistFont as CTFont))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(NotchStyle.secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -172,7 +172,7 @@ struct NotchMusicStrip: View {
             if showsArtist, let artist {
                 Text(artist)
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(NotchStyle.secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -198,7 +198,7 @@ struct NotchMusicStripButton: View {
             .font(.system(size: size, weight: .semibold))
             .foregroundStyle(tint)
             .contentTransition(.symbolEffect(.replace))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: playing)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: playing)
             // The ink, not the frame, sits on the bars' middle.
             .alignmentGuide(VerticalAlignment.center) {
                 $0[VerticalAlignment.center] + NotchCapsuleLayout.symbolDrop(symbol, size: size, weight: .semibold)
@@ -258,7 +258,7 @@ struct NotchMusicCover: View {
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .circular))
         .overlay {
             RoundedRectangle(cornerRadius: radius, style: .circular)
-                .strokeBorder(.white.opacity(0.14), lineWidth: 0.5)
+                .strokeBorder(NotchStyle.control, lineWidth: 0.5)
         }
     }
 }

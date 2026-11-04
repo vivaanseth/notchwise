@@ -60,7 +60,7 @@ struct NotchFilesView: View {
                 NotchEmptyView(symbol: "tray.and.arrow.down", message: FeatureStrings.notch(l10n.language).dropHint)
                     .frame(maxHeight: .infinity)
                     .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(.white.opacity(0.18), style: StrokeStyle(lineWidth: 0.75, dash: [4, 5])) }
+                        .strokeBorder(NotchStyle.selected, style: StrokeStyle(lineWidth: 0.75, dash: [4, 5])) }
             } else {
                 ShelfTilesView(items: shelf.visibleItems,
                                contentRevision: shelf.contentRevision,
@@ -130,9 +130,9 @@ struct NotchFilesView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.white.opacity(selected ? 0.14 : 0.04), in: RoundedRectangle(cornerRadius: 20))
+        .background(.white.opacity(selected ? 0.14 : 0.04), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .strokeBorder(.white.opacity(selected ? 0.7 : 0.2), lineWidth: selected ? 1.5 : 0.75)
         }
         .accessibilityElement(children: .combine)
@@ -149,7 +149,7 @@ struct NotchFilesView: View {
         } label: {
             Image(systemName: "trash")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(NotchStyle.secondary)
                 .frame(width: 28, height: 28)
                 .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }

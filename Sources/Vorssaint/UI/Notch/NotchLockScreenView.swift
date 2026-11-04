@@ -59,7 +59,7 @@ struct NotchLockScreenIsland: View {
                         .foregroundStyle(.white)
                         .contentTransition(.symbolEffect(.replace))
                         .symbolEffect(.bounce, options: .speed(1.4), value: reduceMotion ? false : model.padlockOpen)
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: model.padlockOpen)
+                        .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: model.padlockOpen)
                         .frame(width: padlockSide, height: padlockSide)
                         .padding(.leading, max(0, min(geometry.compactMusicArtworkInset, wing - padlockSide)))
                         .frame(width: wing, height: size.height, alignment: .leading)
@@ -68,7 +68,7 @@ struct NotchLockScreenIsland: View {
                                        barWidth: NotchLayout.compactMusicBarWidth, height: geometry.compactMusicBarHeight,
                                        tint: music.artworkTint?.color ?? .white)
                         .opacity(playing ? 1 : 0)
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: playing)
+                        .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: playing)
                         .padding(.trailing, max(0, min(geometry.compactMusicBarsInset, wing - NotchLayout.compactMusicBarsWidth)))
                         .frame(width: wing, height: size.height, alignment: .trailing)
                 }
@@ -200,7 +200,7 @@ struct NotchLockScreenPlayer: View {
             if let artist = playback.track.artist ?? playback.track.album {
                 Text(artist)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(NotchStyle.secondary)
                     .lineLimit(1)
                     .padding(.top, 2)
             }
@@ -221,7 +221,7 @@ struct NotchLockScreenPlayer: View {
                     Text(playback.track.title ?? text.mediaNowPlaying)
                         .font(.system(size: 16, weight: .bold))
                     if let artist = playback.track.artist ?? playback.track.album {
-                        Text(artist).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.72))
+                        Text(artist).font(.system(size: 13, weight: .medium)).foregroundStyle(NotchStyle.secondary)
                     }
                 }
                 .lineLimit(1)
@@ -238,7 +238,7 @@ struct NotchLockScreenPlayer: View {
         NotchArtwork(image: music.artwork, size: size, source: playback.track)
             .shadow(color: (music.artworkTint?.color ?? .black).opacity(0.5), radius: size * 0.28, y: size * 0.1)
             .scaleEffect(playback.isPlaying || reduceMotion ? 1 : 0.92)
-            .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: playback.isPlaying)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: playback.isPlaying)
     }
 
     /// The player's own buttons, never a permission prompt: a request made
@@ -270,9 +270,9 @@ struct NotchLockScreenPlayer: View {
                 .font(.system(size: size, weight: .semibold))
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: symbol)
+                .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: symbol)
                 .frame(width: 48, height: 44)
-                .contentShape(RoundedRectangle(cornerRadius: 14))
+                .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 14))
         .disabled(!music.canPerform(command))
@@ -319,7 +319,7 @@ struct NotchLockScreenActivities: View {
                 line(Array(items.prefix(1)), at: context.date)
             }
             .frame(width: size.width, height: size.height)
-            .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: items)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.layout, value: items)
         }
         .allowsHitTesting(false)
     }
@@ -344,7 +344,7 @@ struct NotchLockScreenActivities: View {
         }
         .font(.system(size: 15, weight: .semibold))
         .monospacedDigit()
-        .foregroundStyle(.white.opacity(0.92))
+        .foregroundStyle(NotchStyle.primary)
         .lineLimit(1)
         .fixedSize()
         .legibleOnWallpaper()
@@ -376,7 +376,7 @@ struct NotchLockScreenActivities: View {
                         .frame(maxWidth: 240, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(NotchCalendarSupport.countdownText(until: countdown.target, now: date))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(NotchStyle.secondary)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(countdown.ongoing ? text.ongoing : text.next)

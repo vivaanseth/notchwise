@@ -62,9 +62,9 @@ private struct NotchDownloadsSetupView: View {
     private var glyph: some View {
         Image(systemName: downloads.folderUnavailable ? "exclamationmark.triangle" : "arrow.down.circle")
             .font(.system(size: 26, weight: .light))
-            .foregroundStyle(.white.opacity(0.65))
+            .foregroundStyle(NotchStyle.secondary)
             .frame(width: 56, height: 56)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(NotchStyle.platter, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .accessibilityHidden(true)
     }
 
@@ -74,7 +74,7 @@ private struct NotchDownloadsSetupView: View {
         Text(downloads.folderUnavailable ? text.folderUnavailable
              : offersSwitchOnly ? text.downloadsTitle : enabled ? text.downloadsHint : text.downloadsDescription)
             .font(.system(size: 12))
-            .foregroundStyle(downloads.folderUnavailable ? Color.orange : .white.opacity(0.65))
+            .foregroundStyle(downloads.folderUnavailable ? Color.orange : NotchStyle.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -101,7 +101,7 @@ private struct NotchDownloadsSetupView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.horizontal, 14)
                     .frame(height: 28)
-                    .background(.white.opacity(0.14), in: Capsule())
+                    .background(NotchStyle.control, in: Capsule())
                     .contentShape(Capsule())
             }
             .buttonStyle(NotchButtonStyle(cornerRadius: 14))
@@ -109,7 +109,7 @@ private struct NotchDownloadsSetupView: View {
                 Button(action: downloads.forgetFolder) {
                     Text(text.clearFolder)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(NotchStyle.secondary)
                         .padding(.horizontal, 10)
                         .frame(height: 28)
                         .contentShape(Capsule())
@@ -225,7 +225,7 @@ struct NotchDownloadsView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(NotchStyle.platter, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .clipped()
         .accessibilityElement(children: .contain)
     }

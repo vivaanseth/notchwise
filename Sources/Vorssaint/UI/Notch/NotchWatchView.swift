@@ -80,7 +80,7 @@ struct NotchWatchView: View {
             .lineLimit(1).truncationMode(.middle)
         }
         .font(.system(size: 12))
-        .foregroundStyle(.white.opacity(0.85))
+        .foregroundStyle(NotchStyle.primary)
         .help(watchedTitle)
     }
 
@@ -191,7 +191,7 @@ private struct NotchWatchAreaCard: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(NotchStyle.platter, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }
@@ -253,7 +253,7 @@ private struct NotchWatchRuleRow: View {
             .padding(.horizontal, 8)
             .frame(height: 24)
             .frame(maxWidth: 180)
-            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .background(NotchStyle.platter, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .strokeBorder(.white.opacity(focused ? 0.34 : 0), lineWidth: 1)
@@ -302,16 +302,16 @@ private struct NotchWatchSetupView: View {
     private var glyph: some View {
         Image(systemName: NotchModule.watch.symbol)
             .font(.system(size: 26, weight: .light))
-            .foregroundStyle(.white.opacity(0.65))
+            .foregroundStyle(NotchStyle.secondary)
             .frame(width: 56, height: 56)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(NotchStyle.platter, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .accessibilityHidden(true)
     }
 
     private var copy: some View {
         Text(!enabled ? text.description : permissions.screenRecording ? text.setupHint : text.permissionHint)
             .font(.system(size: 12))
-            .foregroundStyle(.white.opacity(0.65))
+            .foregroundStyle(NotchStyle.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 

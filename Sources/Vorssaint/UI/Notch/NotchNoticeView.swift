@@ -110,7 +110,7 @@ struct NotchNoticeView: View {
                     .contentTransition(.numericText())
             }
             .frame(maxWidth: .infinity, alignment: notice.readsFromEnds ? .leading : .trailing)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: notice.detail)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.follow, value: notice.detail)
             .transaction { $0.disablesAnimations = false }
         }
     }
@@ -121,12 +121,12 @@ struct NotchNoticeView: View {
             // one, with the air that fits it beside the camera.
             Text(content.compactDetail)
                 .font(Font(NotchNotificationBannerLayout.messageFont as CTFont))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(NotchStyle.primary)
                 .lineLimit(NotchNotificationBannerLayout.messageLines(stripHeight: geometry.stripHeight))
                 .frame(maxWidth: .infinity, alignment: .trailing)
         } else if let level = notice.level {
             NotchMeter(value: level, height: 5, tint: tint)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: level)
+                .animation(reduceMotion ? nil : NotchStyle.Motion.follow, value: level)
                 .transaction { $0.disablesAnimations = false }
         } else {
             Text(notice.detail)

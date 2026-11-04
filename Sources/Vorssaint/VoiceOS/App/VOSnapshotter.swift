@@ -55,10 +55,18 @@ enum VOSnapshotter {
                 + "size=\(island.surfaceSize) activity=\(island.compactActivity?.rawValue ?? "none")\n"
             capture(notch, out.appendingPathComponent(name), backdrop: true, area: area)
         }
+        /// An open asked for just after launch can be passed over while the
+        /// island settles; ask again until it is open.
+        func ensureOpen(_ open: () -> Void) async {
+            for _ in 0..<5 where !island.expanded {
+                open()
+                await pause(0.9)
+            }
+        }
         await pause(1.2)
         shot("10-island-idle.png")
-        agent.open(focus: false)
-        await pause(1.0)
+        await ensureOpen { agent.open(focus: false) }
+        await pause(0.4)
         shot("11-assistant-empty.png")
         // The home with its calendar removed: the shortcuts take its room.
         NotchCustomization.remove(.widget(.calendar))
@@ -72,6 +80,7 @@ enum VOSnapshotter {
         shot("11c-home-without-assistant.png")
         NotchCustomization.restore(.page(.voice))
         await pause(0.4)
+        await ensureOpen { agent.open(focus: false) }
         agent.phase = .listening
         agent.live = "Can you find his LinkedIn"
         agent.level = 0.6
@@ -94,7 +103,8 @@ enum VOSnapshotter {
         await pause(0.8)
 
         // Vorssaint's own pages still open in the same island.
-        island.open(.controls)
+        await ensureOpen { island.open(.controls) }
+        if island.selected != .controls { island.select(.controls) }
         await pause(1.0)
         shot("16-island-controls.png")
         // Battery Care from its tile. It only reads the battery here.

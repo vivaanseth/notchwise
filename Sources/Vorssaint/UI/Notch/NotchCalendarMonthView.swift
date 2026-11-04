@@ -14,7 +14,7 @@ struct NotchCalendarMonthView: View {
     let select: (Date) -> Void
     @Environment(\.locale) private var locale
     @AppStorage(DefaultsKey.notchCalendarWeekNumbers) private var weekNumbers = false
-    private let accent = Color(red: 1, green: 0.36, blue: 0.39)
+    private let accent = NotchStyle.Tint.red
     private var columns: [GridItem] { NotchCalendarWeekNumber.columns(numbered: weekNumbers) }
 
     var body: some View {
@@ -24,7 +24,7 @@ struct NotchCalendarMonthView: View {
                 let index = (Calendar.current.firstWeekday - 1 + column) % 7
                 Text(weekdaySymbols[index])
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(NotchStyle.secondary)
                     .frame(maxWidth: .infinity).frame(height: 18)
                     .accessibilityHidden(true)
             }
@@ -97,7 +97,7 @@ struct NotchCalendarWeekStrip: View {
     let select: (Date) -> Void
     let week: () -> Void
     @Environment(\.locale) private var locale
-    private let accent = Color(red: 1, green: 0.36, blue: 0.39)
+    private let accent = NotchStyle.Tint.red
 
     var body: some View {
         HStack(spacing: 4) {
@@ -130,7 +130,7 @@ struct NotchCalendarWeekStrip: View {
             VStack(spacing: 2) {
                 Text(weekdaySymbols[calendar.component(.weekday, from: date) - 1])
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(NotchStyle.secondary)
                 Text(calendar.component(.day, from: date), format: .number)
                     .font(.system(size: 12, weight: isToday || selected ? .bold : .medium))
                     .foregroundStyle(selected && !isToday ? .black : .white)
@@ -173,7 +173,7 @@ struct NotchCalendarMonthGrid: View {
     let select: (Date) -> Void
     @Environment(\.locale) private var locale
     @AppStorage(DefaultsKey.notchCalendarWeekNumbers) private var weekNumbers = false
-    private let accent = Color(red: 1, green: 0.36, blue: 0.39)
+    private let accent = NotchStyle.Tint.red
     private var columns: [GridItem] { NotchCalendarWeekNumber.columns(numbered: weekNumbers) }
 
     private var rowHeight: CGFloat { NotchLayout.calendarMonthRowHeight(height: height) }
@@ -188,7 +188,7 @@ struct NotchCalendarMonthGrid: View {
                 let index = (Calendar.current.firstWeekday - 1 + column) % 7
                 Text(weekdaySymbols[index])
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(NotchStyle.secondary)
                     .frame(maxWidth: .infinity).frame(height: NotchLayout.calendarMonthWeekdayHeight)
                     .accessibilityHidden(true)
             }
@@ -268,7 +268,7 @@ struct NotchCalendarWeekNumber: View {
         VStack(spacing: spacing) {
             Text(NotchCalendarSupport.weekNumber(of: date), format: .number)
                 .font(.system(size: 9, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(NotchStyle.secondary)
                 .frame(height: digit)
                 .accessibilityLabel(NotchCalendarSupport.weekNumberLabel(of: date, text: text))
             Color.clear.frame(height: 3)

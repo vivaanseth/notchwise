@@ -46,7 +46,7 @@ struct NotchScratchpadView: View {
                     }
                     if pad.saveFailed {
                         Label(text.saveFailed, systemImage: "exclamationmark.triangle")
-                            .font(.system(size: 10.5)).foregroundStyle(.white.opacity(0.6))
+                            .font(.system(size: 10.5)).foregroundStyle(NotchStyle.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -74,7 +74,7 @@ struct NotchScratchpadView: View {
                         } else if pad.text.isEmpty {
                             Text(text.placeholder)
                                 .font(.system(size: textSize))
-                                .foregroundStyle(.white.opacity(0.35))
+                                .foregroundStyle(NotchStyle.tertiary)
                                 .padding(.leading, Self.editorInset.width + PlainTextEditor.lineFragmentPadding)
                                 .padding(.top, Self.editorInset.height)
                                 .allowsHitTesting(false)
@@ -146,7 +146,7 @@ struct NotchScratchpadView: View {
             }
             .onChange(of: pad.selectedPadID) { _, selected in
                 guard let selected else { return }
-                withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(selected, anchor: .center) }
+                withAnimation(NotchStyle.Motion.scroll) { proxy.scrollTo(selected, anchor: .center) }
             }
         }
     }
@@ -182,7 +182,7 @@ struct NotchScratchpadView: View {
             NotchIconButton(symbol: "textformat",
                             title: text.formatMarks,
                             selected: pad.marksExpanded) {
-                withAnimation(.easeOut(duration: 0.15)) { pad.toggleMarks() }
+                withAnimation(NotchStyle.Motion.layout) { pad.toggleMarks() }
             }
             .disabled(pad.isPreviewing)
             NotchIconButton(symbol: pad.isPreviewing ? "pencil" : "eye",
@@ -274,7 +274,7 @@ struct NotchScratchpadView: View {
                 Button { requestClose(entry) } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(NotchStyle.secondary)
                         .frame(width: 14, height: 14)
                         .contentShape(Rectangle())
                 }
@@ -283,7 +283,7 @@ struct NotchScratchpadView: View {
                 .accessibilityLabel(text.closePad)
             }
         }
-        .foregroundStyle(selected ? .white : .white.opacity(0.6))
+        .foregroundStyle(selected ? .white : NotchStyle.secondary)
         .padding(.leading, 10)
         .padding(.trailing, showsClose ? 5 : selected ? 8 : 10)
         .frame(height: 22)

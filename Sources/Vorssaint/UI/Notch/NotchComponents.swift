@@ -5,10 +5,13 @@ import AppKit
 import SwiftUI
 
 /// Feedback is local to a visible control. No recurring work is needed.
-/// The pointer lifts a control slightly and a press settles it back, which is
-/// what makes the panel feel physical rather than painted on.
+/// The pointer lays a light wash under a control and a press gives it a
+/// little, springing back as it lets go, as the system's controls do. A
+/// control stays where it is under the pointer: hovering is the island's
+/// most frequent gesture, so it moves nothing.
 struct NotchButtonStyle: ButtonStyle {
     var cornerRadius: CGFloat = 10
+    /// Whether a press gives. Off for wide rows and cards, which only dim.
     var lifts = true
     /// A light wash under the pointer.
     var highlights = true
@@ -21,15 +24,13 @@ struct NotchButtonStyle: ButtonStyle {
         configuration.label
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.white.opacity(active && highlights ? 0.09 : 0))
+                    .fill(NotchStyle.hover.opacity(active && highlights ? 1 : 0))
                     .allowsHitTesting(false)
             }
-            .opacity(enabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
-            .scaleEffect(reduceMotion || !lifts ? 1
-                         : configuration.isPressed ? 0.965 : (active ? 1.022 : 1))
-            .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.7),
-                       value: configuration.isPressed)
-            .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.75), value: hovered)
+            .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
+            .scaleEffect(reduceMotion || !lifts || !configuration.isPressed ? 1 : 0.96)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.press, value: configuration.isPressed)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.hover, value: hovered)
             .onHover { hovered = $0 }
     }
 }
@@ -92,7 +93,7 @@ struct NotchMeter: View {
         let fraction = value.isFinite ? min(1, max(0, value)) : 0
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Capsule(style: .continuous).fill(.white.opacity(0.14))
+                Capsule(style: .continuous).fill(NotchStyle.track)
                 Capsule(style: .continuous)
                     .fill(tint.opacity(0.9))
                     .frame(width: max(fraction > 0 ? height : 0, proxy.size.width * fraction))
@@ -115,7 +116,7 @@ struct NotchRollingDigits: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentTransition(.numericText(countsDown: countsDown))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.3),
+            .animation(reduceMotion ? nil : NotchStyle.Motion.state,
                        value: NotchTimerSupport.rollingValue(value, everySecond: everySecond))
     }
 }
@@ -178,16 +179,16 @@ struct NotchIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(selected ? .white : .white.opacity(0.55))
+                .font(NotchStyle.Typeface.rowGlyph)
+                .foregroundStyle(selected ? NotchStyle.primary : NotchStyle.secondary)
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: symbol)
+                .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: symbol)
                 .frame(width: 28, height: 28)
-                .background(.white.opacity(selected ? 0.12 : 0),
-                            in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(selected ? NotchStyle.selected : .clear,
+                            in: RoundedRectangle(cornerRadius: NotchStyle.Radius.button, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: NotchStyle.Radius.button, style: .continuous))
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 9))
+        .buttonStyle(NotchButtonStyle(cornerRadius: NotchStyle.Radius.button))
         .help(title)
         .accessibilityLabel(title)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -233,17 +234,17 @@ struct NotchEmptyView<Actions: View>: View {
 
     private var glyph: some View {
         Image(systemName: symbol)
-            .font(.system(size: 26, weight: .light))
-            .foregroundStyle(.white.opacity(0.65))
+            .font(.system(size: 24, weight: .medium))
+            .foregroundStyle(NotchStyle.secondary)
             .frame(width: 56, height: 56)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(NotchStyle.platter, in: RoundedRectangle(cornerRadius: NotchStyle.Radius.card, style: .continuous))
             .accessibilityHidden(true)
     }
 
     private var label: some View {
         Text(message)
-            .font(.system(size: 12))
-            .foregroundStyle(.secondary)
+            .font(NotchStyle.Typeface.callout)
+            .foregroundStyle(NotchStyle.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -254,25 +255,16 @@ extension NotchEmptyView where Actions == EmptyView {
     }
 }
 
-/// An empty page's next step, as a word on a pill. The step the page leads
-/// to is filled, and any other stays plain beside it.
+/// An empty page's next step, as a word on a capsule. The step the page
+/// leads to is filled white, and any other sits on the control fill.
 struct NotchPillButton: View {
     let title: String
     var prominent = false
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: prominent ? .semibold : .medium))
-                .foregroundStyle(.white.opacity(prominent ? 1 : 0.7))
-                .lineLimit(1)
-                .padding(.horizontal, 14)
-                .frame(height: 28)
-                .background(.white.opacity(prominent ? 0.14 : 0), in: Capsule())
-                .contentShape(Capsule())
-        }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 14))
+        Button(title, action: action)
+            .buttonStyle(NotchCapsuleButtonStyle(prominent: prominent))
     }
 }
 
@@ -365,7 +357,7 @@ struct NotchRail<Item: Identifiable, Content: View>: View {
                 }
                 .onChange(of: targetColumn) { _, target in
                     guard let target else { return }
-                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
+                    withAnimation(reduceMotion ? nil : NotchStyle.Motion.scroll) {
                         proxy.scrollTo(target, anchor: .center)
                     }
                 }
@@ -733,18 +725,18 @@ struct NotchControlSurface: ViewModifier {
             } else {
 #if compiler(>=6.2)
                 if #available(macOS 26, *), glass, !reduceTransparency {
-                    content.background(.white.opacity(selected ? 0.12 : 0.065), in: shape)
+                    content.background(selected ? NotchStyle.selected : NotchStyle.platter, in: shape)
                         .glassEffect(.regular.interactive(interactive), in: shape)
                 } else {
-                    content.background(.white.opacity(selected ? 0.12 : 0.065), in: shape)
+                    content.background(selected ? NotchStyle.selected : NotchStyle.platter, in: shape)
                 }
 #else
-                content.background(.white.opacity(selected ? 0.12 : 0.065), in: shape)
+                content.background(selected ? NotchStyle.selected : NotchStyle.platter, in: shape)
 #endif
             }
         }
         .overlay {
-            shape.strokeBorder(.white.opacity(contrast == .increased ? 0.5 : 0), lineWidth: 0.75)
+            shape.strokeBorder(contrast == .increased ? NotchStyle.contrastOutline : .clear, lineWidth: 0.75)
                 .allowsHitTesting(false)
         }
     }
@@ -794,9 +786,9 @@ struct NotchBandBackButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(NotchStyle.secondary)
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(NotchStyle.Typeface.headline)
                     .lineLimit(1)
             }
             .padding(.horizontal, 7)
@@ -820,13 +812,14 @@ struct NotchBandMenuLabel: View {
     var body: some View {
         HStack(spacing: 4) {
             if let symbol {
-                Image(systemName: symbol).foregroundStyle(.white.opacity(0.55))
+                Image(systemName: symbol).foregroundStyle(NotchStyle.secondary)
             }
             Text(title).lineLimit(1).truncationMode(truncation)
             Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(NotchStyle.secondary)
         }
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(.white.opacity(0.85))
+        .font(NotchStyle.Typeface.callout)
+        .foregroundStyle(NotchStyle.primary)
         .padding(.horizontal, 7)
         .frame(height: 28)
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))

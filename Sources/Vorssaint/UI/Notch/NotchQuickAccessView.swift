@@ -160,16 +160,16 @@ struct NotchQuickAccessView: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .medium))
-                // The suggestion wears its page's colour and a spark, so it
-                // reads as the one button that changes by itself.
-                .foregroundStyle(action == .suggested ? (suggested?.hubTint ?? .white) : .white)
+                // The suggestion wears a spark, so it reads as the one button
+                // that changes by itself; it stays white like the others.
+                .foregroundStyle(NotchStyle.primary)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: NotchQuickAccessLayout.diameter, height: NotchQuickAccessLayout.diameter)
                 .overlay(alignment: .topTrailing) {
                     if action == .suggested, suggested != nil {
                         Image(systemName: "sparkle")
                             .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.85))
+                            .foregroundStyle(NotchStyle.secondary)
                             .padding(7)
                             .accessibilityHidden(true)
                     }

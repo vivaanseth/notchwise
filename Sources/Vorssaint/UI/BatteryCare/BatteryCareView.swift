@@ -19,6 +19,12 @@ struct BatteryCareView: View {
     @State private var limitDraft: Double?
     @State private var draft: BatteryScheduleTask?
     @State private var copiedCommand: String?
+    /// The island has the room for the system's reading sizes; the menu's
+    /// panel keeps its compact ones.
+    @Environment(\.notchPresentation) private var island
+    private var titleSize: CGFloat { island ? 13 : 11.5 }
+    private var bodySize: CGFloat { island ? 12 : 10.5 }
+    private var captionSize: CGFloat { island ? 11 : 9.5 }
 
     private var s: BatteryCareFeatureStrings { FeatureStrings.batteryCare(l10n.language) }
     private var reading: BatteryCareReading? { service.reading }
@@ -42,6 +48,7 @@ struct BatteryCareView: View {
             card(shortcutsCard)
             if service.helperInstalled { card(removeCard) }
         }
+        .modifier(BatteryIslandControls())
         .onAppear { service.viewAppeared() }
         .onDisappear { service.viewDisappeared() }
     }
@@ -56,11 +63,13 @@ struct BatteryCareView: View {
                     .foregroundStyle(stateColor)
                     .frame(width: 18)
                 Text(reading.map { "\($0.percent)%" } ?? "-")
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
+                    .font(.system(size: island ? 34 : 28, weight: .semibold, design: .rounded))
                     .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(NotchStyle.Motion.state, value: reading?.percent)
                 if let hardware = reading?.hardwarePercent {
                     Text(String(format: s.hardwareFormat, hardware))
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(.system(size: bodySize, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
@@ -71,8 +80,10 @@ struct BatteryCareView: View {
                             color: stateColor)
                 .frame(height: 10)
             Text(stateText)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: island ? 12 : 11, weight: .medium))
                 .foregroundStyle(.secondary)
+                .contentTransition(.opacity)
+                .animation(NotchStyle.Motion.state, value: stateText)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -161,7 +172,7 @@ struct BatteryCareView: View {
                 Button(service.isInstalling ? s.waitingForApproval
                        : service.helperState == .outdated ? s.updateHelper : s.installHelper,
                        action: service.installHelper)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(BatteryButtonStyle(prominent: true))
                     .controlSize(.small)
                     .frame(maxWidth: .infinity)
                     .disabled(service.isInstalling)
@@ -188,7 +199,7 @@ struct BatteryCareView: View {
     private var checkCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(s.checkTitle, systemImage: "stethoscope")
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.system(size: titleSize, weight: .semibold))
             if service.state == .fixingReading {
                 caption(s.wrongReadingFixing, color: .green)
             } else if readingIsWrong, let reading, let cells = reading.averageCellMillivolts {
@@ -197,7 +208,7 @@ struct BatteryCareView: View {
                 caption(canControl ? s.wrongReadingFix : s.wrongReadingNoHelper)
                 if canControl {
                     Button(s.chargeToFull, action: service.fixReading)
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(BatteryButtonStyle(prominent: true))
                         .controlSize(.small)
                 }
             }
@@ -221,9 +232,9 @@ struct BatteryCareView: View {
         let shown = Int((limitDraft ?? Double(settings.limit)).rounded())
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(s.limitTitle).font(.system(size: 11.5, weight: .semibold))
+                Text(s.limitTitle).font(.system(size: titleSize, weight: .semibold))
                 Spacer()
-                Text("\(shown)%").font(.system(size: 11.5, weight: .semibold).monospacedDigit())
+                Text("\(shown)%").font(.system(size: titleSize, weight: .semibold).monospacedDigit())
             }
             Slider(value: Binding(get: { limitDraft ?? Double(settings.limit) }, set: { limitDraft = $0 }),
                    in: Double(BatteryCareSettings.limitRange.lowerBound)...Double(BatteryCareSettings.limitRange.upperBound)) { editing in
@@ -268,21 +279,21 @@ struct BatteryCareView: View {
     private var optionsCard: some View {
         let settings = service.settings
         return VStack(alignment: .leading, spacing: 8) {
-            Text(s.options).font(.system(size: 11.5, weight: .semibold))
+            Text(s.options).font(.system(size: titleSize, weight: .semibold))
             toggle(s.enabled, binding(\.enabled), caption: s.enabledCaption)
             toggle(s.fixReadings, binding(\.fixReadings), caption: s.fixReadingsCaption)
             toggle(s.sailing, binding(\.sailing), caption: s.sailingCaption)
             if settings.sailing {
                 Stepper(String(format: s.sailingWidthFormat, settings.sailingWidth), value: binding(\.sailingWidth),
                         in: BatteryCareSettings.sailingWidthRange)
-                    .font(.system(size: 10.5))
+                    .font(.system(size: bodySize))
                     .controlSize(.small)
             }
             toggle(s.heatProtection, binding(\.heatProtection), caption: s.heatCaption)
             if settings.heatProtection {
                 Stepper(MetricFormat.temperature(settings.maxTemperature, unit: unit),
                         value: binding(\.maxTemperature), in: BatteryCareSettings.temperatureRange, step: 1)
-                    .font(.system(size: 10.5))
+                    .font(.system(size: bodySize))
                     .controlSize(.small)
             }
             if service.capabilities.canDischarge {
@@ -300,10 +311,10 @@ struct BatteryCareView: View {
                 Text(s.lowPowerOnBattery).tag(BatteryLowPowerPreference.onBattery)
                 Text(s.lowPowerOnAdapter).tag(BatteryLowPowerPreference.onAdapter)
             }
-            .font(.system(size: 10.5))
+            .font(.system(size: bodySize))
             .controlSize(.small)
             Toggle(s.notifications, isOn: $notifications)
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.system(size: bodySize, weight: .medium))
                 .toggleStyle(.switch)
                 .controlSize(.mini)
         }
@@ -314,7 +325,7 @@ struct BatteryCareView: View {
 
     private var sleepCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(s.sleepTitle).font(.system(size: 11.5, weight: .semibold))
+            Text(s.sleepTitle).font(.system(size: titleSize, weight: .semibold))
             if keepAwake.isActive {
                 caption(keepAwake.endDate.map {
                     String(format: s.sleepUntilFormat, $0.formatted(date: .omitted, time: .shortened))
@@ -333,7 +344,7 @@ struct BatteryCareView: View {
             toggle(s.sleepEndUnplugged, $sleepEndsUnplugged)
             Stepper(String(format: s.sleepEndBatteryFormat, keepAwakeBatteryLimit),
                     value: $keepAwakeBatteryLimit, in: 5...95, step: 5)
-                .font(.system(size: 10.5))
+                .font(.system(size: bodySize))
                 .controlSize(.small)
         }
     }
@@ -342,7 +353,7 @@ struct BatteryCareView: View {
 
     private var healthCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(s.health).font(.system(size: 11.5, weight: .semibold))
+            Text(s.health).font(.system(size: titleSize, weight: .semibold))
             if let reading {
                 if let health = reading.healthPercent, let max = reading.maxCapacity, let design = reading.designCapacity {
                     row(s.maximumCapacity, String(format: s.capacityFormat, health, max, design))
@@ -388,7 +399,7 @@ struct BatteryCareView: View {
 
     private var energyCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(s.energyTitle).font(.system(size: 11.5, weight: .semibold))
+            Text(s.energyTitle).font(.system(size: titleSize, weight: .semibold))
             if service.energyApps.isEmpty {
                 caption(s.energyNone)
             }
@@ -397,9 +408,9 @@ struct BatteryCareView: View {
                     if let icon = NSRunningApplication(processIdentifier: app.pid)?.icon {
                         Image(nsImage: icon).resizable().frame(width: 16, height: 16)
                     }
-                    Text(app.name).font(.system(size: 10.5)).lineLimit(1)
+                    Text(app.name).font(.system(size: bodySize)).lineLimit(1)
                     Spacer()
-                    Text(String(format: "%.0f", locale: l10n.language.formattingLocale(), app.value)).font(.system(size: 10.5).monospacedDigit())
+                    Text(String(format: "%.0f", locale: l10n.language.formattingLocale(), app.value)).font(.system(size: bodySize).monospacedDigit())
                         .foregroundStyle(.secondary)
                     Button(s.quit) { service.quitApp(app.pid) }.controlSize(.mini)
                 }
@@ -411,7 +422,7 @@ struct BatteryCareView: View {
 
     private var scheduleCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(s.scheduleTitle).font(.system(size: 11.5, weight: .semibold))
+            Text(s.scheduleTitle).font(.system(size: titleSize, weight: .semibold))
             if service.tasks.isEmpty, draft == nil { caption(s.noTasks) }
             ForEach(service.tasks) { task in taskRow(task) }
             if let draft {
@@ -432,14 +443,14 @@ struct BatteryCareView: View {
             }
             toggle(s.catchUp, $catchUp, caption: s.catchUpCaption)
             if !service.history.isEmpty {
-                Text(s.recentRuns).font(.system(size: 10.5, weight: .semibold)).foregroundStyle(.secondary)
+                Text(s.recentRuns).font(.system(size: bodySize, weight: .semibold)).foregroundStyle(.secondary)
                 ForEach(service.history.prefix(5)) { run in
                     HStack {
-                        Text(Self.actionTitle(run.action, s)).font(.system(size: 10))
+                        Text(Self.actionTitle(run.action, s)).font(.system(size: captionSize + 0.5))
                         Spacer()
                         Text(run.date.formatted(date: .abbreviated, time: .shortened)
                              + (run.caughtUp ? " (\(s.late))" : ""))
-                            .font(.system(size: 10)).foregroundStyle(.secondary)
+                            .font(.system(size: captionSize + 0.5)).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -457,12 +468,12 @@ struct BatteryCareView: View {
             .toggleStyle(.switch)
             .controlSize(.mini)
             VStack(alignment: .leading, spacing: 1) {
-                Text(Self.actionTitle(task.action, s)).font(.system(size: 10.5, weight: .medium))
+                Text(Self.actionTitle(task.action, s)).font(.system(size: bodySize, weight: .medium))
                 Text(Self.repeatTitle(task.repeats, s) + " · " + (
                     BatteryScheduleSupport.nextOccurrence(of: task, after: Date()).map {
                         String(format: s.nextFormat, $0.formatted(date: .abbreviated, time: .shortened))
                     } ?? s.finished))
-                    .font(.system(size: 9.5)).foregroundStyle(.secondary)
+                    .font(.system(size: captionSize)).foregroundStyle(.secondary)
             }
             Spacer()
             Button { service.removeTask(task.id) } label: { Image(systemName: "trash") }
@@ -499,14 +510,14 @@ struct BatteryCareView: View {
 
     private var shortcutsCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(s.shortcutsTitle).font(.system(size: 11.5, weight: .semibold))
+            Text(s.shortcutsTitle).font(.system(size: titleSize, weight: .semibold))
             caption(s.shortcutsCaption)
             ForEach(BatteryCareCLI.commands.indices, id: \.self) { index in
                 let entry = BatteryCareCLI.commands[index]
                 HStack(spacing: 6) {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("battery \(entry.command)").font(.system(size: 10, design: .monospaced))
-                        Text(entry.summary).font(.system(size: 9.5)).foregroundStyle(.secondary)
+                        Text("battery \(entry.command)").font(.system(size: captionSize + 0.5, design: .monospaced))
+                        Text(entry.summary).font(.system(size: captionSize)).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Button(copiedCommand == entry.command ? s.copied : s.copy) {
@@ -538,7 +549,7 @@ struct BatteryCareView: View {
     private func toggle(_ title: String, _ isOn: Binding<Bool>, caption text: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Toggle(title, isOn: isOn)
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.system(size: bodySize, weight: .medium))
                 .toggleStyle(.switch)
                 .controlSize(.mini)
             if let text { caption(text) }
@@ -547,16 +558,16 @@ struct BatteryCareView: View {
 
     private func caption(_ text: String, color: Color? = nil) -> some View {
         Text(text)
-            .font(.system(size: 9.5))
+            .font(.system(size: captionSize))
             .foregroundStyle(color ?? Color.secondary.opacity(0.84))
             .fixedSize(horizontal: false, vertical: true)
     }
 
     private func row(_ label: String, _ value: String, color: Color? = nil) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(label).font(.system(size: 10.5)).foregroundStyle(.secondary)
+            Text(label).font(.system(size: bodySize)).foregroundStyle(.secondary)
             Spacer(minLength: 8)
-            Text(value).font(.system(size: 10.5, weight: .medium).monospacedDigit())
+            Text(value).font(.system(size: bodySize, weight: .medium).monospacedDigit())
                 .foregroundStyle(color ?? .primary)
                 .multilineTextAlignment(.trailing)
         }
@@ -574,14 +585,15 @@ private struct BatteryLimitBar: View {
         GeometryReader { proxy in
             let width = proxy.size.width
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.secondary.opacity(0.18))
+                Capsule().fill(Color.secondary.opacity(0.22))
                 if let sailingFloor, sailingFloor < limit {
                     Rectangle().fill(color.opacity(0.18))
                         .frame(width: width * CGFloat(limit - sailingFloor) / 100)
                         .offset(x: width * CGFloat(sailingFloor) / 100)
                 }
-                Capsule().fill(color.opacity(0.85))
+                Capsule().fill(color)
                     .frame(width: max(4, width * CGFloat(min(max(percent, 0), 100)) / 100))
+                    .animation(NotchStyle.Motion.state, value: percent)
                 Rectangle().fill(Color.primary.opacity(0.75))
                     .frame(width: 2, height: proxy.size.height + 4)
                     .offset(x: width * CGFloat(limit) / 100 - 1)
@@ -597,6 +609,12 @@ private struct BatteryScheduleEditor: View {
     let strings: BatteryCareFeatureStrings
     let onSave: (BatteryScheduleTask) -> Void
     let onCancel: () -> Void
+    /// The island has the room for the system's reading sizes; the menu's
+    /// panel keeps its compact ones.
+    @Environment(\.notchPresentation) private var island
+    private var titleSize: CGFloat { island ? 13 : 11.5 }
+    private var bodySize: CGFloat { island ? 12 : 10.5 }
+    private var captionSize: CGFloat { island ? 11 : 9.5 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -631,10 +649,10 @@ private struct BatteryScheduleEditor: View {
             }
             HStack {
                 Button(strings.cancel, action: onCancel)
-                Button(strings.add) { onSave(task) }.buttonStyle(.borderedProminent)
+                Button(strings.add) { onSave(task) }.buttonStyle(BatteryButtonStyle(prominent: true))
             }
         }
-        .font(.system(size: 10.5))
+        .font(.system(size: bodySize))
         .controlSize(.small)
     }
 }
@@ -644,6 +662,12 @@ private struct BatteryScheduleEditor: View {
 struct BatteryPowerFlowView: View {
     let power: PowerReading?
     let strings: BatteryCareFeatureStrings
+    /// The island has the room for the system's reading sizes; the menu's
+    /// panel keeps its compact ones.
+    @Environment(\.notchPresentation) private var island
+    private var titleSize: CGFloat { island ? 13 : 11.5 }
+    private var bodySize: CGFloat { island ? 12 : 10.5 }
+    private var captionSize: CGFloat { island ? 11 : 9.5 }
 
     var body: some View {
         let charger = max(power?.adapterWatts ?? 0, 0)
@@ -658,10 +682,10 @@ struct BatteryPowerFlowView: View {
             (strings.mac, "laptopcomputer", mac), (strings.battery, "battery.100.bolt", intoBattery),
         ].filter { $0.2 > 0.05 }
         VStack(alignment: .leading, spacing: 8) {
-            Text(strings.powerFlow).font(.system(size: 11.5, weight: .semibold))
+            Text(strings.powerFlow).font(.system(size: titleSize, weight: .semibold))
             if sources.isEmpty || sinks.isEmpty {
                 Text(power?.adapterWatts == nil && charger == 0 ? strings.noCharger : "-")
-                    .font(.system(size: 9.5)).foregroundStyle(.secondary)
+                    .font(.system(size: captionSize)).foregroundStyle(.secondary)
             } else {
                 HStack(alignment: .center, spacing: 0) {
                     labels(sources, alignment: .leading)
@@ -681,8 +705,8 @@ struct BatteryPowerFlowView: View {
             ForEach(nodes.indices, id: \.self) { index in
                 let node = nodes[index]
                 VStack(alignment: alignment, spacing: 0) {
-                    Label(node.0, systemImage: node.1).font(.system(size: 9.5)).foregroundStyle(.secondary)
-                    Text(MetricFormat.watts(node.2)).font(.system(size: 10.5, weight: .semibold).monospacedDigit())
+                    Label(node.0, systemImage: node.1).font(.system(size: captionSize)).foregroundStyle(.secondary)
+                    Text(MetricFormat.watts(node.2)).font(.system(size: bodySize, weight: .semibold).monospacedDigit())
                 }
             }
         }
@@ -726,6 +750,38 @@ struct BatteryPowerFlowView: View {
             let color: Color = source == 1 ? .yellow : (sinkIsBattery[sink] ? .green : .teal)
             context.fill(path, with: .color(color.opacity(0.55)))
             leftY += height
+        }
+    }
+}
+
+/// In the island, Battery Care's buttons are the island's capsules and its
+/// switches and slider take the system's green, so the page reads as part
+/// of the island; the menu's panel keeps the system's own controls.
+private struct BatteryIslandControls: ViewModifier {
+    @Environment(\.notchPresentation) private var island
+
+    func body(content: Content) -> some View {
+        if island {
+            content.buttonStyle(BatteryButtonStyle()).tint(NotchStyle.Tint.green)
+        } else {
+            content
+        }
+    }
+}
+
+/// A Battery Care button: the island's capsule there, the system's button
+/// in the menu's panel, prominent for the step a card leads to.
+private struct BatteryButtonStyle: PrimitiveButtonStyle {
+    var prominent = false
+    @Environment(\.notchPresentation) private var island
+
+    @ViewBuilder func makeBody(configuration: Configuration) -> some View {
+        if island {
+            Button(configuration).buttonStyle(NotchCapsuleButtonStyle(prominent: prominent, height: 26))
+        } else if prominent {
+            Button(configuration).buttonStyle(.borderedProminent)
+        } else {
+            Button(configuration).buttonStyle(.automatic)
         }
     }
 }

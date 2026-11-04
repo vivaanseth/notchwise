@@ -123,7 +123,7 @@ struct NotchTimerView: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .semibold))
             }
-            .foregroundStyle(.white.opacity(0.85))
+            .foregroundStyle(NotchStyle.primary)
             .padding(.horizontal, NotchTimerSupport.ModePicker.labelPadding)
             .frame(height: 28)
             .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -152,7 +152,7 @@ struct NotchTimerView: View {
                     Text(title(for: candidate))
                         .font(.system(size: NotchTimerSupport.ModePicker.labelSize, weight: .medium))
                         .lineLimit(1)
-                        .foregroundStyle(selected ? .white : .white.opacity(0.5))
+                        .foregroundStyle(selected ? .white : NotchStyle.secondary)
                         .padding(.horizontal, NotchTimerSupport.ModePicker.labelPadding)
                         .frame(height: NotchTimerSupport.ModePicker.height)
                         .overlay(alignment: .bottom) {
@@ -168,7 +168,7 @@ struct NotchTimerView: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: mode)
+        .animation(reduceMotion ? nil : NotchStyle.Motion.layout, value: mode)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(text.timer)
     }

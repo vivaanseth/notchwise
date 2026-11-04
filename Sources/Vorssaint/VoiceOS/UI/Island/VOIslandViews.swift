@@ -39,6 +39,11 @@ struct VOVoicePage: View {
             && !service.hubModules.isEmpty
     }
 
+    /// Listening, thinking or speaking: the only time the page wears colour.
+    private var assistantActive: Bool {
+        assistant && (agent.phase == .listening || agent.phase == .thinking || voice.speaking)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if assistant {
@@ -52,17 +57,21 @@ struct VOVoicePage: View {
                 NotchHubView(service: service, selection: assistant ? agent.frontSelection : nil) { agent.submit($0) }
                     .padding(.horizontal, 8)
                     .padding(.top, assistant ? 14 : 6)
-                    .transition(.opacity)
+                    .transition(.blurReplace)
             }
         }
-        .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: showsHub)
+        .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: showsHub)
         .fixedSize(horizontal: false, vertical: true)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { service.updateVoiceHeight($0) }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        // VoiceOS's dark blue fade at the island's foot, out to its
-        // edges; the island's own outline clips it.
+        // At rest the home is the island's plain black, as every page is.
+        // While the assistant listens, thinks or speaks, VoiceOS's blue rises
+        // from the island's foot and settles back after, out to its edges;
+        // the island's own outline clips it.
         .background {
             VOVoiceBackdrop()
+                .opacity(assistantActive ? 1 : 0)
+                .animation(reduceMotion ? nil : .smooth(duration: 0.6), value: assistantActive)
                 .padding(.horizontal, -NotchLayout.horizontalInset)
                 .padding(.bottom, -NotchLayout.bottomInset)
                 .allowsHitTesting(false)
@@ -70,13 +79,13 @@ struct VOVoicePage: View {
         }
         .notchBand(leading: {
             if assistant {
-                VOJarvisGlyph(size: 17, active: agent.phase == .listening || agent.phase == .thinking || voice.speaking)
+                VOJarvisGlyph(size: 17, active: assistantActive)
                     .padding(.leading, 6)
                     .accessibilityHidden(true)
             } else {
-                Image(systemName: "house")
+                Image(systemName: "house.fill")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(NotchStyle.secondary)
                     .padding(.leading, 6)
                     .accessibilityHidden(true)
             }
@@ -131,14 +140,14 @@ private struct VOExpandedNotch: View {
                     .frame(height: min(turnsHeight, 470))
                     .onPreferenceChange(VOTurnsHeightKey.self) { turnsHeight = $0 }
                     .onChange(of: agent.turns) { _, _ in
-                        withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo("bottom", anchor: .bottom) }
+                        withAnimation(NotchStyle.Motion.scroll) { proxy.scrollTo("bottom", anchor: .bottom) }
                     }
                 }
             }
             if let hint = agent.hint {
                 HStack(spacing: 8) {
-                    Image(systemName: "info.circle").foregroundColor(.white.opacity(0.6))
-                    Text(hint).font(.system(size: 13)).foregroundColor(.white.opacity(0.7))
+                    Image(systemName: "info.circle").foregroundStyle(NotchStyle.secondary)
+                    Text(hint).font(NotchStyle.Typeface.body).foregroundStyle(NotchStyle.secondary)
                 }
                 .padding(.top, 10)
             }
@@ -154,8 +163,10 @@ private struct VOExpandedNotch: View {
             switch agent.phase {
             case .listening:
                 Text(agent.live.isEmpty ? "Listening…" : agent.live)
-                    .font(.system(size: 18, weight: .regular))
-                    .foregroundColor(agent.live.isEmpty ? .white.opacity(0.5) : .white)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(agent.live.isEmpty ? NotchStyle.secondary : NotchStyle.primary)
+                    .contentTransition(.opacity)
+                    .animation(NotchStyle.Motion.follow, value: agent.live)
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 VOWaveform(level: agent.level, bars: 9, height: 22)
@@ -170,13 +181,13 @@ private struct VOExpandedNotch: View {
                             VOKeyCap(label: settings.agentTrigger.keycap, size: 12.5)
                             Text("to speak")
                         }
-                        .font(.system(size: 18))
-                        .foregroundColor(.white.opacity(0.42))
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(NotchStyle.tertiary)
                         .allowsHitTesting(false)
                     }
                     TextField("", text: $agent.input, axis: .vertical)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 18))
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundColor(.white)
                         .lineLimit(1...4)
                         .focused($focused)
@@ -189,7 +200,8 @@ private struct VOExpandedNotch: View {
                         Image(systemName: "arrow.up").font(.system(size: 13, weight: .bold)).foregroundColor(.black)
                             .frame(width: 28, height: 28).background(Circle().fill(Color.white))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NotchButtonStyle(cornerRadius: 14, highlights: false))
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
                 }
             }
         }
@@ -210,12 +222,12 @@ private struct VOTurnView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(turn.query)
-                .font(.system(size: 16))
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 15)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(NotchStyle.primary)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Color(hex: 0x1E1E20)))
+                .background(NotchStyle.control, in: RoundedRectangle(cornerRadius: NotchStyle.Radius.card, style: .continuous))
                 .textSelection(.enabled)
 
             if turn.thinking && turn.say.isEmpty {
@@ -241,7 +253,7 @@ private struct VOTurnView: View {
             if !turn.via.isEmpty && !turn.thinking {
                 HStack(spacing: 6) {
                     VOProviderLogo(provider: turn.provider, size: 12)
-                    Text(turn.via).font(.system(size: 11)).foregroundColor(.white.opacity(0.38)).lineLimit(1)
+                    Text(turn.via).font(NotchStyle.Typeface.caption).foregroundStyle(NotchStyle.tertiary).lineLimit(1)
                 }
                 .padding(.leading, 2)
             }
@@ -252,7 +264,7 @@ private struct VOTurnView: View {
         let text = turn.say
         let upTo = voice.currentText == text ? min(voice.spokenUpTo, text.utf16.count) : text.utf16.count
         let idx = String.Index(utf16Offset: upTo, in: text)
-        return (Text(text[..<idx]).foregroundColor(.white) + Text(text[idx...]).foregroundColor(.white.opacity(0.4)))
+        return (Text(text[..<idx]).foregroundColor(NotchStyle.primary) + Text(text[idx...]).foregroundColor(NotchStyle.tertiary))
             .font(.system(size: 20, weight: .medium))
             .lineSpacing(3)
             .fixedSize(horizontal: false, vertical: true)
@@ -265,21 +277,20 @@ private struct VOErrorCard: View {
     let provider: VOProviderID
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundColor(VOTheme.orange).font(.system(size: 15))
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(NotchStyle.Tint.orange).font(.system(size: 15))
             VStack(alignment: .leading, spacing: 10) {
-                Text(message).font(.system(size: 13.5)).foregroundColor(.white.opacity(0.88)).fixedSize(horizontal: false, vertical: true)
+                Text(message).font(NotchStyle.Typeface.body).foregroundStyle(NotchStyle.primary).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 8) {
                     Button("Fix \(provider.displayName) connection") { VOMainWindow.show(.apps) }
-                        .buttonStyle(VOSecondaryButtonStyle())
+                        .buttonStyle(NotchCapsuleButtonStyle(prominent: true))
                     Button("Use another AI") { VOMainWindow.show(.assistant) }
-                        .buttonStyle(VOSecondaryButtonStyle())
+                        .buttonStyle(NotchCapsuleButtonStyle())
                 }
             }
             Spacer(minLength: 0)
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(VOTheme.orange.opacity(0.1)))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(VOTheme.orange.opacity(0.3), lineWidth: 1))
+        .notchPlatter()
     }
 }
 
@@ -301,30 +312,30 @@ struct VOActionCardView: View {
         case .done(let msg):
             VStack(alignment: .leading, spacing: 8) {
                 statusRow(text: msg) {
-                    Image(systemName: "checkmark.circle.fill").foregroundColor(VOTheme.green).font(.system(size: 16))
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(NotchStyle.Tint.green).font(.system(size: 16))
                 }
                 if !item.files.isEmpty { fileList }
             }
         case .failed(let msg):
-            statusRow(text: msg, tint: VOTheme.orange) {
-                Image(systemName: "exclamationmark.circle.fill").foregroundColor(VOTheme.orange).font(.system(size: 16))
+            statusRow(text: msg, tint: NotchStyle.Tint.orange) {
+                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(NotchStyle.Tint.orange).font(.system(size: 16))
             }
         case .cancelled:
-            statusRow(text: "Cancelled", dim: true) { Image(systemName: "xmark.circle").foregroundColor(.white.opacity(0.4)) }
+            statusRow(text: "Cancelled", dim: true) { Image(systemName: "xmark.circle").foregroundStyle(NotchStyle.tertiary) }
         }
     }
 
     private func statusRow<T: View>(text: String, tint: Color = .white, dim: Bool = false, @ViewBuilder trailing: () -> T) -> some View {
         HStack(spacing: 10) {
             VOAppIconView(bundleID: spec.bundleID, symbol: spec.symbol, size: 20)
-            Text(text).font(.system(size: 13.5, weight: .medium)).foregroundColor(dim ? .white.opacity(0.45) : tint.opacity(0.9))
+            Text(text).font(NotchStyle.Typeface.body.weight(.medium)).foregroundStyle(dim ? NotchStyle.tertiary : tint)
                 .lineLimit(2)
             trailing()
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Capsule().fill(Color.white.opacity(0.06)))
-        .overlay(Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1))
+        .background(NotchStyle.platter, in: Capsule())
+        .transition(.blurReplace)
     }
 
     private var fileList: some View {
@@ -334,13 +345,13 @@ struct VOActionCardView: View {
                     HStack(spacing: 10) {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 22, height: 22)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(url.lastPathComponent).font(.system(size: 13, weight: .medium)).foregroundColor(.white).lineLimit(1)
+                            Text(url.lastPathComponent).font(NotchStyle.Typeface.body.weight(.medium)).foregroundStyle(NotchStyle.primary).lineLimit(1)
                             Text((url.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath)
-                                .font(.system(size: 11)).foregroundColor(.white.opacity(0.45)).lineLimit(1).truncationMode(.middle)
+                                .font(NotchStyle.Typeface.caption).foregroundStyle(NotchStyle.tertiary).lineLimit(1).truncationMode(.middle)
                         }
                         Spacer()
                         Button { NSWorkspace.shared.activateFileViewerSelecting([url]) } label: {
-                            Image(systemName: "folder").font(.system(size: 11)).foregroundColor(.white.opacity(0.5))
+                            Image(systemName: "folder").font(.system(size: 11, weight: .medium)).foregroundStyle(NotchStyle.secondary)
                         }
                         .buttonStyle(.plain)
                         .help("Show in Finder")
@@ -353,15 +364,15 @@ struct VOActionCardView: View {
             }
         }
         .padding(6)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white.opacity(0.05)))
+        .notchPlatter(cornerRadius: NotchStyle.Radius.card)
     }
 
     private var confirmCard: some View {
         HStack(alignment: .top, spacing: 14) {
             VOAppIconView(bundleID: spec.bundleID, symbol: spec.symbol, size: 42)
             VStack(alignment: .leading, spacing: 7) {
-                Text(spec.appName).font(.system(size: 13, weight: .semibold)).foregroundColor(.white.opacity(0.85))
-                Text(spec.title).font(.system(size: 17, weight: .semibold)).foregroundColor(.white).padding(.bottom, 2)
+                Text(spec.appName).font(NotchStyle.Typeface.headline).foregroundStyle(NotchStyle.secondary)
+                Text(spec.title).font(.system(size: 17, weight: .semibold)).foregroundStyle(NotchStyle.primary).padding(.bottom, 2)
                 ForEach(spec.fields, id: \.key) { field in
                     fieldRow(field.label, key: field.key, multiline: field.multiline)
                 }
@@ -382,19 +393,16 @@ struct VOActionCardView: View {
             .padding(.top, 22)
         }
         .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(LinearGradient(colors: [Color.white.opacity(0.13), Color.white.opacity(0.06)], startPoint: .top, endPoint: .bottom))
-        )
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Color.white.opacity(0.16), lineWidth: 1))
+        .notchPlatter(cornerRadius: 24)
         .overlay(alignment: .topTrailing) {
             Button { agent.cancelAction(turnID: turnID, actionID: item.id) } label: {
-                Image(systemName: "xmark").font(.system(size: 10, weight: .bold)).foregroundColor(.white.opacity(0.8))
-                    .frame(width: 24, height: 24).background(Circle().fill(Color.white.opacity(0.14)))
+                Image(systemName: "xmark").font(.system(size: 10, weight: .bold)).foregroundStyle(NotchStyle.secondary)
+                    .frame(width: 24, height: 24).background(NotchStyle.control, in: Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NotchButtonStyle(cornerRadius: 12))
             .padding(10)
         }
+        .transition(.blurReplace)
     }
 
     @ViewBuilder
@@ -402,7 +410,7 @@ struct VOActionCardView: View {
         let value = item.action[key]
         if item.editing {
             VStack(alignment: .leading, spacing: 3) {
-                Text(label).font(.system(size: 11, weight: .medium)).foregroundColor(.white.opacity(0.5))
+                Text(label).font(NotchStyle.Typeface.caption).foregroundStyle(NotchStyle.secondary)
                 TextField(label, text: Binding(get: { item.action[key] },
                                                set: { agent.setField(turnID: turnID, actionID: item.id, key: key, value: $0) }),
                           axis: multiline ? .vertical : .horizontal)
@@ -412,14 +420,14 @@ struct VOActionCardView: View {
                     .lineLimit(multiline ? 1...6 : 1...1)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
-                    .background(RoundedRectangle(cornerRadius: 9).fill(Color.black.opacity(0.35)))
+                    .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: NotchStyle.Radius.button, style: .continuous))
             }
         } else if !value.isEmpty {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("\(label):").font(.system(size: 13.5)).foregroundColor(.white.opacity(0.55))
+                Text("\(label):").font(NotchStyle.Typeface.body).foregroundStyle(NotchStyle.secondary)
                 Text(display(key: key, value: value))
-                    .font(.system(size: 13.5))
-                    .foregroundColor(.white.opacity(0.92))
+                    .font(NotchStyle.Typeface.body)
+                    .foregroundStyle(NotchStyle.primary)
                     .lineLimit(multiline ? 4 : 1)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -435,22 +443,23 @@ struct VOActionCardView: View {
     }
 }
 
+/// The confirmation card's buttons: the step it asks for in the system's
+/// blue, the others on the control fill, all capsules with no glow, as the
+/// island's other buttons are.
 struct VOCardButtonStyle: ButtonStyle {
     let primary: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundColor(.white)
+            .font(NotchStyle.Typeface.headline)
+            .foregroundStyle(NotchStyle.primary)
             .frame(maxWidth: .infinity)
-            .frame(height: 38)
-            .background(
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(primary ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0x6A95FF), Color(hex: 0x3D66F2)], startPoint: .top, endPoint: .bottom))
-                                  : AnyShapeStyle(Color.white.opacity(0.14)))
-            )
-            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(Color.white.opacity(primary ? 0.25 : 0.1), lineWidth: 1))
-            .shadow(color: primary ? Color(hex: 0x3D66F2).opacity(0.45) : .clear, radius: 8, y: 3)
+            .frame(height: 34)
+            .background(primary ? NotchStyle.Tint.blue : NotchStyle.control, in: Capsule())
             .opacity(configuration.isPressed ? 0.8 : 1)
-            .contentShape(Rectangle())
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.press, value: configuration.isPressed)
+            .contentShape(Capsule())
     }
 }

@@ -579,6 +579,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/BatteryCareStrings.swift
         Sources/Vorssaint/Core/NotchCustomizationStrings.swift
         Sources/Vorssaint/Services/Notch/NotchCustomization.swift
+        Sources/Vorssaint/UI/Notch/NotchStyle.swift
         Sources/Vorssaint/Services/Metrics/TemperatureSensorSelector.swift
         Sources/Vorssaint/Services/Metrics/SustainedAlertGate.swift
         Sources/Vorssaint/Services/WindowLayout/WindowLayoutSupport.swift

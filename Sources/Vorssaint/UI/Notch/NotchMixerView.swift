@@ -54,7 +54,7 @@ struct NotchMixerView: View {
                         NotchMicrophoneFader(height: faderHeight, editingVolumeID: $editingVolumeID)
                             .frame(width: Self.masterWidth)
                     }
-                    Rectangle().fill(.white.opacity(0.12)).frame(width: 1)
+                    Rectangle().fill(NotchStyle.control).frame(width: 1)
                         .accessibilityHidden(true)
                     desk.frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -79,13 +79,13 @@ struct NotchMixerView: View {
 
     private func toggleOptions() {
         editingVolumeID = nil
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { showingOptions.toggle() }
+        withAnimation(reduceMotion ? nil : NotchStyle.Motion.layout) { showingOptions.toggle() }
     }
 
     /// What Escape does: it only ever closes the options.
     private func closeOptions() {
         editingVolumeID = nil
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { showingOptions = false }
+        withAnimation(reduceMotion ? nil : NotchStyle.Motion.layout) { showingOptions = false }
     }
 
     @ViewBuilder private var desk: some View {
@@ -139,9 +139,9 @@ struct NotchMixerView: View {
     private var permission: some View {
         HStack(spacing: 14) {
             Image(systemName: "waveform.badge.exclamationmark").font(.system(size: 24, weight: .light))
-                .foregroundStyle(.white.opacity(0.65))
+                .foregroundStyle(NotchStyle.secondary)
                 .frame(width: 56, height: 56)
-                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .background(NotchStyle.platter, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 8) {
                 Text(l10n.s.mixerPermissionBody).font(.system(size: 12)).foregroundStyle(.secondary)
@@ -180,7 +180,7 @@ private struct NotchEditablePercent: View {
                     .font(.system(size: height > 18 ? 12 : 10, weight: .medium)).monospacedDigit()
                     .foregroundStyle(tint)
                     .contentTransition(.numericText())
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.2), value: percent)
+                    .animation(reduceMotion ? nil : NotchStyle.Motion.follow, value: percent)
             }
             .frame(maxWidth: .infinity, minHeight: height)
         } onCommit: { commit($0) }
@@ -215,7 +215,7 @@ private struct NotchMasterFader: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(muted ? Color.red : Color.white)
                     .contentTransition(.symbolEffect(.replace))
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: muted)
+                    .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: muted)
                     .frame(width: 32, height: 32)
                     .contentShape(Circle())
             }
@@ -286,7 +286,7 @@ private struct NotchMicrophoneFader: View {
         Image(systemName: muted ? "mic.slash.fill" : "mic.fill")
             .font(.system(size: 15, weight: .medium))
             .contentTransition(.symbolEffect(.replace))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: muted)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.state, value: muted)
             .frame(width: 32, height: 32)
             .contentShape(Circle())
     }
@@ -388,7 +388,7 @@ private struct NotchMixerOptions: View {
                     }
                     microphone
                 }
-                Divider().overlay(.white.opacity(0.12))
+                Divider().overlay(NotchStyle.control)
                 MixerOptionsControls()
             }
             .padding(.trailing, 4)
@@ -608,7 +608,7 @@ private struct NotchAppFader: View {
         Menu { actions } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(NotchStyle.secondary)
                 .frame(width: 24, height: 28)
                 .contentShape(Rectangle())
         }

@@ -62,7 +62,7 @@ struct NotchSectionsView: View {
             .frame(height: NotchLayout.railHeight(rows: visible, rowHeight: NotchLayout.sectionTileHeight,
                                                   spacing: NotchLayout.sectionSpacing), alignment: .top)
             .clipped()
-            .animation(reduceMotion ? nil : .spring(duration: 0.3, bounce: 0), value: first)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.layout, value: first)
             .accessibilityScrollAction { edge in
                 if edge == .bottom { service.scrollSections(by: 1) }
                 else if edge == .top { service.scrollSections(by: -1) }
@@ -82,7 +82,8 @@ struct NotchSectionsView: View {
                 ForEach(0..<positions, id: \.self) { position in
                     Button { service.showSectionRow(position) } label: {
                         Circle()
-                            .fill(.white.opacity(position == current ? 0.9 : contrast == .increased ? 0.5 : 0.28))
+                            .fill(position == current ? NotchStyle.primary
+                                  : contrast == .increased ? NotchStyle.secondary : NotchStyle.tertiary)
                             .frame(width: 6, height: 6)
                             .frame(width: 12, height: 12)
                             .contentShape(Rectangle())
@@ -90,7 +91,7 @@ struct NotchSectionsView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: current)
+            .animation(reduceMotion ? nil : NotchStyle.Motion.hover, value: current)
             .accessibilityHidden(true)
         } else {
             Color.clear
@@ -100,56 +101,50 @@ struct NotchSectionsView: View {
     private func tile(_ module: NotchModule, visible: Bool) -> some View {
         let highlighted = service.highlightedSection == module
         let current = service.selected == module
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: NotchStyle.Radius.card, style: .continuous)
         return Button { service.select(module) } label: {
             VStack(spacing: 6) {
                 Image(systemName: module.symbol)
                     .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(tint(for: module))
+                    .foregroundStyle(NotchStyle.primary)
                     .frame(width: 25, height: 25)
                 Text(module.title(l10n.language))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11, weight: .semibold))
                     .lineLimit(2)
                     .minimumScaleFactor(0.85)
                     .multilineTextAlignment(.center)
                     .frame(height: 27)
                 Text("⌥⌘" + module.shortcutKey.uppercased())
                     .font(.system(size: 10, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(NotchStyle.tertiary)
             }
             .padding(.horizontal, 6)
             .frame(maxWidth: .infinity)
             .frame(height: NotchLayout.sectionTileHeight)
-            .background(.white.opacity(highlighted ? 0.12 : 0.045), in: shape)
+            .background(highlighted ? NotchStyle.selected : NotchStyle.platter, in: shape)
             .overlay {
-                shape.strokeBorder(.white.opacity(highlighted ? 0.55 : contrast == .increased ? 0.4 : 0.04), lineWidth: 1)
+                // Keyboard focus is a white ring, as the system draws it.
+                shape.strokeBorder(highlighted ? NotchStyle.secondary
+                                   : contrast == .increased ? NotchStyle.contrastOutline : .clear, lineWidth: 1.5)
             }
             .overlay(alignment: .topTrailing) {
                 if current {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .padding(7)
+                        .font(.system(size: 11))
+                        .foregroundStyle(NotchStyle.secondary)
+                        .padding(8)
                 }
             }
+            .animation(reduceMotion ? nil : NotchStyle.Motion.hover, value: highlighted)
             .contentShape(shape)
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 16, lifts: false))
+        .buttonStyle(NotchButtonStyle(cornerRadius: NotchStyle.Radius.card, lifts: false))
         .accessibilityLabel(module.title(l10n.language))
         .accessibilityAddTraits(current ? .isSelected : [])
         .accessibilityIdentifier("notch.module.\(module.rawValue)")
         // A stepped-away row sits under the header, clipped; it keeps no
         // tooltip there.
         .help(visible ? module.title(l10n.language) + "  ⌥⌘" + module.shortcutKey.uppercased() : "")
-    }
-
-    private func tint(for module: NotchModule) -> Color {
-        switch module {
-        case .music: return .pink
-        case .calendar: return .red
-        case .timer: return .orange
-        default: return .white.opacity(0.85)
-        }
     }
 }
 
@@ -186,7 +181,7 @@ struct NotchSectionSearch: View {
         HStack(spacing: expanded ? 4 : 6) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(expanded ? .white : .white.opacity(0.55))
+                .foregroundStyle(expanded ? NotchStyle.primary : NotchStyle.secondary)
                 .frame(width: expanded ? 22 : 28, height: 28)
             // The field keeps its focus at a hair's width, so typing filters
             // the gallery before the field has even shown itself.
@@ -208,11 +203,11 @@ struct NotchSectionSearch: View {
         }
         .padding(.trailing, expanded ? 8 : 0)
         .frame(height: 28)
-        .background(.white.opacity(expanded ? 0.07 : 0), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .background(expanded ? NotchStyle.control : .clear, in: Capsule())
+        .contentShape(Capsule())
         .clipped()
         .onHover { hovering in
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { hovered = hovering }
+            withAnimation(reduceMotion ? nil : NotchStyle.Motion.hover) { hovered = hovering }
         }
         .onTapGesture { searching = true }
         .onAppear { searching = true }
