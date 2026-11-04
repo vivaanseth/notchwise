@@ -63,6 +63,8 @@ final class VODictationController: ObservableObject {
             session = s
             VOSounds.start()
             state = handsFree ? .handsFree : .listening
+            // Polishing with a local model: Ollama opens while the words are spoken.
+            VOLocalModels.shared.startAhead(if: settings.polishEngine == .ollama)
         } catch {
             show(.message(error.localizedDescription, isError: true))
         }

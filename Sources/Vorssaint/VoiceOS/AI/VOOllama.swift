@@ -25,15 +25,22 @@ struct VOOllamaBackend: VOAIBackend {
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let deadline = Date().addingTimeInterval(request.timeout)
-        let bytes: URLSession.AsyncBytes
-        let response: URLResponse
-        do {
-            (bytes, response) = try await URLSession.shared.bytes(for: req)
-        } catch {
-            if await VOLocalModels.isInstalled { await VOLocalModels.shared.start() }
-            throw VOError(await VOLocalModels.isInstalled ? "Ollama isn't running — starting it now, try again in a few seconds."
-                                                        : "Ollama isn't installed. Get it from ollama.com or run: brew install --cask ollama")
+        // Ollama never opens with the app, so the first request may find it
+        // closed: it opens then, hidden, and the request goes again once it answers.
+        let opened: (URLSession.AsyncBytes, URLResponse)
+        if let first = try? await URLSession.shared.bytes(for: req) {
+            opened = first
+        } else {
+            guard VOLocalModels.isInstalled else {
+                throw VOError("Ollama isn’t installed. Get it from ollama.com or run: brew install --cask ollama")
+            }
+            await VOLocalModels.shared.start()
+            guard await VOLocalModels.shared.running, let again = try? await URLSession.shared.bytes(for: req) else {
+                throw VOError("Ollama didn’t start. Open it from Applications, then try again.")
+            }
+            opened = again
         }
+        let (bytes, response) = opened
         var text = ""
         var errorText = ""
         for try await line in bytes.lines {
@@ -107,11 +114,32 @@ final class VOLocalModels: ObservableObject {
         installed.contains { $0.name == model || $0.name == model + ":latest" }
     }
 
+    /// Starts Ollama ahead of a request about to come: as the person starts
+    /// talking to the assistant or dictating with a local model. The app never
+    /// opens Ollama when it opens itself; this is the first moment it is needed,
+    /// and the question is still being spoken while it starts.
+    func startAhead(if needed: Bool) {
+        guard needed, !running, startTask == nil, Self.isInstalled else { return }
+        Task { await start() }
+    }
+
+    private var startTask: Task<Void, Never>?
+
     /// Launches the Ollama app (or `ollama serve`) and waits for the API.
-    /// Already serving (Ollama's own login item, or an earlier start), it is
-    /// left alone; otherwise it starts hidden, never in front of the user's work.
+    /// Already serving (opened by the person, or an earlier start), it is left
+    /// alone; otherwise it starts hidden, never in front of the user's work.
+    /// Asked again while starting, it waits for that start instead of
+    /// opening a second one.
     func start() async {
         if running { return }
+        if let startTask { await startTask.value; return }
+        let task = Task { await launch() }
+        startTask = task
+        await task.value
+        startTask = nil
+    }
+
+    private func launch() async {
         await refresh()
         if running { return }
         if FileManager.default.fileExists(atPath: "/Applications/Ollama.app") {

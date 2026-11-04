@@ -74,13 +74,11 @@ final class VORuntime: NSObject {
             guard self?.running == true else { return }
             VOProviderManager.shared.prewarmIfUseful()
         }
-        // Local-first: make sure Ollama is up and the model is loaded before the first request.
-        Task {
-            let usesLocal = settings.agentProvider.isLocal || settings.polishEngine == .ollama
-            if usesLocal && VOLocalModels.isInstalled { await VOLocalModels.shared.start() }
-            VOProviderManager.shared.refreshStatus(.ollama)
-            VOLocalModels.shared.warmUp()
-        }
+        // Ollama never opens with the app: it opens when it is first needed,
+        // as the person starts talking or dictating with a local model. If it
+        // is already running, its model is loaded ahead of the first request.
+        VOProviderManager.shared.refreshStatus(.ollama)
+        VOLocalModels.shared.warmUp()
         settings.$localModel.dropFirst().removeDuplicates()
             .sink { _ in
                 DispatchQueue.main.async {

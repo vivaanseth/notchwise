@@ -160,8 +160,10 @@ final class VOAssistantController: ObservableObject {
             return
         }
         VOAssistantVoice.shared.stop()
-        // Kokoro loads while the question is asked, ready for the answer.
+        // Kokoro loads while the question is asked, ready for the answer, and
+        // a local model's Ollama opens now if it is closed.
         VOAssistantVoice.shared.warmUp()
+        VOLocalModels.shared.startAhead(if: settings.agentProvider.isLocal)
         VODictationController.shared.cancel()
         if !expanded { context = VOAccessibility.frontContext() }
         if Date().timeIntervalSince(lastActivity) > 300, !hasPendingWork { turns.removeAll() }
@@ -227,6 +229,7 @@ final class VOAssistantController: ObservableObject {
         if context == nil { context = VOAccessibility.frontContext() }
         if screenshot == nil && wantsScreenshot { screenshot = Task { await VOScreenGrab.captureAroundCursor() } }
         let provider = settings.agentProvider
+        VOLocalModels.shared.startAhead(if: provider.isLocal)
         let turn = VOAssistantTurn(query: query, provider: provider)
         let history = Array(turns.suffix(6))
         turns.append(turn)
