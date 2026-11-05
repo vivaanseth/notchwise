@@ -654,7 +654,8 @@ swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" "${BUILD_VARIAN
     Sources/Vorssaint/Services/FanControl/FanControlHardware.swift \
     Sources/FanControlHelper/main.swift \
     -o "build/$FAN_HELPER_ID"
-"build/$FAN_HELPER_ID" --selftest
+# A helper built for the other chip cannot run here; its self-test runs on that Mac.
+[[ "$ARCH" != "$(uname -m)" ]] || "build/$FAN_HELPER_ID" --selftest
 
 echo "▸ Compiling battery helper…"
 swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" "${BUILD_VARIANT_FLAGS[@]}" \
@@ -669,7 +670,8 @@ swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" "${BUILD_VARIAN
     Sources/BatteryHelper/main.swift \
     -o "build/$BATTERY_HELPER_ID"
 # Policy checks against made-up readings; it never touches the charging controller.
-"build/$BATTERY_HELPER_ID" --selftest
+# A helper built for the other chip cannot run here; its self-test runs on that Mac.
+[[ "$ARCH" != "$(uname -m)" ]] || "build/$BATTERY_HELPER_ID" --selftest
 
 echo "▸ Compiling Now Playing adapter…"
 swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" -emit-library \
