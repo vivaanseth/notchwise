@@ -253,7 +253,7 @@ final class VOProviderManager: ObservableObject {
         case .chatgpt: note = "Choose \"Sign in with ChatGPT\" to use your ChatGPT plan."
         case .gemini: note = "Pick \"Login with Google\", finish in the browser, then type /quit."
         }
-        VOTerminal.run(cmd, banner: "VoiceOS · Connect \(p.displayName)\n\(note)")
+        VOTerminal.run(cmd, banner: "Notchwise · Connect \(p.displayName)\n\(note)")
     }
 
     // MARK: - Plan usage (CodexBar)
@@ -388,7 +388,7 @@ enum VOTerminal {
         }
         if let cwd { script += "cd \(shellQuote(cwd)) || exit 1\n" }
         script += "\(command)\n"
-        script += "echo\necho 'Done. You can close this window and return to VoiceOS.'\n"
+        script += "echo\necho 'Done. You can close this window and return to Notchwise.'\n"
         try? script.write(to: url, atomically: true, encoding: .utf8)
         try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
         let terminal = URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app")

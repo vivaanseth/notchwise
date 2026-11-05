@@ -96,8 +96,8 @@ struct VOOnboardingView: View {
 
     private var permissions: some View {
         VStack(alignment: .leading, spacing: 16) {
-            title("Give VoiceOS a voice", "macOS asks you to allow each of these once.")
-            permRow("mic.fill", "Microphone", "So VoiceOS can hear you.", perms.microphone) { perms.requestMicrophone() }
+            title("Give Notchwise a voice", "macOS asks you to allow each of these once.")
+            permRow("mic.fill", "Microphone", "So Notchwise can hear you.", perms.microphone) { perms.requestMicrophone() }
             permRow("waveform", "Speech Recognition", "On-device transcription — nothing is uploaded.", perms.speech) { perms.requestSpeech() }
             permRow("accessibility", "Accessibility", "To notice fn / ⌘ and type text into your apps.", perms.accessibility) { perms.requestAccessibility() }
             permRow("rectangle.dashed.badge.record", "Screen Recording (optional)", "Lets the assistant see what you're pointing at.", perms.screen) { perms.requestScreen() }
@@ -114,7 +114,7 @@ struct VOOnboardingView: View {
 
     private var connect: some View {
         VStack(alignment: .leading, spacing: 16) {
-            title("Connect your AI", "VoiceOS runs on a free local model. Optionally connect Claude, ChatGPT or Gemini for the occasional hard request — it uses the plan you already pay for.")
+            title("Connect your AI", "Notchwise runs on a free local model. Optionally connect Claude, ChatGPT or Gemini for the occasional hard request — it uses the plan you already pay for.")
             ForEach(VOProviderID.allCases) { p in
                 let st = providers.status[p] ?? .unknown
                 HStack(spacing: 14) {
@@ -154,7 +154,7 @@ struct VOOnboardingView: View {
 
     private var aboutYou: some View {
         VStack(alignment: .leading, spacing: 16) {
-            title("What should VoiceOS call you?", "Used for greetings and to sign off emails you dictate.")
+            title("What should Notchwise call you?", "Used for greetings and to sign off emails you dictate.")
             HStack(spacing: 12) {
                 VODarkField(placeholder: "First name", text: $settings.firstName)
                 VODarkField(placeholder: "Last name", text: $settings.lastName)

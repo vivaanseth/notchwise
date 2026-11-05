@@ -96,7 +96,7 @@ enum VOActionKit {
             return VOActionSpec(title: "Copied to clipboard", appName: "Clipboard", bundleID: nil, symbol: "doc.on.clipboard", fields: [("Text", "text", true)],
                               primary: "Copy", secondary: nil, confirm: false, capability: nil)
         default:
-            return VOActionSpec(title: type.replacingOccurrences(of: "_", with: " ").capitalized, appName: "VoiceOS", bundleID: nil, symbol: "sparkles",
+            return VOActionSpec(title: type.replacingOccurrences(of: "_", with: " ").capitalized, appName: "Notchwise", bundleID: nil, symbol: "sparkles",
                               fields: [], primary: "Run", secondary: nil, confirm: true, capability: nil)
         }
     }
@@ -199,7 +199,7 @@ enum VOActionKit {
         case "code_task":
             var folder = a["folder"].isEmpty ? NSHomeDirectory() : (a["folder"] as NSString).expandingTildeInPath
             if !FileManager.default.fileExists(atPath: folder) { folder = NSHomeDirectory() }
-            VOTerminal.run("claude \(VOTerminal.shellQuote(a["prompt"]))", banner: "VoiceOS → Claude Code", cwd: folder)
+            VOTerminal.run("claude \(VOTerminal.shellQuote(a["prompt"]))", banner: "Notchwise → Claude Code", cwd: folder)
             return VOActionOutcome(message: "Claude Code started in \((folder as NSString).abbreviatingWithTildeInPath)")
 
         case "web_search":
@@ -293,7 +293,7 @@ enum VOAppleScript {
         if let err {
             let msg = err[NSAppleScript.errorMessage] as? String ?? "AppleScript failed."
             if (err[NSAppleScript.errorNumber] as? Int) == -1743 {
-                throw VOError("VoiceOS needs permission to control that app. Allow it in System Settings → Privacy & Security → Automation.")
+                throw VOError("Notchwise needs permission to control that app. Allow it in System Settings → Privacy & Security → Automation.")
             }
             throw VOError(msg)
         }

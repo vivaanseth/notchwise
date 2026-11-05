@@ -42,7 +42,7 @@ final class VODictationController: ObservableObject {
         let perms = VOPermissions.shared
         perms.refresh()
         guard perms.microphone else {
-            show(.message("Allow microphone access in VoiceOS → Dashboard", isError: true))
+            show(.message("Allow microphone access in Notchwise → Dashboard", isError: true))
             perms.requestMicrophone()
             return
         }

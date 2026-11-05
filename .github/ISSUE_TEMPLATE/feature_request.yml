@@ -1,5 +1,5 @@
 name: "✨ Feature Request"
-description: Suggest a new feature or improvement for Vorssaint
+description: Suggest a new feature or improvement for Notchwise
 labels:
   - enhancement
 
@@ -7,12 +7,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Someone may have asked already.** [Enhancement Summary](https://github.com/vorssaint/vorssaint-utils/issues/838)
-        indexes every open request, sorted into what already shipped, what is
-        worth doing, and what has been ruled out and why.
-
-        A comment and a 👍 on the existing request carries further than a
-        second issue for the same thing, since the votes stay in one place.
+        Check the open issues first: a 👍 on an existing request carries further
+        than a second issue for the same thing.
 
   - type: textarea
     id: problem
@@ -28,7 +24,7 @@ body:
     attributes:
       label: Proposed Solution
       description: Describe the solution you'd like to see.
-      placeholder: It would be great if Vorssaint could...
+      placeholder: It would be great if Notchwise could...
     validations:
       required: true
 

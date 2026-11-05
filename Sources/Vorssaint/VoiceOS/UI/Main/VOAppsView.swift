@@ -21,7 +21,7 @@ struct VOAppsView: View {
                 VOSegmentedPill(options: [(Tab.ai, "AI Models"), (Tab.mac, "Mac Apps")], selection: $tab, compact: true)
             }
             if tab == .ai {
-                Text("VoiceOS runs on a free local model first. Cloud AIs are only used for requests that need them, through their official apps signed in with your own account — so they count against the plan you already pay for, not an API bill.")
+                Text("Notchwise runs on a free local model first. Cloud AIs are only used for requests that need them, through their official apps signed in with your own account — so they count against the plan you already pay for, not an API bill.")
                     .font(.system(size: 13)).foregroundColor(VOTheme.secondary)
                 ForEach(VOProviderID.allCases) { p in
                     if p.isLocal { VOLocalAICard() } else { VOProviderCard(provider: p) }
@@ -91,7 +91,7 @@ struct VOProviderCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Used by VoiceOS").font(.system(size: 12, weight: .semibold)).foregroundColor(VOTheme.tertiary)
+                    Text("Used by Notchwise").font(.system(size: 12, weight: .semibold)).foregroundColor(VOTheme.tertiary)
                     let t = providers.totals(for: provider)
                     Text("\(providers.todayRequests(provider)) requests today · \(t.requests) in 30 days")
                         .font(.system(size: 12.5)).foregroundColor(VOTheme.secondary)
@@ -238,7 +238,7 @@ struct VOMacAppsGrid: View {
                 VOSectionLabel(text: "Available")
                 grid(available)
             }
-            Text("Assistant Mode asks before anything is sent, booked or changed. macOS will ask you once per app to allow VoiceOS to control it.")
+            Text("Assistant Mode asks before anything is sent, booked or changed. macOS will ask you once per app to allow Notchwise to control it.")
                 .font(.system(size: 12.5)).foregroundColor(VOTheme.tertiary)
         }
     }

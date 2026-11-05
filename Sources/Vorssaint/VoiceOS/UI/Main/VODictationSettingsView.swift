@@ -75,7 +75,7 @@ struct VODictationSettingsView: View {
                     }
                     Text(p.isLocal
                          ? "Phrases under six words skip the model entirely. If the local model is slow, the basic cleanup goes in instead so you're never waiting."
-                         : "If \(p.displayName) is slow or unavailable, VoiceOS inserts the on-device cleanup instead so you're never stuck.")
+                         : "If \(p.displayName) is slow or unavailable, Notchwise inserts the on-device cleanup instead so you're never stuck.")
                         .font(.system(size: 12)).foregroundColor(VOTheme.tertiary)
                 }
                 toggleRow("Remove filler words", "Drops um, uh, repeated words and false starts.", $settings.removeFillers)
@@ -92,7 +92,7 @@ struct VODictationSettingsView: View {
 
             VOCard {
                 VOCardHeader(symbol: "character.book.closed", title: "Dictionary",
-                           subtitle: "Names, products, acronyms — say them however they come out and VoiceOS writes them your way.")
+                           subtitle: "Names, products, acronyms — say them however they come out and Notchwise writes them your way.")
                 VStack(spacing: 8) {
                     ForEach(settings.dictionary) { e in
                         HStack(spacing: 12) {

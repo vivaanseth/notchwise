@@ -149,13 +149,13 @@ final class VOAssistantController: ObservableObject {
         perms.refresh()
         guard perms.microphone else {
             open(focus: false)
-            hint = "Allow microphone access to talk to VoiceOS."
+            hint = "Allow microphone access to talk to Notchwise."
             perms.requestMicrophone()
             return
         }
         if settings.speechEngine == .apple && !perms.speech {
             open(focus: false)
-            hint = "Allow speech recognition to talk to VoiceOS."
+            hint = "Allow speech recognition to talk to Notchwise."
             perms.requestSpeech()
             return
         }
@@ -594,7 +594,7 @@ final class VOAssistantController: ObservableObject {
             for t in past {
                 s += "User: \(t.query)\n"
                 let reply = [t.say, t.detail ?? ""].filter { !$0.isEmpty }.joined(separator: " ")
-                s += "VoiceOS: \(t.error == nil ? reply : "(failed)")\n"
+                s += "Notchwise: \(t.error == nil ? reply : "(failed)")\n"
             }
             s += "</conversation>\n"
         }

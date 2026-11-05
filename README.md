@@ -1,70 +1,39 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/logo-dark.svg">
-    <img src="docs/assets/readme/logo.svg" width="220" alt="Vorssaint logo">
-  </picture>
-</p>
-
-<h1 align="center">Vorssaint</h1>
+<h1 align="center">Notchwise</h1>
 
 <p align="center">
-  One menu bar icon doing the job of a dozen paid Mac apps.<br>
-  Install only what you use.
+  A Dynamic Island for your Mac's notch, a private voice assistant,<br>
+  and a menu bar full of the utilities you'd otherwise buy one by one.
 </p>
 
 <p align="center">
-  <a href="https://vorssaint.com">Website</a> ·
-  <a href="#install">Install</a> ·
+  <a href="#the-island">The island</a> ·
+  <a href="#the-assistant">The assistant</a> ·
   <a href="#everything-it-does">Features</a> ·
-  <a href="#private-by-default">Privacy</a> ·
-  <a href="CHANGELOG.md">Changelog</a> ·
-  <a href="mailto:hello@vorssaint.com">Contact</a> ·
-  <a href="https://discord.gg/M6BwWH4BJp">Discord</a>
+  <a href="#build-it">Build it</a> ·
+  <a href="#credits">Credits</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/vorssaint/vorssaint-utils/releases"><img src="https://img.shields.io/github/v/release/vorssaint/vorssaint-utils?label=release&color=4c8dff" alt="Latest release"></a>
-  <a href="https://github.com/vorssaint/vorssaint-utils/releases"><img src="https://img.shields.io/github/downloads/vorssaint/vorssaint-utils/total?color=4c8dff" alt="Downloads"></a>
-  <a href="https://github.com/vorssaint/vorssaint-utils/actions/workflows/ci.yml"><img src="https://github.com/vorssaint/vorssaint-utils/actions/workflows/ci.yml/badge.svg?branch=main&event=push" alt="CI status"></a>
-  <a href="#what-you-need"><img src="https://img.shields.io/badge/macOS-14%2B%20Apple%20Silicon-black" alt="macOS 14 and newer, Apple Silicon"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License GPL 3.0 or later"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-black" alt="macOS 14 and newer">
 </p>
 
-<p align="center">
-  <a href="https://buymeacoffee.com/vorssaint">
-    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="217" height="60" alt="Buy Me a Coffee">
-  </a>
-</p>
+Notchwise turns the notch into a place you actually use: music with live audio bars, your calendar, timers, a camera mirror, files, clipboard, battery care and more, all a hover away. A voice assistant lives in the same island, running on a local model first, so most of what you say never leaves your Mac. Around it sits a full set of menu bar utilities. There's no account, no telemetry and no subscription.
 
-<p align="center">
-  For anything private, email
-  <a href="mailto:hello@vorssaint.com"><strong>hello@vorssaint.com</strong></a>.
-</p>
+## The island
 
-<p align="center">
-  <a href="https://trendshift.io/repositories/53716?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-53716" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/53716" alt="vorssaint/vorssaint-utils | Trendshift" width="250" height="55"></a>
-  <a href="https://trendshift.io/repositories/53716?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-53716" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/53716/weekly?language=Swift" alt="vorssaint/vorssaint-utils | Trendshift weekly ranking" width="250" height="55"></a>
-  <a href="https://trendshift.io/repositories/53716?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-53716" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/53716/monthly?language=Swift" alt="vorssaint/vorssaint-utils | Trendshift monthly ranking" width="250" height="55"></a>
-</p>
+- **One island, many pages.** Home, Controls, Now Playing, Calendar, Timer, Clipboard, Files, Downloads, Captures, Notifications, System, Volume mixer, Battery and more, each a click away from the page bar or the grid of pages.
+- **Make it yours.** Right-click to remove any page, home widget, shortcut or control, and add it back later; what stays fills the room.
+- **Live activities.** Music, timers, downloads, calendar countdowns and AI agents at work show in the closed island.
+- **An Apple-style design.** One set of colours, type and spring animations across every page. See [the island's design](docs/ISLAND_DESIGN.md).
+- **Battery care.** A charge limit, sailing, top-ups, calibration, heat protection and a power-flow view, with an admin-installed helper to hold the limit.
 
-<p align="center">
-  <img src="docs/assets/readme/panel-mixer.png" width="196" alt="Volume mixer with per app sliders, one app boosted past 100 percent">
-  <img src="docs/assets/readme/panel-system.png" width="196" alt="System tab with temperatures, usage graphs and memory pressure">
-  <img src="docs/assets/readme/panel-controls.png" width="196" alt="Window controls with the app switcher and Dock features">
-  <img src="docs/assets/readme/panel-utilities.png" width="196" alt="Utilities with cleaner, Homebrew, media tools and clipboard">
-</p>
+## The assistant
 
-Per app volume, a real system monitor, a better app switcher, window snapping, Dock previews, clipboard history, text snippets, a file shelf, an uninstaller. The utilities Mac users usually buy one by one, together behind a single menu bar icon, with no account, no telemetry and no subscription.
-
-## Install only what you use
-
-Choose individual features or start with a preset. Uninstalled features stop loading and disappear from the interface; reinstalling restores their settings. Setup asks only for the permissions your choices need.
-
-<p align="center">
-  <img src="docs/assets/readme/features-hub.png" width="720" alt="The Features hub in Settings, installing and uninstalling whole features">
-</p>
-
-Reorder or hide panel sections, choose a compact layout, and export settings to another Mac. The app supports more than a dozen languages.
+- **Hold a key and speak**, or type. It answers in the island, out loud if you like.
+- **Local first.** A free local model through [Ollama](https://ollama.com) handles everything it can, and Ollama only opens when it's needed. Cloud AIs you already pay for (Claude, ChatGPT, Gemini) are optional, signed in with your own account.
+- **Does things, with your OK.** Drafts messages, emails, notes, reminders and events, and asks before anything is sent or changed.
+- **Dictation anywhere**, with on-device cleanup and your own dictionary.
 
 ## Everything it does
 
@@ -166,89 +135,39 @@ Reorder or hide panel sections, choose a compact layout, and export settings to 
 - **Keep awake.** Keep your Mac working on a timer, with the lid closed, or while selected apps, power or external displays are present.
 - **Displays.** Control individual displays and brightness, with hardware control where supported, half or quarter steps for the brightness keys, optional extra dimming below a monitor's minimum, and software dimming as a fallback.
 - **Extra brightness.** Use a MacBook Pro XDR display's HDR headroom to go beyond its normal maximum brightness.
-- **Bluetooth on sleep.** Disconnect Bluetooth during sleep and restore it on wake only if Vorssaint turned it off.
+- **Bluetooth on sleep.** Disconnect Bluetooth during sleep and restore it on wake only if Notchwise turned it off.
 
-## Install
-
-With [Homebrew](https://brew.sh):
+## Build it
 
 ```sh
-brew install --cask vorssaint
+git clone https://github.com/vivaanseth/vorssaint-voiceos.git
+cd vorssaint-voiceos
+./build.sh                  # builds build/stage/Notchwise.app
+./build.sh --test-suite=notch   # runs a test suite
 ```
 
-Or grab the disk image from the [releases page](https://github.com/vorssaint/vorssaint-utils/releases) and drag Vorssaint into Applications.
-
-Builds are signed with an Apple Developer ID and notarized, so macOS opens them without a fuss and your permissions survive updates.
-
-## Uninstall
-
-With Homebrew:
-
-```sh
-brew uninstall --cask vorssaint
-```
-
-To remove Vorssaint completely, including its settings and permissions:
-
-```sh
-./Tools/uninstall.sh
-```
+Xcode Command Line Tools are the only requirement. Builds work on Intel and Apple Silicon Macs running macOS 14 Sonoma or newer. [Tools/setup-signing.sh](Tools/setup-signing.sh) makes a local signing identity so macOS keeps your permissions across rebuilds.
 
 ## Private by default
 
-Vorssaint is local-first, with no account, analytics or tracking. The network is touched only by things you can see: update checks, the speed test, Homebrew actions, optional online lyric lookup, temporary screenshot or recording links and feedback you explicitly send. The full story is in the [privacy notes](docs/PRIVACY.md).
-
-Permissions get the same treatment. Every one is optional, the app explains each in plain words, shows which features actually use it, and even tells you when a permission you granted is no longer needed by anything, with a shortcut to revoke it.
-
-<p align="center">
-  <img src="docs/assets/readme/permissions.png" width="720" alt="The Permissions page showing what each permission does, which features use it, and an unused permission warning">
-</p>
-
-See the [permissions guide](docs/PERMISSIONS.md) for which features need access and what remains available without it.
-
-## What you need
-
-- A Mac with Apple Silicon
-- macOS 14 Sonoma or newer
-
-### Build it yourself
-
-```sh
-git clone https://github.com/vorssaint/vorssaint-utils.git
-cd vorssaint-utils
-./build.sh --dev            # build the separate Developer variant
-./build.sh --dev --install  # install and launch it
-```
-
-Xcode Command Line Tools are the only requirement. The [contributing guide](CONTRIBUTING.md) covers the layout and conventions. Official builds come only from the maintainer: the GPL covers the source, while the Vorssaint name, icon and look are covered by [TRADEMARKS.md](TRADEMARKS.md), so forks need their own identity.
-
-## When something misbehaves
-
-See [troubleshooting](docs/TROUBLESHOOTING.md) for launch problems, permissions and missing previews, or [support](SUPPORT.md) for help.
+Notchwise is local-first, with no account, analytics or tracking. The network is touched only by things you can see: the speed test, Homebrew actions, optional online lyric lookup, temporary screenshot or recording links, and the cloud AIs you choose to connect. See the [privacy notes](docs/PRIVACY.md) and the [permissions guide](docs/PERMISSIONS.md).
 
 ## Documentation
 
-- [Privacy](docs/PRIVACY.md), what does and does not leave your Mac
-- [Permissions](docs/PERMISSIONS.md), every macOS permission in plain words
-- [Troubleshooting](docs/TROUBLESHOOTING.md), the common fixes
-- [Contributing](CONTRIBUTING.md), build, layout and conventions
-- [Support](SUPPORT.md), where to get help
-- [Security](SECURITY.md), how to report a vulnerability
+- [The island's design](docs/ISLAND_DESIGN.md)
+- [The assistant](docs/VOICEOS.md)
+- [Privacy](docs/PRIVACY.md) and [permissions](docs/PERMISSIONS.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Contributing](CONTRIBUTING.md), [support](SUPPORT.md) and [security](SECURITY.md)
 
-## Community
+## Credits
 
-Vorssaint went from first commit to the front of GitHub trending in three days, top of the Swift charts, and issues and pull requests have shaped every release since. Bug reports, feature ideas and translations are all welcome, starting from the [contributing guide](CONTRIBUTING.md).
+Notchwise is built on **[Vorssaint](https://github.com/vorssaint/vorssaint-utils)**, a free and open-source Mac utility by Vorssaint, licensed under GPL-3.0-or-later. Its menu bar utilities and the original Dynamic Island come from Vorssaint 3.4.2; Notchwise adds the voice assistant, the Intel build, Battery Care, island customization, the redesign and many fixes. Notchwise is an independent project and is not affiliated with or endorsed by Vorssaint.
 
-Vorssaint is free and will stay that way. If it earned its place in your menu bar, a star helps other people find it, and a [coffee](https://buymeacoffee.com/vorssaint) keeps the maintainer awake, with or without the Keep awake feature.
+The assistant's design is inspired by VoiceOS. Notchwise is not affiliated with, endorsed by or connected to VoiceOS or its makers, and uses none of their code or assets.
 
-## Acknowledgements
-
-- App icon designed by [@divisionseven](https://github.com/divisionseven)
+The app icon is by [@divisionseven](https://github.com/divisionseven), from Vorssaint.
 
 ## License
 
-[GPL 3.0 or later](LICENSE), copyright 2026 Vorssaint. The license covers the source code; the Vorssaint name, logo and look are covered separately in [TRADEMARKS.md](TRADEMARKS.md).
-
-<p align="center">
-  <sub>Made by <a href="https://x.com/vorssaint">@vorssaint</a></sub>
-</p>
+[GPL 3.0 or later](LICENSE). Copyright 2026 Vivaan, and portions copyright 2026 Vorssaint. Files that started in Vorssaint keep their original copyright notice; see [TRADEMARKS.md](TRADEMARKS.md) for names and branding.

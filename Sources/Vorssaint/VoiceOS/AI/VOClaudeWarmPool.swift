@@ -121,7 +121,7 @@ final class VOClaudeWarmPool: @unchecked Sendable {
     static let shared = VOClaudeWarmPool()
 
     /// Every request carries its own <instructions>, so one warm process can serve dictation, edits and the agent.
-    static let systemPrompt = "You are the AI engine inside VoiceOS, a voice assistant for Mac. Each request begins with <instructions> that define your role and exact output format for that request. Follow them precisely and output nothing else."
+    static let systemPrompt = "You are the AI engine inside Notchwise, a voice assistant for Mac. Each request begins with <instructions> that define your role and exact output format for that request. Follow them precisely and output nothing else."
 
     private let lock = NSLock()
     private var warm: VOClaudeProc?

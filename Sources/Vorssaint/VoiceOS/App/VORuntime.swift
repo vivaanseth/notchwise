@@ -150,14 +150,14 @@ final class VORuntime: NSObject {
             guard shared.running else { return }
             let submenu = NSMenu()
             shared.fillMenu(submenu)
-            let item = NSMenuItem(title: "VoiceOS", action: nil, keyEquivalent: "")
+            let item = NSMenuItem(title: "Notchwise", action: nil, keyEquivalent: "")
             item.submenu = submenu
             menu.addItem(item)
         }
     }
 
     private func fillMenu(_ menu: NSMenu) {
-        menu.addItem(withTitle: "Open VoiceOS", action: #selector(openMain), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Open Notchwise", action: #selector(openMain), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Ask the Assistant…", action: #selector(openAgent), keyEquivalent: "").target = self
         menu.addItem(.separator())
 
@@ -187,7 +187,7 @@ final class VORuntime: NSObject {
 
         menu.addItem(.separator())
         menu.addItem(withTitle: "History", action: #selector(openHistory), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "VoiceOS Settings…", action: #selector(openApps), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Notchwise Settings…", action: #selector(openApps), keyEquivalent: "").target = self
     }
 
     @objc private func openMain() { VOMainWindow.show() }

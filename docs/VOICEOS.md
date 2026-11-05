@@ -1,4 +1,6 @@
-# Vorssaint + VoiceOS
+# How Notchwise is put together
+
+*Internal notes. `VoiceOS` and `VO…` are code names for the assistant's sources; Notchwise is not affiliated with VoiceOS.*
 
 This tree is Vorssaint 3.4.2 (with the two Intel commits: Intel build, sensors and updates
 off; Intel DDC brightness) with the VoiceOS Clone voice assistant built in. It builds one app,

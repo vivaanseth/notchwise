@@ -77,7 +77,7 @@ struct VODashboardView: View {
         HStack(spacing: 14) {
             Image(systemName: "hand.raised.fill").foregroundColor(VOTheme.orange).font(.system(size: 18))
             VStack(alignment: .leading, spacing: 3) {
-                Text("Finish setting up VoiceOS").font(.system(size: 15, weight: .semibold))
+                Text("Finish setting up Notchwise").font(.system(size: 15, weight: .semibold))
                 Text(missingText).font(.system(size: 13)).foregroundColor(VOTheme.secondary)
             }
             Spacer()

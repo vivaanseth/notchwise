@@ -28,7 +28,7 @@ if [[ "$MODE" != snapshot && "$MODE" != selftest ]] || [[ -z "$OUT" ]]; then
     echo "usage: $0 snapshot <dir> | selftest <file>" >&2
     exit 2
 fi
-SOURCE_APP="build/stage/Vorssaint + VoiceOS.app"
+SOURCE_APP="build/stage/Notchwise.app"
 [[ -d "$SOURCE_APP" ]] || { echo "✗ build the app first (./build.sh)" >&2; exit 1; }
 
 HARNESS_ID="com.vorssaint.voiceos.selftest"

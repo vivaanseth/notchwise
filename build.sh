@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Vorssaint
 
-# Builds Vorssaint + VoiceOS (Vorssaint with the VoiceOS assistant in its
+# Builds Notchwise (built on Vorssaint, with its own voice assistant in its
 # island), assembles the .app bundle, signs it and (with --install) installs it
 # into /Applications.
 #
@@ -46,14 +46,14 @@ done
 # The combined app has its own identity, so it installs next to the standalone
 # Vorssaint (com.vorssaint.utils) instead of replacing it.
 if (( DEV )); then
-    APP_NAME="Vorssaint + VoiceOS (Developer)"
+    APP_NAME="Notchwise (Developer)"
     EXECUTABLE="VorssaintVoiceOSDeveloper"
     APP_BUNDLE_ID="com.vorssaint.voiceos.dev"
     BUILD_VARIANT_FLAGS=(-D VORSSAINT_DEVELOPMENT)
     APP_OPTIMIZATION_FLAGS=(-Onone)
     BUILD_CONFIGURATION="debug"
 else
-    APP_NAME="Vorssaint + VoiceOS"
+    APP_NAME="Notchwise"
     EXECUTABLE="VorssaintVoiceOS"
     APP_BUNDLE_ID="com.vorssaint.voiceos"
     BUILD_VARIANT_FLAGS=()

@@ -29,7 +29,7 @@ enum BatteryCareCLI {
     }
 
     static func shellCommand(_ command: String) -> String {
-        let binary = Bundle.main.executablePath ?? "/Applications/Vorssaint + VoiceOS.app/Contents/MacOS/VorssaintVoiceOS"
+        let binary = Bundle.main.executablePath ?? "/Applications/Notchwise.app/Contents/MacOS/VorssaintVoiceOS"
         return "\(BatteryCareInstaller.quoted(binary)) battery \(command)"
     }
 

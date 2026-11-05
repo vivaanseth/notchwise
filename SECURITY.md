@@ -1,33 +1,12 @@
 # Security Policy
 
-Thanks for helping keep Vorssaint and the people who use it safe.
+Please report security vulnerabilities in private, not in a public issue.
 
-## Reporting a vulnerability
+- **[Report a vulnerability privately](https://github.com/vivaanseth/vorssaint-voiceos/security/advisories/new)**
 
-Please report security vulnerabilities in private. Do not open a public issue, pull request or discussion for them.
+Include a description and its impact, steps to reproduce, and your Notchwise and
+macOS versions. Notchwise is a personal project looked after on a best effort
+basis, so please allow time for a fix before talking about the issue in public.
 
-Use GitHub's private vulnerability reporting for this repository.
-
-- **[Report a vulnerability privately](https://github.com/vorssaint/vorssaint-utils/security/advisories/new)**
-
-That opens a private security advisory that only you and the maintainer can see.
-
-When you write it up, please include as much as you can.
-
-- A description of the issue and the impact it could have.
-- Steps to reproduce, or a proof of concept.
-- The Vorssaint version from Settings under About and your macOS version.
-
-## What to expect
-
-- This is a community project looked after on a best effort basis, so please allow reasonable time for a reply and a fix.
-- Please give the maintainer a chance to ship a fix before you talk about the issue in public. That is what coordinated disclosure means.
-- Credit goes gladly to reporters who want it.
-
-## Supported versions
-
-Security fixes land on the latest released version. Before you report, please make sure you can reproduce the issue on the most recent release.
-
-## Scope
-
-Vorssaint runs locally and ships as a signed and notarized macOS app. The reports that matter most are the ones that could affect the integrity of the app or its self update flow, or that could let the app's permissions be misused. Issues in the outside services the app merely talks to, like GitHub's releases API or the speed test endpoint, are best taken to those providers.
+Issues in Vorssaint's own code that also affect upstream are worth reporting to
+[Vorssaint](https://github.com/vorssaint/vorssaint-utils/security) too.

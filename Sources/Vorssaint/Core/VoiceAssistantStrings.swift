@@ -14,9 +14,9 @@ struct VoiceAssistantStrings {
     let pageTitle: String
     let editorSummary: String
     /// VoiceOS keeps its name in every language, as the Dynamic Island does.
-    var settingsSection: String { "VoiceOS" }
+    var settingsSection: String { "Notchwise" }
     var searchKeywords: [String] {
-        [title, pageTitle, "VoiceOS", "dictation", "voice", "Jarvis", "Ollama", "Claude"]
+        [title, pageTitle, "Notchwise", "dictation", "voice", "Jarvis", "Ollama", "Claude"]
     }
 }
 

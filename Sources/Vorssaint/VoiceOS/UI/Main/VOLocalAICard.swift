@@ -47,7 +47,7 @@ struct VOLocalAICard: View {
                 }
             }
 
-            Text("Runs free on this Mac's CPU — nothing you say leaves the computer. VoiceOS uses it for everything it can, and only hands a request to a cloud AI when it truly needs one (set that up on the Assistant page).")
+            Text("Runs free on this Mac's CPU — nothing you say leaves the computer. Notchwise uses it for everything it can, and only hands a request to a cloud AI when it truly needs one (set that up on the Assistant page).")
                 .font(.system(size: 13)).foregroundColor(VOTheme.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 

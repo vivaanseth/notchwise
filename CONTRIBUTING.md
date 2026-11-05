@@ -1,6 +1,6 @@
-# Contributing to Vorssaint
+# Contributing to Notchwise
 
-Vorssaint aims to stay small, native and readable. Contributions are accepted
+Notchwise aims to stay small, native and readable. Contributions are accepted
 under GPL-3.0-or-later unless stated otherwise.
 
 ## Getting started
@@ -11,8 +11,8 @@ dependencies. `Package.swift` supports editor indexing; it does not assemble or
 sign the app bundle.
 
 ```sh
-git clone https://github.com/vorssaint/vorssaint-utils.git
-cd vorssaint-utils
+git clone https://github.com/vivaanseth/vorssaint-voiceos.git
+cd vorssaint-voiceos
 ./build.sh --dev
 ./build/VorssaintDeveloper --selftest
 ./build.sh --test
@@ -97,7 +97,7 @@ a stable release carries the fix, and can close the issue after two weeks withou
 a response. If the PR addresses only part of an issue, say exactly which part.
 
 For agent-assisted work, see [contributing with an agent](docs/AI-CONTRIBUTIONS.md).
-Bug reports and feature requests use the [issue forms](https://github.com/vorssaint/vorssaint-utils/issues/new/choose).
+Bug reports and feature requests use the [issue forms](https://github.com/vivaanseth/vorssaint-voiceos/issues/new).
 Report vulnerabilities through [private security reporting](SECURITY.md).
 
 ## Releases (maintainers)

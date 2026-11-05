@@ -94,7 +94,7 @@ struct VOVoiceStrip: View {
 }
 
 /// What the idle island grows to show under the pointer, as VoiceOS's idle
-/// notch did: the Jarvis mark, "Ask VoiceOS" and a quiet wave. A click opens
+/// notch did: the Jarvis mark, "Ask Notchwise" and a quiet wave. A click opens
 /// the assistant ready for typing.
 struct VOAskHoverContent: View {
     let geometry: NotchGeometry
@@ -104,7 +104,7 @@ struct VOAskHoverContent: View {
         HStack(spacing: 6) {
             VOJarvisGlyph(size: 12)
             Spacer(minLength: 4)
-            Text("Ask VoiceOS").font(.system(size: 10.5, weight: .medium)).foregroundColor(.white.opacity(0.6))
+            Text("Ask Notchwise").font(.system(size: 10.5, weight: .medium)).foregroundColor(.white.opacity(0.6))
                 .lineLimit(1).fixedSize()
             Spacer(minLength: 4)
             VOWaveform(level: 0.2, bars: 4, height: 9, barWidth: 2)
