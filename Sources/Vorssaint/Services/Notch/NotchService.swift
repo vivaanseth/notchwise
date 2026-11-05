@@ -212,6 +212,8 @@ final class NotchService: ObservableObject {
     private var activityPickerMenuOpen = false
     private var hoverState = NotchHoverState()
     private var hoverIntent = NotchHoverIntent()
+    /// The next hover opening checks a settling pointer again shortly.
+    private var hoverRechecks = false
     private var openedByHover = false
     /// A click on the closed island opened it, which leaving closes as a hover opening.
     private var openedByClick = false
@@ -624,12 +626,14 @@ final class NotchService: ObservableObject {
             && hoverIntent.rests(at: ProcessInfo.processInfo.systemUptime, current: NSEvent.mouseLocation)
     }
 
-    /// The hover deadline came while the pointer still moved: a fresh one
-    /// starts, so the island opens once the pointer settles on it.
+    /// The hover deadline came while the pointer still moved: it is checked
+    /// again a moment later, so the island opens once the pointer settles on
+    /// it rather than a whole activation time after that.
     private func retryHoverOpening() {
         hoverWork = nil
         DispatchQueue.main.async { [weak self] in
             guard let self, self.inside, !self.expanded else { return }
+            self.hoverRechecks = true
             self.hover(true)
         }
     }
@@ -1703,10 +1707,14 @@ final class NotchService: ObservableObject {
         // The music strip names its song only while the pointer stays on the
         // island: leaving ends it, and a name left from before goes on return.
         let unnamesMusic = inside != wasInside && endMusicStripHover(leaving: !inside)
-        // The island grows under the pointer in every opening mode: waiting
-        // to open on hover, it shows the pointer was seen rather than looking
-        // slow to answer, and the opening grows on from there.
-        let emphasize = inside && !hiddenInFullscreen && !hiddenUntilHover && !expanded && !peeking && !dragPlaceholder
+        // The island grows under the pointer while it waits: opening on a
+        // click, or on a longer hover, it shows the pointer was seen rather
+        // than looking slow to answer. One about to open on hover stays still
+        // and opens: a grow a moment before the opening read as a jump.
+        let opensShortly = hoverOpeningEnabled && UserDefaults.standard.bool(forKey: DefaultsKey.notchHoverExpands)
+            && NotchSupport.sanitizedHoverDelay(UserDefaults.standard.double(forKey: DefaultsKey.notchHoverDelay))
+                < NotchSupport.quickHoverOpening
+        let emphasize = inside && !opensShortly && !hiddenInFullscreen && !hiddenUntilHover && !expanded && !peeking && !dragPlaceholder
             && notice == nil && captureControls == nil
             && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         if hoverEmphasized != emphasize || showedPicker != showsCompactActivityPicker || unnamesMusic {
@@ -1781,7 +1789,12 @@ final class NotchService: ObservableObject {
             }
             hoverWork = work
             let delay = NotchSupport.sanitizedHoverDelay(UserDefaults.standard.double(forKey: DefaultsKey.notchHoverDelay))
-            DispatchQueue.main.asyncAfter(deadline: .now() + (overActivity ? max(delay, 0.7) : delay), execute: work)
+            // A pointer still settling when its time came is checked again
+            // shortly, not after a whole new wait, so the island opens at the
+            // activation time or as soon as the pointer rests after it.
+            let wait = hoverRechecks ? NotchSupport.hoverRecheck : overActivity ? max(delay, 0.7) : delay
+            hoverRechecks = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + wait, execute: work)
         } else if holdsNotification
                     || NotchSupport.closesOnPointerExit(expanded: expanded, peeking: peeking, openedByHover: leavesOnExit) {
             let work = DispatchWorkItem { [weak self] in

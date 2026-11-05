@@ -1734,6 +1734,12 @@ enum NotchSupport {
     static let toolColumns = 5
     static let defaultHoverDelay = 0.25
     static let hoverDelayRange = 0.10...1.0
+    /// Set to open on hover sooner than this, the island stays still until
+    /// it opens: the opening is the answer, and a grow just before it reads
+    /// as a jump. Waiting longer, it grows to show the pointer was seen.
+    static let quickHoverOpening: TimeInterval = 0.5
+    /// How soon a pointer still settling at the deadline is checked again.
+    static let hoverRecheck: TimeInterval = 0.05
 
     /// Whether a screen point lies in a top-edge click area, whose top edge
     /// belongs to it as in the flipped native view.
