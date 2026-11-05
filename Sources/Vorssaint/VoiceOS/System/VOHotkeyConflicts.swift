@@ -36,7 +36,7 @@ enum VOHotkeyConflicts {
     static func note(for keyCodes: [UInt16]) -> String? {
         guard let source = superKeySource, let code = keyCode(of: source), keyCodes.contains(code) else { return nil }
         let name = FeatureStrings.superKey(L10n.shared.language).sourceLabel(source)
-        return "Vorssaint's Super Key uses \(name), so Notchwise doesn't listen on it. Choose another key here, or another Super Key key in Settings → Super Key."
+        return "Notchwise's Super Key uses \(name), so Notchwise doesn't listen on it. Choose another key here, or another Super Key key in Settings → Super Key."
     }
 }
 

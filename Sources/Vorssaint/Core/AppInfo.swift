@@ -5,13 +5,16 @@ import Foundation
 
 /// Static identity of the app, shared by UI, notifications and tooling.
 enum AppInfo {
-    static let name = "Vorssaint"
-    static let copyright = "© 2026 Vorssaint"
-    static let websiteURL = URL(string: "https://vorssaint.com")!
-    static let repositoryURL = URL(string: "https://github.com/vorssaint/vorssaint-utils")!
-    static let coffeeURL = URL(string: "https://buymeacoffee.com/vorssaint")!
-    static let discordURL = URL(string: "https://discord.gg/M6BwWH4BJp")!
-    static let socialURL = URL(string: "https://x.com/vorssaint")!
+    static let name = "Notchwise"
+    static let copyright = "© 2026 Vivaan · Based on Notchwise, © 2026 Notchwise"
+    static let repositoryURL = URL(string: "https://github.com/vivaanseth/vorssaint-voiceos")!
+    static let websiteURL = repositoryURL
+    static let issuesURL = URL(string: "https://github.com/vivaanseth/vorssaint-voiceos/issues/new")!
+    /// Notchwise takes no donations; the buttons that offered them stay hidden.
+    static let coffeeURL: URL? = nil
+    /// Notchwise has no server of its own for share links or feedback.
+    /// Vorssaint's belongs to Vorssaint, so uploads stay off.
+    static let sharingServer: URL? = nil
 
     /// The bundle version. The fallback only applies to the bare binary
     /// (e.g. `--selftest`), never the shipped app, which reads its Info.plist.
@@ -25,15 +28,9 @@ enum AppInfo {
         (Bundle.main.bundleIdentifier ?? "").hasSuffix(".dev")
     }
 
-    /// Published releases are Apple Silicon only, so a build from source for
-    /// an Intel Mac must never download one over itself.
-    static var releasesRunOnThisMac: Bool {
-        #if arch(arm64)
-        return true
-        #else
-        return false
-        #endif
-    }
+    /// Notchwise releases are installed by hand from its GitHub page; the
+    /// app never downloads one over itself.
+    static var releasesRunOnThisMac: Bool { false }
 
     /// True when the current version is a pre-release (e.g. 3.3.4-beta.1 or 3.3.4-rc.1).
     static var isBeta: Bool {

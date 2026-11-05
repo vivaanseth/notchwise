@@ -13,6 +13,12 @@ MergedSettingsImport.runOnce()
 MergedSettingsImport.applyHoverHomeOnce()
 MergedSettingsImport.hideInFullscreenOnce()
 Defaults.register()
+// Notchwise has no share server of its own: uploads stay off, whatever an
+// earlier build stored.
+if AppInfo.sharingServer == nil {
+    UserDefaults.standard.set(false, forKey: DefaultsKey.screenshotSharingEnabled)
+    UserDefaults.standard.set(false, forKey: DefaultsKey.recorderSharingEnabled)
+}
 MergedSettingsImport.showAllControlsOnce()
 MergedSettingsImport.removeCompanionOnce()
 MergedSettingsImport.showBatteryCareOnce()

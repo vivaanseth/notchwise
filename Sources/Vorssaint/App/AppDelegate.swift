@@ -1780,6 +1780,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
 
     func openFeedbackWindow(kind: FeedbackKind = .bug) {
         closePopover()
+        // Feedback goes to Notchwise's GitHub issues: the form posted to
+        // Vorssaint's own server, which is not this project's.
+        guard AppInfo.sharingServer != nil else { NSWorkspace.shared.open(AppInfo.issuesURL); return }
         let host = NSHostingController(rootView: FeedbackView(initialKind: kind) { [weak self] in
             self?.feedbackWindow?.close()
         })

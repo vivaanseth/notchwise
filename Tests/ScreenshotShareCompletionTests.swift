@@ -405,9 +405,9 @@ enum ScreenshotShareCompletionTests {
             AppFeature.available = scenario != "feature off"
             let png = Data([137, 80, 78, 71, 13, 10, 26, 10])
             _ = try? await gate.createLink(pngData: png, duration: .oneHour)
-            suite.expect(gate.session.uploads == (scenario == "enabled" ? 1 : 0)
-                         && gate.writes == (scenario == "enabled" ? 1 : 0),
-                         "service checks \(scenario) before persistence or any upload")
+            // Notchwise has no share server, so not even an enabled link uploads.
+            suite.expect(gate.session.uploads == 0 && gate.writes == 0,
+                         "service checks \(scenario) and the missing share server before persistence or any upload")
         }
         SharingDefaults.standard.enabled = true
         AppFeature.available = true

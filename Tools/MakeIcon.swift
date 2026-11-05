@@ -6,7 +6,7 @@
 //   adaptive source (Resources/Brand/AppIcon-Default.png)
 // - the menu bar template glyph and BrandMark from the wordmark master
 //   (Resources/Brand/logo.png)
-// AppIcon-Default.png is a hand-exported twin of Resources/Brand/AppIcon.icon;
+// AppIcon-Default.png is the Notchwise icon master;
 // re-export it whenever the Icon Composer project changes. The build cannot read
 // .icon bundles directly: actool exists only inside full Xcode 26, and the
 // supported local floor is Command Line Tools alone.

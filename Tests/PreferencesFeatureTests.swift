@@ -153,7 +153,7 @@ enum PreferencesFeatureTests {
         suite.expect(registeredDefaults[DefaultsKey.keepAwakeIconTint] as? String == KeepAwakeIconTint.orange.rawValue,
                "keep-awake active icon tint defaults to orange")
         suite.expect(registeredDefaults[DefaultsKey.keepAwakeActiveIcon] as? String == KeepAwakeActiveIcon.vorssaint.rawValue,
-               "keep-awake active icon defaults to the Vorssaint glyph")
+               "keep-awake active icon defaults to the Notchwise glyph")
         suite.expect(registeredDefaults[DefaultsKey.keepAwakeMouseJiggleEnabled] as? Bool == false,
                "Keep Awake mouse movement is opt-in")
         suite.expect(registeredDefaults[DefaultsKey.keepAwakeMouseJiggleInterval] as? Int == 5,
@@ -169,11 +169,11 @@ enum PreferencesFeatureTests {
         suite.expect(Defaults.sanitizedKeepAwakeActiveIcon("coffee") == .coffee,
                "valid keep-awake active icon is preserved")
         suite.expect(Defaults.sanitizedKeepAwakeActiveIcon("bad") == .vorssaint,
-               "invalid keep-awake active icon falls back to the Vorssaint glyph")
+               "invalid keep-awake active icon falls back to the Notchwise glyph")
         suite.expect(KeepAwakeActiveIcon.eye.systemSymbolName == "eye.fill",
                "keep-awake eye option maps to its menu bar symbol")
         suite.expect(registeredDefaults[DefaultsKey.menuBarIconSymbol] as? String == "",
-               "the menu bar shows the Vorssaint glyph until a symbol is chosen")
+               "the menu bar shows the Notchwise glyph until a symbol is chosen")
         suite.expect(Defaults.sanitizedMenuBarIconSymbol("  bolt.fill\n") == "bolt.fill"
                      && Defaults.sanitizedMenuBarIconSymbol(" ") == ""
                      && Defaults.sanitizedMenuBarIconSymbol(nil) == "",

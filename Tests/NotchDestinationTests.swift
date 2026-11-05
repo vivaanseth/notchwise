@@ -429,7 +429,7 @@ enum NotchDestinationContract {
             return named.flatMap { name, window in Array(repeating: name, count: window.keyRequests) }
         }
         suite.expect(handoff(frontmost: vorssaint) == ["settings"],
-                     "closing the island hands the keyboard back to Settings while Vorssaint stays active")
+                     "closing the island hands the keyboard back to Settings while Notchwise stays active")
         suite.expect(handoff(frontmost: vorssaint, otherSpaceInFront: true, regularBehind: true) == ["settings"],
                      "closing the island hands the keyboard to the frontmost regular window on this Space")
         suite.expect(handoff(frontmost: RunningApplication(processIdentifier: 1)).isEmpty,

@@ -22,7 +22,7 @@ import AppKit
 /// could mistake the just-updated app for a leftover; that is fixed by routing
 /// the old-name case to a rename and comparing canonical paths everywhere else.
 enum BundleMigration {
-    private static let oldName = "Vorssaint Utils.app"
+    private static let oldName = "Notchwise Utils.app"
     private static let newName = "Vorssaint.app"
 
     /// Returns true when the app is about to quit and relaunch under the new

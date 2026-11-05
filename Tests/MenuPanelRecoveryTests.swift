@@ -683,7 +683,7 @@ enum MenuPanelRecoveryTests {
             close(host)
             DispatchQueue.main.drain()
             expect(!host.popover.isShown && source.activations == 0,
-                   "a close Vorssaint did not ask for does not hand activation back")
+                   "a close Notchwise did not ask for does not hand activation back")
         }
         do {
             let host = setup()

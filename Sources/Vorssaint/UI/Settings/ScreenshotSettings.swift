@@ -203,7 +203,7 @@ struct ScreenshotCaptureSettings: View {
                 Text(strings.toolShortcutsTitle)
             }
 
-            Section {
+            if AppInfo.sharingServer != nil { Section {
                 Toggle(strings.shareEnabledToggle, isOn: $sharingEnabled)
                     .onChange(of: sharingEnabled) { _, _ in service.syncWithPreferences() }
                 if sharingEnabled {
@@ -252,7 +252,7 @@ struct ScreenshotCaptureSettings: View {
                 }
             } header: {
                 Text(strings.shareSectionTitle)
-            }
+            } }
         }
         .onAppear { sharing.refresh() }
         .sheet(isPresented: $showingSharedLinks) {

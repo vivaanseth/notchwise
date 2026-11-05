@@ -33,13 +33,13 @@ SOURCE_APP="build/stage/Notchwise.app"
 
 HARNESS_ID="com.vorssaint.voiceos.selftest"
 HARNESS_DIR="build/harness"
-HARNESS="$HARNESS_DIR/Vorssaint + VoiceOS Harness.app"
+HARNESS="$HARNESS_DIR/Notchwise Harness.app"
 mkdir -p "$HARNESS_DIR"
 rm -rf "$HARNESS"
 ditto --noextattr --noqtn "$SOURCE_APP" "$HARNESS"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $HARNESS_ID" \
-    -c "Set :CFBundleName Vorssaint + VoiceOS Harness" \
-    -c "Set :CFBundleDisplayName Vorssaint + VoiceOS Harness" "$HARNESS/Contents/Info.plist"
+    -c "Set :CFBundleName Notchwise Harness" \
+    -c "Set :CFBundleDisplayName Notchwise Harness" "$HARNESS/Contents/Info.plist"
 codesign --force --deep --sign - "$HARNESS" >/dev/null 2>&1
 # VoiceOS keeps its history and counters under the home folder; the tools get
 # a scratch one so a test run leaves the real ones as they were.
