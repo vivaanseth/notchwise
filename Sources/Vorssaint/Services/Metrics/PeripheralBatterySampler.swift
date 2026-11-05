@@ -183,7 +183,11 @@ final class PeripheralBatterySampler {
         var devices: [PeripheralBatteryDevice] = []
         var service = IOIteratorNext(iterator)
         while service != 0 {
-            if let properties = properties(for: service),
+            // Most HID services have no battery, and their full property
+            // lists, report descriptors and all, took about half a second of
+            // CPU together on every read. One reporting a charge is read in full.
+            if reportsCharge(service),
+               let properties = properties(for: service),
                let device = device(from: properties, service: service) {
                 devices.append(device)
             }
@@ -191,6 +195,14 @@ final class PeripheralBatterySampler {
             service = IOIteratorNext(iterator)
         }
         return devices
+    }
+
+    private static func reportsCharge(_ service: io_object_t) -> Bool {
+        PeripheralBatterySupport.percentKeys.contains { key in
+            guard let value = IORegistryEntryCreateCFProperty(service, key as CFString, kCFAllocatorDefault, 0)
+            else { return false }
+            return PeripheralBatterySupport.percent(from: value.takeRetainedValue()) != nil
+        }
     }
 
     private static func properties(for service: io_object_t) -> [String: Any]? {

@@ -1937,7 +1937,20 @@ enum NotchSupport {
                 .contains(Substring(NotchModule.voice.rawValue))
     }
 
+    /// The island's pages in order. Every layout pass and click asks for
+    /// them, many times over, so the standard defaults' answer is kept until
+    /// any setting changes; other defaults are read each time.
     static func modules(in defaults: UserDefaults = .standard) -> [NotchModule] {
+        guard defaults === UserDefaults.standard else { return readModules(in: defaults) }
+        let battery = NotchControlItem.hasBattery()
+        if let cached = NotchModuleCache.shared.modules(battery: battery) { return cached }
+        let generation = NotchModuleCache.shared.generation
+        let modules = readModules(in: defaults)
+        NotchModuleCache.shared.store(modules, battery: battery, generation: generation)
+        return modules
+    }
+
+    private static func readModules(in defaults: UserDefaults) -> [NotchModule] {
         let hidden = Set((defaults.string(forKey: DefaultsKey.notchHiddenModules) ?? "")
             .split(separator: ",").map(String.init))
         let stored = (defaults.string(forKey: DefaultsKey.notchModuleOrder) ?? "")
@@ -3299,5 +3312,47 @@ enum NotchTranslucentTint {
             (Double($0 / height), opacity(atDepth: $0, stripHeight: stripHeight,
                                           openness: openness, increasedContrast: increasedContrast))
         }
+    }
+}
+
+/// The standard defaults' page list, dropped whenever a default changes in
+/// this process, which is where Settings and the island write them. A list
+/// read while a change lands is not kept, since it may predate the change.
+final class NotchModuleCache {
+    static let shared = NotchModuleCache()
+
+    private let lock = NSLock()
+    private var cached: (modules: [NotchModule], battery: Bool)?
+    private var currentGeneration = 0
+    private var observer: NSObjectProtocol?
+
+    private init() {
+        observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification,
+                                                          object: nil, queue: nil) { [weak self] _ in
+            self?.invalidate()
+        }
+    }
+
+    var generation: Int {
+        lock.lock(); defer { lock.unlock() }
+        return currentGeneration
+    }
+
+    func modules(battery: Bool) -> [NotchModule]? {
+        lock.lock(); defer { lock.unlock() }
+        guard let cached, cached.battery == battery else { return nil }
+        return cached.modules
+    }
+
+    func store(_ modules: [NotchModule], battery: Bool, generation: Int) {
+        lock.lock(); defer { lock.unlock() }
+        guard generation == currentGeneration else { return }
+        cached = (modules, battery)
+    }
+
+    func invalidate() {
+        lock.lock(); defer { lock.unlock() }
+        currentGeneration &+= 1
+        cached = nil
     }
 }

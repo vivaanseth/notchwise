@@ -115,6 +115,8 @@ enum NotchScreenRefreshContract {
         var menuSpaceGeneration = 0
         var screenRefreshWork: DispatchWorkItem?
         var preferenceSyncWork: DispatchWorkItem?
+        var syncedDefaults: NSDictionary?
+        var preferenceSyncForced = false
         var geometry = NotchGeometry(screen: CGRect(x: 0, y: 0, width: 1440, height: 900),
                                      safeAreaTop: 32, cameraWidth: 210, compactSideRoom: 64)
         var panel: Panel? = Panel()
@@ -192,6 +194,17 @@ enum NotchScreenRefreshContract {
         DispatchQueue.main.advance(0)
         suite.expect(preferences.preferenceSyncs == 3,
                      "suspended islands still apply preference changes that stop disabled services")
+        preferences.suspended = false
+        preferences.syncedDefaults = UserDefaults.standard.dictionaryRepresentation() as NSDictionary
+        preferences.schedulePreferenceSync()
+        DispatchQueue.main.advance(0)
+        suite.expect(preferences.preferenceSyncs == 3 && preferences.preferenceSyncWork == nil,
+                     "a change notice that changes no setting leaves the island as it is")
+        preferences.preferenceSyncForced = true
+        preferences.schedulePreferenceSync()
+        DispatchQueue.main.advance(0)
+        suite.expect(preferences.preferenceSyncs == 4 && !preferences.preferenceSyncForced,
+                     "a sync asked for by something no setting shows still runs")
         let initialSize = service.geometry.compactMusicGeometry.compactActivitySize
         var pendingPeak = 0
         var geometryChanged = false

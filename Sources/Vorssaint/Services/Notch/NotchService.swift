@@ -286,6 +286,13 @@ final class NotchService: ObservableObject {
     private var menuBarMeasurements = NotchMenuBarMeasurements()
     private var screenRefreshWork: DispatchWorkItem?
     private var preferenceSyncWork: DispatchWorkItem?
+    /// The settings the island last synced with. A write that changes no
+    /// value still posts a change, and so do other apps' writes to the shared
+    /// domain; those leave the island as it is instead of laying it out anew.
+    private var syncedDefaults: NSDictionary?
+    /// A sync asked for by something other than a setting, such as the
+    /// display options, which no snapshot of the settings shows.
+    private var preferenceSyncForced = false
     private let menuSpaceQueue = DispatchQueue(label: "com.vorssaint.notch-menu-space", qos: .utility)
     /// The display the island is on. The pointer choice keeps it there until
     /// the island rests, so a preference sync never moves an open island.
@@ -883,15 +890,28 @@ final class NotchService: ObservableObject {
     /// The wider of the two sides, the reading or the working agents' marks,
     /// with the clearance from the silhouette's curve that the strip keeps
     /// and air beside the camera.
+    /// The reading's shape changes only when its digits' count or its words
+    /// do, while the strip's width is asked for on every layout pass, click
+    /// and hover; measuring the text each time cost more than the rest of
+    /// the island's sizing together.
+    private var agentReadingWidth: (shape: String, size: CGFloat, width: CGFloat)?
+
+    private func measuredAgentReading(_ shape: String, size: CGFloat) -> CGFloat {
+        if let cached = agentReadingWidth, cached.shape == shape, cached.size == size { return cached.width }
+        let width = (shape as NSString).size(withAttributes: [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: .medium)
+        ]).width
+        agentReadingWidth = (shape, size, width)
+        return width
+    }
+
     private func agentStripWing(in geometry: NotchGeometry) -> CGFloat {
         let provisional = geometry.compactAgentGeometry(wing: NotchAgentSupport.stripWingRange.lowerBound)
         let size = NotchAgentSupport.stripTextSize(height: provisional.compactActivityContentHeight)
         let shape = NotchAgentSupport.readingShape(NotchAgentSupport.stripReading(
             AgentUsageService.shared.snapshot, readout: NotchAgentSupport.readout(),
             display: NotchAgentSupport.limitDisplay(), focus: NotchAgentSupport.limitFocus(), now: Date()))
-        let width = (shape as NSString).size(withAttributes: [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: size, weight: .medium)
-        ]).width
+        let width = measuredAgentReading(shape, size: size)
         let reading = width.rounded(.up) + provisional.compactActivityEdgeInset(boxHeight: size * 0.72, radius: 0)
         // The marks on the other side, drawn as the strip draws them: two
         // working agents share a smaller size, each in a frame wider than it.
@@ -1235,6 +1255,7 @@ final class NotchService: ObservableObject {
 
     func syncWithPreferences() {
         preferenceSyncWork?.cancel(); preferenceSyncWork = nil
+        syncedDefaults = UserDefaults.standard.dictionaryRepresentation() as NSDictionary
         guard NotchSupport.isEnabled() else { stop(); return }
         if !running {
             running = true
@@ -2153,12 +2174,16 @@ final class NotchService: ObservableObject {
 
     func fileDragChanged(_ active: Bool, internalDrag: Bool = false) {
         guard running, !suspended, internalDrag || NotchSupport.routesShelf() else { return }
+        let wasHeld = heldDrag
         heldDrag = active && internalDrag
         if !heldDrag { shelfDragExitWork?.cancel(); shelfDragExitWork = nil }
         if active, !internalDrag, NotchSupport.revealsShelfDrag(), !expanded {
-            mutatePresentation { dragPlaceholder = true; peeking = false }
+            if !dragPlaceholder || peeking { mutatePresentation { dragPlaceholder = true; peeking = false } }
         } else if !active {
-            mutatePresentation { dragPlaceholder = false }
+            // Every click anywhere ends a gesture. Only one that showed the
+            // drop hint or held the island needs the island drawn again; the
+            // rest would lay it out anew on each click for nothing.
+            if dragPlaceholder || wasHeld { mutatePresentation { dragPlaceholder = false } }
             inside = windowHost?.containsHover(NSEvent.mouseLocation) == true
             if !inside, !pinned { hover(false) }
         }
@@ -3750,7 +3775,7 @@ final class NotchService: ObservableObject {
         session.locked = (CGSessionCopyCurrentDictionary() as? [String: Any])?["CGSSessionScreenIsLocked"] as? Bool ?? false
         let workspace = NSWorkspace.shared.notificationCenter
         observe(workspace, NSWorkspace.accessibilityDisplayOptionsDidChangeNotification) { [weak self] in
-            self?.schedulePreferenceSync()
+            self?.forcePreferenceSync()
         }
         observe(workspace, NSWorkspace.activeSpaceDidChangeNotification) { [weak self] in
             self?.fullscreenEnvironmentDidChange()
@@ -3795,12 +3820,24 @@ final class NotchService: ObservableObject {
 
     /// AppStorage can notify during drawing. A preference import or a group
     /// of edits only needs one deferred pass over the final saved settings.
+    /// A sync for a change no snapshot of the settings shows.
+    private func forcePreferenceSync() {
+        preferenceSyncForced = true
+        schedulePreferenceSync()
+    }
+
     private func schedulePreferenceSync() {
         guard running, preferenceSyncWork == nil else { return }
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
             self.preferenceSyncWork = nil
             guard self.running else { return }
+            let forced = self.preferenceSyncForced
+            self.preferenceSyncForced = false
+            // Comparing every setting costs a fraction of a millisecond; a
+            // sync lays the whole island out again.
+            guard forced || self.syncedDefaults?.isEqual(UserDefaults.standard.dictionaryRepresentation()) != true
+            else { return }
             self.syncWithPreferences()
         }
         preferenceSyncWork = work
