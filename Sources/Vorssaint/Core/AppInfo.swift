@@ -7,9 +7,9 @@ import Foundation
 enum AppInfo {
     static let name = "Notchwise"
     static let copyright = "© 2026 Vivaan · Based on Notchwise, © 2026 Notchwise"
-    static let repositoryURL = URL(string: "https://github.com/vivaanseth/vorssaint-voiceos")!
+    static let repositoryURL = URL(string: "https://github.com/vivaanseth/notchwise")!
     static let websiteURL = repositoryURL
-    static let issuesURL = URL(string: "https://github.com/vivaanseth/vorssaint-voiceos/issues/new")!
+    static let issuesURL = URL(string: "https://github.com/vivaanseth/notchwise/issues/new")!
     /// Notchwise takes no donations; the buttons that offered them stay hidden.
     static let coffeeURL: URL? = nil
     /// Notchwise has no server of its own for share links or feedback.

@@ -95,4 +95,4 @@ This page describes how the current version of Notchwise behaves. If the app's b
 
 ## Questions
 
-If anything here is unclear, open a question in [GitHub issues](https://github.com/vivaanseth/vorssaint-voiceos/issues), or have a look at [support](../SUPPORT.md).
+If anything here is unclear, open a question in [GitHub issues](https://github.com/vivaanseth/notchwise/issues), or have a look at [support](../SUPPORT.md).

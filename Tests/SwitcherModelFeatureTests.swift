@@ -2081,7 +2081,7 @@ enum SwitcherModelFeatureTests {
                && !SupportUpdateIntroInfo.shouldShow(appVersion: "3.5.0", lastSeenVersion: nil),
                "support prompt never leaks into another release or a beta")
         suite.expect(AppInfo.coffeeURL == nil && AppInfo.sharingServer == nil
-               && AppInfo.repositoryURL.absoluteString == "https://github.com/vivaanseth/vorssaint-voiceos",
+               && AppInfo.repositoryURL.absoluteString == "https://github.com/vivaanseth/notchwise",
                "Notchwise offers no donations, uses no outside server and links to its own repository")
         // AppInfo.version falls back to "dev" in this bare harness, so read
         // the plist the shipped app will actually carry. The pin is a

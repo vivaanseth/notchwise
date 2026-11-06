@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/vivaanseth/vorssaint-voiceos/releases/latest"><b>Download</b></a> ·
+  <a href="https://github.com/vivaanseth/notchwise/releases/latest"><b>Download</b></a> ·
   <a href="#getting-started">Getting started</a> ·
   <a href="#features">Features</a> ·
   <a href="#faq">FAQ</a> ·
@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/vivaanseth/vorssaint-voiceos/releases/latest"><img src="https://img.shields.io/github/v/release/vivaanseth/vorssaint-voiceos?label=release&color=0a84ff" alt="Latest release"></a>
+  <a href="https://github.com/vivaanseth/notchwise/releases/latest"><img src="https://img.shields.io/github/v/release/vivaanseth/notchwise?label=release&color=0a84ff" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-black" alt="macOS 14 or later">
   <img src="https://img.shields.io/badge/Apple%20Silicon%20%2B%20Intel-universal-555" alt="Universal: Apple Silicon and Intel">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License GPL 3.0 or later"></a>
@@ -37,7 +37,7 @@
 
 ## Getting started
 
-1. **Download** `Notchwise.dmg` from the [latest release](https://github.com/vivaanseth/vorssaint-voiceos/releases/latest).
+1. **Download** `Notchwise.dmg` from the [latest release](https://github.com/vivaanseth/notchwise/releases/latest).
 2. **Open the disk image** and drag **Notchwise** into **Applications**.
 3. **Open Notchwise.** It isn't notarized by Apple yet, so the first time, macOS asks you to confirm:
    - Right-click (or Control-click) Notchwise in Applications, choose **Open**, then **Open** again. Or
@@ -280,8 +280,8 @@ Use **Uninstall Notchwise completely** in Settings → Advanced to remove the ap
 You need the Xcode Command Line Tools (`xcode-select --install`).
 
 ```sh
-git clone https://github.com/vivaanseth/vorssaint-voiceos.git
-cd vorssaint-voiceos
+git clone https://github.com/vivaanseth/notchwise.git
+cd notchwise
 ./Tools/setup-signing.sh   # once: a local signing identity, so permissions survive rebuilds
 ./build.sh                 # builds build/stage/Notchwise.app
 ./build.sh --test          # runs the test suites
@@ -291,7 +291,7 @@ See the [contributing guide](CONTRIBUTING.md) for the project layout, and [the i
 
 ## Help and feedback
 
-Found a bug or have an idea? [Open an issue](https://github.com/vivaanseth/vorssaint-voiceos/issues/new). The [troubleshooting guide](docs/TROUBLESHOOTING.md) covers the common fixes, and security issues go through the [security policy](SECURITY.md).
+Found a bug or have an idea? [Open an issue](https://github.com/vivaanseth/notchwise/issues/new). The [troubleshooting guide](docs/TROUBLESHOOTING.md) covers the common fixes, and security issues go through the [security policy](SECURITY.md).
 
 ## Credits
 

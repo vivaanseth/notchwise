@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-Notchwise's own changes are listed with each [release](https://github.com/vivaanseth/vorssaint-voiceos/releases).
+Notchwise's own changes are listed with each [release](https://github.com/vivaanseth/notchwise/releases).
 The entries below come from [Vorssaint](https://github.com/vorssaint/vorssaint-utils), which Notchwise is built on.
 
 ## [Unreleased]

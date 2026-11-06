@@ -127,4 +127,4 @@ If you have a build from source, the self test prints a quick health summary tha
 ./build/Vorssaint --selftest
 ```
 
-Open a report from the [new issue](https://github.com/vivaanseth/vorssaint-voiceos/issues/new) page, and see [support](../SUPPORT.md) for every way to get help.
+Open a report from the [new issue](https://github.com/vivaanseth/notchwise/issues/new) page, and see [support](../SUPPORT.md) for every way to get help.

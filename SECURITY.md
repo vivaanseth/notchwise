@@ -2,7 +2,7 @@
 
 Please report security vulnerabilities in private, not in a public issue.
 
-- **[Report a vulnerability privately](https://github.com/vivaanseth/vorssaint-voiceos/security/advisories/new)**
+- **[Report a vulnerability privately](https://github.com/vivaanseth/notchwise/security/advisories/new)**
 
 Include a description and its impact, steps to reproduce, and your Notchwise and
 macOS versions. Notchwise is a personal project looked after on a best effort
