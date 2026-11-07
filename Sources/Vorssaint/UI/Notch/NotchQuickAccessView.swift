@@ -19,7 +19,7 @@ final class NotchQuickAccessMotion: ObservableObject {
         let values = NotchQuickAccessLayout.placements(configuration, body: body, headerTop: headerTop)
         guard self.configuration != configuration || placements != values else { return }
         let spring = NotchMotion.sideSpring(from: bodyFrame.size, to: body.size)
-        let animation: Animation? = animated && visible ? .spring(duration: spring.duration, bounce: spring.bounce) : nil
+        let animation: Animation? = animated && visible ? .spring(duration: spring.duration, bounce: spring.bounce).delay(spring.softStart / 2) : nil
         bodyFrame = body
         withAnimation(animation) {
             self.configuration = configuration

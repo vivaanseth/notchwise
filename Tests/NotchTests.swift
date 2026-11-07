@@ -2991,7 +2991,7 @@ enum NotchTests {
             suite.expect(envelope.width <= max(from.width, to.width) + NotchMotion.overshootLimit
                    && envelope.height <= max(from.height, to.height) + NotchMotion.overshootLimit,
                    "a long travel swings no farther than the room kept around the island")
-            suite.expect(motion.duration > 0.1 && motion.duration < 0.85,
+            suite.expect(motion.duration > 0.1 && motion.duration < 1.0,
                    "the island settles within the time its surroundings wait for it: \(motion.duration)")
             suite.expect(motion.sizes.allSatisfy { $0.height >= 0 && $0.width >= 0 }, "no frame turns inside out")
             if to.width < from.width {
@@ -3003,10 +3003,10 @@ enum NotchTests {
                        "a shortening island never passes its resting height")
             }
             if to.width > from.width + 40 {
-                suite.expect(widest > to.width, "a widening island stretches past its size before settling")
+                suite.expect(widest >= to.width, "a widening island reaches its size, with next to no swing")
             }
             if to.height > from.height + 40 {
-                suite.expect(tallest > to.height, "a lengthening island stretches past its size before settling")
+                suite.expect(tallest >= to.height, "a lengthening island reaches its size, with next to no swing")
             }
         }
         let long = NotchMotion.envelope(from: CGSize(width: 200, height: 32), to: CGSize(width: 1_400, height: 900))
@@ -3051,7 +3051,7 @@ enum NotchTests {
                              return abs(size.width - expected.width) < 0.001 && abs(size.height - expected.height) < 0.001
                          },
                          "a motion begun once moves exactly as the island's springs always have")
-            let retarget = 10.07, frame = 1.0 / 60
+            let retarget = 10.25, frame = 1.0 / 60
             if let carried = opening.continued(to: rows, at: retarget) {
                 let before = opening.size(at: retarget - frame), at = opening.size(at: retarget)
                 let after = carried.size(at: retarget + frame)

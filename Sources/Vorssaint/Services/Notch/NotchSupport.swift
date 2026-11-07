@@ -2978,10 +2978,15 @@ enum NotchMotion {
         /// Perceptual duration and bounce, as SwiftUI and Core Animation define them.
         var duration: TimeInterval
         var bounce: Double
+        /// How long the motion takes to come up to the spring's own pace. A
+        /// spring alone is at its fastest almost at once, which reads as a
+        /// jump over the island's long travel; this starts it from standstill.
+        var softStart: TimeInterval = 0
 
         /// Progress from rest at 0 toward 1.
-        func progress(at time: TimeInterval) -> Double {
-            guard time > 0 else { return 0 }
+        func progress(at elapsed: TimeInterval) -> Double {
+            guard elapsed > 0 else { return 0 }
+            let time = elapsed < softStart ? elapsed * elapsed / (2 * softStart) : elapsed - softStart / 2
             let natural = 2 * Double.pi / duration
             let damping = 1 - bounce
             if damping >= 1 { return 1 - exp(-natural * time) * (1 + natural * time) }
@@ -3001,17 +3006,17 @@ enum NotchMotion {
         func limited(travel: CGFloat, limit: CGFloat) -> Spring {
             guard bounce > 0, travel > 0, Double(travel) * overshoot > Double(limit) else { return self }
             let share = log(Double(max(limit, 0.01) / travel))
-            return Spring(duration: duration, bounce: 1 + share / (Double.pi * Double.pi + share * share).squareRoot())
+            return Spring(duration: duration, bounce: 1 + share / (Double.pi * Double.pi + share * share).squareRoot(), softStart: softStart)
         }
     }
 
-    static let growingWidth = Spring(duration: 0.65, bounce: 0.25)
-    static let growingHeight = Spring(duration: 0.58, bounce: 0.22)
+    static let growingWidth = Spring(duration: 0.65, bounce: 0.12, softStart: 0.18)
+    static let growingHeight = Spring(duration: 0.58, bounce: 0.1, softStart: 0.18)
     static let shrinkingWidth = Spring(duration: 0.30, bounce: 0)
     static let shrinkingHeight = Spring(duration: 0.26, bounce: 0)
     /// A strip that stays on screen and only fits a new reading, as a level
     /// passing 99% or 9%, eases to its width without a swing, either way.
-    static let steadyWidth = Spring(duration: 0.75, bounce: 0)
+    static let steadyWidth = Spring(duration: 0.75, bounce: 0, softStart: 0.18)
     /// The farthest a side may pass its target. The display always keeps at
     /// least this much free around the island and its floating controls.
     static let overshootLimit: CGFloat = 12
