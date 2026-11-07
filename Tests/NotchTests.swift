@@ -1083,9 +1083,16 @@ enum NotchTests {
             let widest = geometry.noticeSize(wings: long.preferredWings)
             var shifted = geometry
             shifted.surfaceShift = geometry.noticeShift(long.preferredWings)
-            suite.expect(compact.width == geometry.cameraWidth + short.preferredWings.leading + short.preferredWings.trailing
+            suite.expect(compact.width == geometry.cameraWidth + 2 * short.preferredWings.widest
                          && compact.width < widest.width && screen.contains(shifted.frame(for: widest)),
                          "a short banner narrows around the camera, and the widest stays on the display")
+            // A caption a browser sends as a song's name, with no artist.
+            let caption = NotchNotice(event: .track, title: String(repeating: "A long reel caption ", count: 8),
+                                      detail: "", symbol: "music.note")
+            let wings = caption.wings(in: geometry)
+            suite.expect(caption.preferredWings.leading > caption.preferredWings.trailing
+                         && wings.leading == wings.trailing && geometry.noticeShift(caption.preferredWings) == 0,
+                         "a long title beside an empty detail never stretches the island to one side")
         }
     }
 

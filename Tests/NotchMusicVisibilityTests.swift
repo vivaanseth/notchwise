@@ -407,8 +407,8 @@ enum NotchMusicVisibilityTests {
         suite.expect(service.surfaceSize == service.geometry.noticeSize(wings: notice.wings(in: service.geometry))
                && service.surfaceSize.width > service.geometry.notice.width
                && service.surfaceShift == service.geometry.noticeShift(notice.wings(in: service.geometry))
-               && service.surfaceShift < 0,
-               "a device notice widens the actual presentation toward its longer name")
+               && service.surfaceShift == 0,
+               "a device notice widens evenly for its longer name and stays centred on the camera")
         service.notice = nil
         suite.expect(service.surfaceShift == 0, "the island returns to the camera's centre once the notice ends")
         suite.expect(service.surfaceSize == service.compactActivityGeometry.compactActivitySize,

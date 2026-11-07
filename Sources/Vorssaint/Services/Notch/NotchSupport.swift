@@ -2734,10 +2734,12 @@ struct NotchGeometry: Equatable {
         max(0, (noticeSize(wingWidth: preferred).width - noticeCameraGap) / 2)
     }
 
-    /// Each side as wide as it asks, short of the display's edge.
+    /// Both sides as wide as the wider one asks, short of the display's edge,
+    /// so a notice stays centred on the camera. Sized apart, a long title
+    /// beside a short detail stretched the island off to the left.
     func noticeWings(_ preferred: NotchNoticeWings) -> NotchNoticeWings {
-        NotchNoticeWings(leading: noticeWingWidth(preferred: preferred.leading),
-                         trailing: noticeWingWidth(preferred: preferred.trailing))
+        let wing = noticeWingWidth(preferred: preferred.widest)
+        return NotchNoticeWings(leading: wing, trailing: wing)
     }
 
     func noticeSize(wings preferred: NotchNoticeWings) -> CGSize {
