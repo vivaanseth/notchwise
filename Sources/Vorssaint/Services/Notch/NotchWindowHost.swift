@@ -1482,7 +1482,7 @@ private final class NotchCanvas: NSView {
             // opacity already on screen. A shape that snaps into place only
             // needs its first frames drawn.
             let keyTimes: [NSNumber] = kind == .dismiss ? [0, 0.65, 1] : shapeSnaps ? [0, 0.25, 1] : [0, 0.35, 1]
-            let duration: CFTimeInterval = kind == .dismiss ? 0.40 : shapeSnaps ? 0.2 : 0.45
+            let duration: CFTimeInterval = kind == .dismiss ? 0.40 : shapeSnaps ? 0.2 : 0.65
             animation.values = [start, start, 1]
             animation.keyTimes = keyTimes
             animation.duration = duration

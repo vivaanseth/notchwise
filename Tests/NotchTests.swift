@@ -2991,7 +2991,7 @@ enum NotchTests {
             suite.expect(envelope.width <= max(from.width, to.width) + NotchMotion.overshootLimit
                    && envelope.height <= max(from.height, to.height) + NotchMotion.overshootLimit,
                    "a long travel swings no farther than the room kept around the island")
-            suite.expect(motion.duration > 0.1 && motion.duration < 0.6,
+            suite.expect(motion.duration > 0.1 && motion.duration < 0.85,
                    "the island settles within the time its surroundings wait for it: \(motion.duration)")
             suite.expect(motion.sizes.allSatisfy { $0.height >= 0 && $0.width >= 0 }, "no frame turns inside out")
             if to.width < from.width {
