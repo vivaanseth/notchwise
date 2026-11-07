@@ -31,9 +31,14 @@ enum NotchAudioLevelTests {
         var scaled: [Double] = []
         for _ in 0..<12 { scaled = quiet.next([0.1, 0.2, 0.3, 0.3, 0.2, 0.1, 0.05]) }
         expect(scaled.max().map { $0 > 0.8 } == true, "a quiet source still fills the meter")
-        expect(NotchAudioLevelSupport.barIndex(0, of: 3, bands: 7) == 1 && NotchAudioLevelSupport.barIndex(1, of: 3, bands: 7) == 3
-               && NotchAudioLevelSupport.barIndex(2, of: 3, bands: 7) == 5 && NotchAudioLevelSupport.barIndex(6, of: 7, bands: 7) == 6,
-               "fewer bars sample the bands evenly")
+        for bars in 1...9 {
+            let bands = (0..<bars).map { NotchAudioLevelSupport.barIndex($0, of: bars, bands: 7) }
+            expect(bands == Array(bands.reversed()) && bands.allSatisfy { (0..<7).contains($0) },
+                   "\(bars) bars mirror around their middle")
+        }
+        expect(NotchAudioLevelSupport.barIndex(1, of: 3, bands: 7) == 0 && NotchAudioLevelSupport.barIndex(0, of: 3, bands: 7) == 4
+               && NotchAudioLevelSupport.barIndex(3, of: 7, bands: 7) == 0,
+               "the middle bar follows the bass and the outer bars a band that still has sound")
         expect(!NotchAudioLevelSupport.fallsBack(heard: false, elapsed: 1) && !NotchAudioLevelSupport.fallsBack(heard: true, elapsed: 10)
                && NotchAudioLevelSupport.fallsBack(heard: false, elapsed: NotchAudioLevelSupport.silenceGrace),
                "a tap that only ever delivers silence hands the bars back to their synthetic motion")

@@ -120,12 +120,15 @@ enum NotchAudioLevelSupport {
         }
     }
 
-    /// Which band a bar reads when there are fewer bars than bands: the bars
-    /// sample the bands evenly rather than all crowding into the bass.
+    /// Which band a bar reads. The bars mirror around their middle: the centre
+    /// follows the bass and each pair outward the same higher band, so both
+    /// sides always match. The outermost pair stops two thirds of the way up,
+    /// as the top bands are often near silent and would leave the ends empty.
     static func barIndex(_ bar: Int, of bars: Int, bands: Int) -> Int {
-        guard bars > 0, bands > 0 else { return 0 }
-        let position = (Double(bar) + 0.5) / Double(bars) * Double(bands)
-        return min(bands - 1, max(0, Int(position.rounded(.down))))
+        guard bars > 1, bands > 0 else { return 0 }
+        let distance = abs(Double(2 * bar - (bars - 1))) / Double(bars - 1)
+        let position = distance * Double(bands - 1) * 2 / 3
+        return min(bands - 1, max(0, Int(position.rounded())))
     }
 
     /// Bars rise fast and fall slowly, and the loudest band sets the scale so
