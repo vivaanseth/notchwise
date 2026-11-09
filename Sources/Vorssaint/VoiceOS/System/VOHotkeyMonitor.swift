@@ -66,10 +66,16 @@ final class VOHotkeyMonitor {
             return false
         }
         guard e.type == .flagsChanged else { return false }
+        // Off, the keys are the system's again. A press already under way
+        // still ends, so nothing is left listening.
+        guard triggersEnabled() || dictKeyDown || agentKeyDown || handsFree else { return false }
         handleDictation(e)
         handleAgent(e)
         return false
     }
+
+    /// Whether holding the dictation or assistant key starts listening.
+    var triggersEnabled: () -> Bool = { true }
 
     private func isDictationKey(_ e: NSEvent) -> (matches: Bool, down: Bool) {
         // A modifier Vorssaint's Super Key has taken stays Super Key's.

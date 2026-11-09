@@ -118,6 +118,9 @@ final class VORuntime: NSObject {
     private func wireHotkeys() {
         let dictation = VODictationController.shared
         let agent = VOAssistantController.shared
+        // Removed from the island, the assistant stops listening for its keys,
+        // and so never opens Ollama either.
+        hotkeys.triggersEnabled = { NotchSupport.showsAssistant() }
         hotkeys.onDictationStart = { if !agent.expanded || agent.phase != .listening { dictation.begin() } }
         hotkeys.onDictationStop = { dictation.finish() }
         hotkeys.onDictationCancel = { dictation.cancel() }
