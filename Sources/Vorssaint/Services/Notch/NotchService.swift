@@ -48,7 +48,9 @@ struct NotchNotice: Equatable {
             return NotchNoticeWings(leading: wing, trailing: wing)
         }
         // Long accessory names still use bounded truncation.
-        let maximum: CGFloat = event == .accessory && level == nil ? 160 : 240
+        // Both sides take the wider one's width, so a song's banner stops
+        // well short of that and its title ends in an ellipsis.
+        let maximum: CGFloat = event == .track ? 140 : event == .accessory && level == nil ? 160 : 240
         func fitted(_ content: CGFloat) -> CGFloat { min(maximum, max(Self.minimumWing, ceil(content) + 16 + cameraGap)) }
         // An empty title leaves the mark alone, without the space after it.
         let mark = fitted(leading > 0 ? leading + 18 + 8 : 18)

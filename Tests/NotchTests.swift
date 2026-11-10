@@ -1093,6 +1093,8 @@ enum NotchTests {
             suite.expect(caption.preferredWings.leading > caption.preferredWings.trailing
                          && wings.leading == wings.trailing && geometry.noticeShift(caption.preferredWings) == 0,
                          "a long title beside an empty detail never stretches the island to one side")
+            suite.expect(caption.preferredWings.widest <= 140,
+                         "a new song's banner stays modest however long its title is")
         }
     }
 
