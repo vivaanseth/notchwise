@@ -23,7 +23,7 @@ struct NotchQueueView: View {
                 Text(text.actionFailed).font(.caption).foregroundStyle(.orange)
             }
             if let queue = service.upcoming, !service.upcomingRows.isEmpty {
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(spacing: 0) {
                         ForEach(service.upcomingRows) { item in
                             HStack(spacing: 10) {

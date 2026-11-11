@@ -295,7 +295,7 @@ private struct NotchHubCalendarWidget: View {
                     }
                     .padding(.bottom, 4)
                 }
-                .scrollIndicators(.automatic)
+                .scrollIndicators(.never)
                 .notchScrollEdgeFade()
             }
         }

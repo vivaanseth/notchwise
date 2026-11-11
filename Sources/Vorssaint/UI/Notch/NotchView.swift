@@ -355,7 +355,7 @@ struct NotchView: View {
                     .padding(.bottom, 4)
                     .contentShape(Rectangle())
             }
-            .scrollIndicators(.automatic)
+            .scrollIndicators(.never)
             .notchScrollEdgeFade()
         } else {
             content

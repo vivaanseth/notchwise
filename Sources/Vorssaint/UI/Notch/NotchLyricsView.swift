@@ -49,7 +49,7 @@ struct NotchLyricsView: View {
                     .font(.caption).buttonStyle(.borderless)
                 } else {
                     if !playback.hasPosition { Text(text.noPosition).font(.caption).foregroundStyle(.secondary) }
-                    ScrollView {
+                    ScrollView(.vertical, showsIndicators: false) {
                         Text(lyrics.plain.isEmpty ? lyrics.lines.map(\.text).joined(separator: "\n") : lyrics.plain)
                             .font(.system(size: 15, weight: .medium)).textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -117,7 +117,7 @@ struct NotchLyricsView: View {
         TimelineView(.explicit(lyrics.changeDates(for: playback, offset: service.offset, from: .now))) { context in
             let active = lyrics.activeIndex(at: playback.position(at: context.date), offset: service.offset)
             ScrollViewReader { proxy in
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(alignment: .leading, spacing: 12) {
                         if active == nil {
                             Text(text.waiting).font(.caption).foregroundStyle(.secondary).id("start")

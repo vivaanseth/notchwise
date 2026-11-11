@@ -145,7 +145,7 @@ struct NotchDownloadsView: View {
                         }
                     }
                 }
-                .scrollIndicators(.automatic)
+                .scrollIndicators(.never)
             }
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         // The watched folder heads the island's top row, so the cards start at

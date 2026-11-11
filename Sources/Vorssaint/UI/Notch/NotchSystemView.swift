@@ -102,7 +102,7 @@ struct NotchSystemView: View {
                                                spacing: NotchLayout.rowSpacing) + inset * 2
             Group {
                 if height > size.height {
-                    ScrollView {
+                    ScrollView(.vertical, showsIndicators: false) {
                         grid(cards: cards, rows: rows).padding(inset)
                             .contentShape(Rectangle())
                     }

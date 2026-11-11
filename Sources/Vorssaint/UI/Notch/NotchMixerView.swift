@@ -394,7 +394,7 @@ private struct NotchMixerOptions: View {
             .padding(.trailing, 4)
             .padding(.bottom, 4)
         }
-        .scrollIndicators(.automatic)
+        .scrollIndicators(.never)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 

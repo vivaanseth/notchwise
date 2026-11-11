@@ -89,7 +89,7 @@ struct NotchClipboardView: View {
                             }
                         }
                     }
-                    .scrollIndicators(.automatic)
+                    .scrollIndicators(.never)
                     .coordinateSpace(.named(Self.listSpace))
                     .onChange(of: highlightedID) { previous, id in
                         guard let id else { return }
@@ -278,11 +278,9 @@ struct NotchClipboardView: View {
     }
 
     /// The width an open entry's text wraps in: the card less its padding and
-    /// any color swatch, and less a scroll bar where one takes room.
+    /// any color swatch. The island draws no scroll bar, so none takes room.
     private func openTextWidth(_ entry: ClipboardHistoryEntry) -> CGFloat {
-        let scroller = NSScroller.preferredScrollerStyle == .legacy
-            ? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) : 0
-        return size.width - 2 * 10 - (entry.color == nil ? 0 : 12 + 7) - scroller
+        size.width - 2 * 10 - (entry.color == nil ? 0 : 12 + 7)
     }
 
     /// The text an open entry shows: the card preview the quick panel's cards
