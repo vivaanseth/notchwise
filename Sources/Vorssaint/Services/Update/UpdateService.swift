@@ -216,6 +216,15 @@ final class UpdateService: ObservableObject {
     func downloadAndInstall() {
         if AppInfo.isDeveloperBuild { return }  // never replace the local dev build over itself
         guard AppInfo.releasesRunOnThisMac else { return }
+        guard AppInfo.installsUpdatesItself else {
+            // The person downloads it from the release's page and replaces the app.
+            if case .available(let version) = state {
+                NSWorkspace.shared.open(AppInfo.releasesURL.appendingPathComponent("tag/v\(version)"))
+            } else {
+                NSWorkspace.shared.open(AppInfo.releasesURL.appendingPathComponent("latest"))
+            }
+            return
+        }
         guard let downloadURL else { return }
         // Pre-flight BEFORE spending the download: a translocated app or one
         // running from a read-only volume (the mounted DMG) can never be

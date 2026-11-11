@@ -28,9 +28,14 @@ enum AppInfo {
         (Bundle.main.bundleIdentifier ?? "").hasSuffix(".dev")
     }
 
-    /// Notchwise releases are installed by hand from its GitHub page; the
-    /// app never downloads one over itself.
-    static var releasesRunOnThisMac: Bool { false }
+    /// Notchwise's releases are universal, so every Mac checks for them.
+    static var releasesRunOnThisMac: Bool { true }
+
+    /// Releases aren't signed with an Apple Developer ID, which the installer
+    /// requires, so an update opens its download page instead of installing.
+    static let installsUpdatesItself = false
+
+    static var releasesURL: URL { repositoryURL.appendingPathComponent("releases") }
 
     /// True when the current version is a pre-release (e.g. 3.3.4-beta.1 or 3.3.4-rc.1).
     static var isBeta: Bool {
